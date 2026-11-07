@@ -17,7 +17,7 @@ iteracion,cdu,iso2-catalogo,iso2-seguridad,iso2-agendas,iso2-solicitudes,iso2-ci
 15,CDU18,,1.2.0,,,,,,,,,1.3.0-SN,,,CFG-15,cfg-iter15,interna
 16,CDU09,,,,,,,,1.1.0,1.3.0,,1.3.0-SN,0.4.0-SN,1.3.0-SN,CFG-16,cfg-iter16,interna (beta en curso)
 17,CDU10,,,,,,,,,,1.1.0,1.3.0-SN,0.4.0-SN,1.3.0-SN,CFG-17,cfg-iter17,interna
-18,CDU04,,,,,,,1.2.0,,,1.3.0,0.4.0-beta,1.3.0,CFG-18,cfg-iter18;v0.4.0-beta,R3 04/12 BETA v0.4.0-beta
+18,CDU04,,,,,,,1.2.0,,,,1.3.0,0.4.0-beta,1.3.0,CFG-18,cfg-iter18;v0.4.0-beta,R3 04/12 BETA v0.4.0-beta
 19,CDU15,,,,,,,,,,1.2.0,1.4.0-SN,0.9.0-SN,1.4.0-SN,CFG-19,cfg-iter19,interna (RC en curso)
 20,CDU20,,,,,,,,,,1.3.0,1.4.0,0.9.0-rc,1.4.0,CFG-20,cfg-iter20,R4 11/12 CANDIDATA v0.9.0-rc
 21,-,,,,,,,,,,,1.5.0,1.0.0,1.5.0,CFG-21,cfg-iter21,R5 15/12 DEFINITIVA v1.0.0
