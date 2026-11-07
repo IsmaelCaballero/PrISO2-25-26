@@ -6,9 +6,9 @@
 > **incremento** = conjunto de artefactos que nos llevan de la versión inmediatamente anterior.
 > Convención: `v1.1.0` = CDU de MAYOR riesgo; `v1.2.0` = siguiente nivel de riesgo/prioridad; etc.
 
-## 1. Arquitectura del sistema: 13 componentes Maven
+## 1. Arquitectura del sistema: 14 módulos Maven
 
-Diez componentes de dominio (servidor) + dos transversales + dos aplicaciones (tren de versiones):
+Un agregador + un módulo transversal + diez componentes de dominio (servidor) + dos aplicaciones (tren de versiones):
 
 ```
 iso2-parent (agregador · tren de versiones de release)
