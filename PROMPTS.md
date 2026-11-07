@@ -178,5 +178,5 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 >   README de exportación a StarUML (D18). El de casos de uso lleva actores de rol (Médico, Técnico
 >   facultativo, Celador, Recepcionista) con solo consulta a UC16.5 y UC7 de auditoría fuera de la
 >   frontera; revalidados los 4 con PlantUML 1.2025.2.
-> - Falta de Ismael: fusión del PR #7 (Iter0) + tags, fusión del PR de Iter1, **TC humanos de CDU16**
+> - Falta de Ismael: fusión del PR #7 (Iter0) + tags, fusión del **PR #10** (Iter1), **TC humanos de CDU16**
 >   (D28) y exportación `.staruml`.
