@@ -101,3 +101,47 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 - Para que los incrementos de `iso2-citas` respeten riesgo decreciente (1.2.0=CDU14 T2-alto antes
   de 1.3.0=CDU01 T2-bajo), se invierten las iteraciones 7 y 9 del plan de sesión 1.
 - No altera fechas, pareja responsable ni coste total; solo el orden CDU01↔CDU14.
+
+## D24. Modelo de calidad ISO/IEC 25010 acotado a 5 características + puertas por release
+- **Fecha:** 07/11/2026 · **Estado:** aceptada (pendiente de sellado en PR de `releaseplan`)
+- Se maximizan: **Adecuación funcional** (completitud, corrección, pertinencia), **Usabilidad**
+  (operabilidad + protección contra errores), **Fiabilidad** (disponibilidad, tolerancia a fallos,
+  recuperabilidad), **Seguridad** (confidencialidad, integridad, no repudio, responsabilidad) y
+  **Mantenibilidad** (modularidad MVC+SOLID, analizabilidad, testabilidad). El resto de características
+  de ISO 25010 se cubren de forma básica (proyecto de 5 semanas, S13 del PUD +Calidad).
+- Instrumentos: TC humanos por RF (1 feliz + ≥2 error + 1 permisos); ArchUnit para reglas MVC/SOLID;
+  `@Auditable` en toda mutación con auditoría de hash encadenado (no repudio); TC de adaptador externo
+  caído; ensayo de copia/restore H2. Puertas JaCoCo línea: ≥60 % R1 · ≥70 % R2 · ≥75 % R3 · ≥78 % R4 ·
+  **≥80 % final** (≥85 % en citas/solicitudes/seguridad); rama ≥45 %→70 %; fallos Surefire = 0.
+- figura de **guardián de calidad** rotatoria por release; ningún miembro se auto-fusiona su PR.
+- Detalle: `SOFTWAREQUALITY.md` (por componente y por CDU) y `docs/planificacion-PUD+Calidad.md` §8.
+
+## D25. Ítems de configuración: 14 módulos Maven + contratos + migraciones + docs vivos
+- **Fecha:** 07/11/2026 · **Estado:** aceptada
+- Ítems de configuración: parent + common + 10 dominio + 2 apps (versión SemVer en POM), scripts
+  `db/migration/V<versión>__<cdu>.sql`, suites JUnit e informes, diagramas `docs/modelo/iterXX/`,
+  ficheros vivos (DECISIONS/PLAN/STATUS/SOFTWAREQUALITY) y pipeline CI. Todo en Git; nada fuera.
+- **CFG-NN = configuración mínima de la iteración NN** (conjunto exacto de componentes+versiones que
+  la construyen). Tag anotado `cfg-iterNN` en cada merge de iteración a `develop`. Ninguna etiqueta de
+  release (`v…`) puede contener `SNAPSHOT`. Auditoría de configuración tras cada merge: el guardián
+  verifica que los POM coinciden con `docs/componentes-versiones+Calidad.csv`.
+- Detalle: `docs/planificacion-PUD+Calidad.md` §9 y `docs/mapa-configuraciones.md`.
+
+## D26. Mapa de configuraciones CFG-00…CFG-21 con etiquetas alfa/beta/candidata/definitiva
+- **Fecha:** 07/11/2026 · **Estado:** aceptada
+- 22 configuraciones mínimas mapeadas a la agenda de iteraciones. CFG hito de release:
+  CFG-06 `v0.2.0-alpha` (**ALFA 1**, R1 20/11) · CFG-12 `v0.3.0-alpha` (**ALFA consolidada**, R2 27/11) ·
+  CFG-18 `v0.4.0-beta` (**BETA**, R3 04/12) · CFG-20 `v0.9.0-rc` (**CANDIDATA**, R4 11/12) ·
+  CFG-21 `v1.0.0` (**DEFINITIVA**, R5 15/12). El resto, CFG internas (pueden llevar `…-SN`).
+- Las clasificaciones se declaran **por criterios cumplidos, no por fecha** (flujo end-to-end, nº de
+  CDU, puertas de calidad, modo degradado probado). Ambientes: dev → test → alfa → beta → demo.
+  Rollback = `git checkout cfg-iterNN` + build + par server/client + copia H2 asociada.
+- Detalle y tabla completa: `docs/mapa-configuraciones.md` + `docs/mapa-configuraciones.csv`
+  (rama `releaseplan`).
+
+## D27. Puertas de calidad embebidas en el plan (por release, no como iteración aparte)
+- **Fecha:** 07/11/2026 · **Estado:** aceptada
+- Las actividades de calidad se financian dentro de las horas ya presupuestadas de cada iteración
+  (diseño humano de TC, revisión de arquitectura, CI) y de las 80 h fijas de Iter21: **el presupuesto
+  no cambia** respecto del plan v1.1.0. La tabla de puertas §8.4 del PUD +Calidad es la referencia
+  para el criterio de paso entre releases (trazabilidad RF→CU→TC: 6/12/18/20/20 CDU).

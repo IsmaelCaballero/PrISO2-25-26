@@ -1,0 +1,23 @@
+iteracion,cdu,iso2-catalogo,iso2-seguridad,iso2-agendas,iso2-solicitudes,iso2-citas,iso2-pacientes,iso2-comunicacion,iso2-informes,iso2-integracion,iso2-reporting,iso2-common,iso2-server-app,iso2-client-app,cfg_id,tag_configuracion,etiqueta_release
+0,-,1.0.0,1.0.0,1.0.0,1.0.0,1.0.0,1.0.0,1.0.0,1.0.0,1.0.0,1.0.0,1.0.0,0.1.0,0.1.0,CFG-00,cfg-iter00,interna (linea base R0 v0.1.0)
+1,CDU16,1.1.0,,,,,,,,,,1.1.0-SN,,,CFG-01,cfg-iter01,interna
+2,CDU17,,1.1.0,,,,,,,,,1.1.0-SN,,,CFG-02,cfg-iter02,interna
+3,CDU13,,,1.1.0,,,,,,,,1.1.0-SN,,,CFG-03,cfg-iter03,interna
+4,CDU06,,,,1.1.0,,,,,,,1.1.0-SN,,,CFG-04,cfg-iter04,interna
+5,CDU12,,,,,1.1.0,,,,,,1.1.0-SN,,,CFG-05,cfg-iter05,interna
+6,CDU19,,,,,,,,,1.1.0,,1.1.0,0.2.0-alpha,1.1.0,CFG-06,cfg-iter06,R1 20/11 ALFA-1 v0.2.0-alpha
+7,CDU14,,,,,1.2.0,,,,,,1.2.0-SN,,,CFG-07,cfg-iter07,interna (alfa en curso)
+8,CDU11,,,,,,1.1.0,,,1.2.0,,1.2.0-SN,,,CFG-08,cfg-iter08,interna
+9,CDU01,,,,,1.3.0,,,,,,1.2.0-SN,,,CFG-09,cfg-iter09,interna
+10,CDU02,,,,,,,1.1.0,,,,1.2.0-SN,,,CFG-10,cfg-iter10,interna
+11,CDU07,,,,1.2.0,,,,,,,1.2.0-SN,,,CFG-11,cfg-iter11,interna
+12,CDU08,,,1.2.0,1.3.0,,,,,,,1.2.0,0.3.0-alpha,1.2.0,CFG-12,cfg-iter12,R2 27/11 ALFA-consolidada v0.3.0-alpha
+13,CDU03,,,,,,1.2.0,,,,,1.3.0-SN,,,CFG-13,cfg-iter13,interna (beta en curso)
+14,CDU05,,,,1.4.0,,,,,,,1.3.0-SN,,,CFG-14,cfg-iter14,interna
+15,CDU18,,1.2.0,,,,,,,,,1.3.0-SN,,,CFG-15,cfg-iter15,interna
+16,CDU09,,,,,,,,1.1.0,1.3.0,,1.3.0-SN,0.4.0-SN,1.3.0-SN,CFG-16,cfg-iter16,interna (beta en curso)
+17,CDU10,,,,,,,,,,1.1.0,1.3.0-SN,0.4.0-SN,1.3.0-SN,CFG-17,cfg-iter17,interna
+18,CDU04,,,,,,,1.2.0,,,,1.3.0,0.4.0-beta,1.3.0,CFG-18,cfg-iter18;v0.4.0-beta,R3 04/12 BETA v0.4.0-beta
+19,CDU15,,,,,,,,,,1.2.0,1.4.0-SN,0.9.0-SN,1.4.0-SN,CFG-19,cfg-iter19,interna (RC en curso)
+20,CDU20,,,,,,,,,,1.3.0,1.4.0,0.9.0-rc,1.4.0,CFG-20,cfg-iter20,R4 11/12 CANDIDATA v0.9.0-rc
+21,-,,,,,,,,,,,1.5.0,1.0.0,1.5.0,CFG-21,cfg-iter21,R5 15/12 DEFINITIVA v1.0.0
