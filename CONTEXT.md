@@ -44,6 +44,11 @@
 - Cada tarea tiene su **issue** con: objetivos, disciplinas PUD, contratos/interfaces involucrados,
   criterios de aceptación (DoD), estimación de horas (con y sin agente) y un **prompt listo para
   ser simulado** por el asignatario (plantilla en `PLAN.md`).
+- **Configuración (D25–D26)**: cada merge de iteración a `develop` va etiquetado `cfg-iterNN`
+  (configuración mínima de esa iteración, lista para desplegar y para rollback). Etiquetas de
+  release `v0.2.0-alpha / v0.3.0-alpha / v0.4.0-beta / v0.9.0-rc / v1.0.0` en `main` vía rama
+  `release/Rn`; **ninguna etiqueta de release contiene `SNAPSHOT`**. Tras cada merge, el guardián de
+  calidad verifica que las versiones de los POM coinciden con `docs/componentes-versiones+Calidad.csv`.
 
 ## 4. Modelado por iteración (StarUML)
 
@@ -71,7 +76,24 @@ Formato de trabajo: fuente **PlantUML** en el repo (económico en tokens y difer
   correspondiente en el cliente: nunca se rompen contratos publicados (SemVer estricto).
 - Reglas de arquitectura (guardarailes): comunicación entre módulos solo por interfaces de
   `iso2-common`; capas dominio/servicio-adaptador/vista; datos clínicos siempre tras `iso2-seguridad`;
-  DICOM/HL7/FHIR solo tras fachadas de `iso2-integracion`.
+  DICOM/HL7/FHIR solo tras fachadas de `iso2-integracion`. **Estas reglas se verifican con ArchUnit
+  en CI** (reglas escritas en Iter0, antes que el código): violación = PR no fusionable.
+
+## 6bis. Puertas de calidad (D24 — detalle en SOFTWAREQUALITY.md y PUD +Calidad §8)
+
+- Modelo ISO/IEC 25010 acotado: adecuación funcional, usabilidad (operabilidad + protección de
+  errores), fiabilidad (disponibilidad, tolerancia a fallos, recuperabilidad), seguridad
+  (confidencialidad, integridad, **no repudio**, responsabilidad) y mantenibilidad (**MVC+SOLID**,
+  analizabilidad, testabilidad).
+- En cada iteración: TC humanos (≥1 camino feliz + ≥2 error + 1 permisos por RF), RBAC
+  deny-by-default testeado en cada endpoint, **`@Auditable` en toda mutación de estado** (auditoría
+  con hash encadenado), y umbrales JaCoCo del componente (≥85 % en citas/solicitudes/seguridad).
+- Puertas por release (α 60 % → α 70 % → β 75 % → RC 78 % → final 80 % línea; Surefire/ArchUnit = 0).
+- **Un CDU no se marca "Hecha" si su exigencia de calidad verificable
+  (`docs/planificacion-iteraciones+Calidad.csv`) no está probada.** Prioridad si va justo de tiempo:
+  corrección y seguridad > protección contra errores > resto de usabilidad > prestación.
+- Guardián de calidad rotatorio por release: ejecuta puertas, audita configuración, publica métricas
+  en `STATUS.md`. Nadie se auto-fusiona su PR.
 
 ## 7. Gestión de contexto del agente (tokens)
 
