@@ -180,3 +180,15 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 >   frontera; revalidados los 4 con PlantUML 1.2025.2.
 > - Falta de Ismael: fusión del PR #7 (Iter0) + tags, fusión del **PR #10** (Iter1), **TC humanos de CDU16**
 >   (D28) y exportación `.staruml`.
+
+### Prompt 09b - Cierre de jornada 7: guardar estado tras las fusiones de Ismael [✔ ejecutado]
+
+> Usuario (07/11 noche): «guarda el estado de todo, que de momento lo vamos a dejar por hoy aqui»
+
+- Contexto de última hora: durante el cierre, Ismael fusionó **PR #7** (merge `641e72d`) y
+  **PR #10** (merge `df09bca`, nuevo tip de `develop`) y cerró **sin fusionar** el PR #3
+  (`develop`→`main`). Los issues #6/#9 no se cerraron solos: `Closes #N` solo opera al fusionar
+  a la rama por defecto (`main`) → registrada como **D29** (cierre manual de issues en merges a `develop`).
+- Hecho: rama `docs/cierre-sesion-7` desde `develop` con PR de sincronización: STATUS.md (fila
+  sesión 7, punto de continuación y cierre de jornada), DECISIONS.md (D29) y esta entrada en
+  PROMPTS.md. Sin cambios de código. El trabajo de Iter1/CDU16 queda fusionado en `develop`.
