@@ -1,23 +1,23 @@
 iteracion,fase,cdu,requisito_funcional,actor,pareja_responsable,complejidad,horas_con_ia,horas_sin_ia,coste_eur,fecha_inicio,fecha_fin,modulo_maven,version_esperada,release
-0,Inicio,-,-,Todos,-,-,40,40,1000,2026-10-19,2026-10-25,iso2-parent + iso2-common,0.1.0,R0
-1,Elaboracion,CDU16,RF16,Administrador,P-A,Media,22,40,550,2026-11-09,2026-11-13,iso2-catalogo,1.0.0,
-2,Elaboracion,CDU17,RF17,Administrador,P-B,Media,22,40,550,2026-11-09,2026-11-13,iso2-seguridad,1.0.0,
-3,Elaboracion,CDU13,RF13,Administrativo,P-C,Alta,36,64,900,2026-11-09,2026-11-13,iso2-agendas,1.0.0,
-4,Elaboracion,CDU06,RF06,Medico,P-A,Alta,36,64,900,2026-11-16,2026-11-20,iso2-solicitudes,1.0.0,
-5,Elaboracion,CDU12,RF12,Administrativo,P-B,Alta,36,64,900,2026-11-16,2026-11-20,iso2-citas,1.0.0,
-6,Elaboracion,CDU19,RF19,Administrador,P-C,Alta,36,64,900,2026-11-16,2026-11-20,iso2-integracion,1.0.0,R1
-7,Construccion,CDU01,RF01,Paciente,P-A,Media,22,40,550,2026-11-23,2026-11-27,iso2-citas,1.1.0,
-8,Construccion,CDU11,RF11,Administrativo,P-B,Media,22,40,550,2026-11-23,2026-11-27,iso2-pacientes,1.0.0,
-9,Construccion,CDU14,RF14,Administrativo,P-C,Media,22,40,550,2026-11-23,2026-11-27,iso2-citas,1.2.0,
-10,Construccion,CDU02,RF02,Paciente,P-A,Media,22,40,550,2026-11-25,2026-11-27,iso2-comunicacion,1.0.0,
-11,Construccion,CDU07,RF07,Medico,P-B,Alta,36,64,900,2026-11-23,2026-11-27,iso2-solicitudes,1.1.0,
-12,Construccion,CDU08,RF08,Medico,P-C,Media,22,40,550,2026-11-25,2026-11-27,iso2-solicitudes,1.2.0,
-13,Construccion,CDU03,RF03,Paciente,P-A,Media,22,40,550,2026-11-30,2026-12-02,iso2-pacientes,1.1.0,
-14,Construccion,CDU05,RF05,Paciente,P-B,Media,22,40,550,2026-11-30,2026-12-02,iso2-solicitudes,1.3.0,
-15,Construccion,CDU18,RF18,Administrador,P-C,Media,22,40,550,2026-11-30,2026-12-02,iso2-seguridad,1.1.0,
-16,Construccion,CDU09,RF09,Medico,P-A,Alta,36,64,900,2026-11-30,2026-12-04,iso2-informes,1.0.0,
-17,Construccion,CDU10,RF10,Medico,P-B,Baja,14,24,350,2026-12-03,2026-12-04,iso2-reporting,1.0.0,
-18,Construccion,CDU04,RF04,Paciente,P-C,Baja,14,24,350,2026-12-03,2026-12-04,iso2-comunicacion,1.1.0,R3
-19,Construccion,CDU15,RF15,Administrativo,P-A,Baja,14,24,350,2026-12-07,2026-12-09,iso2-reporting,1.1.0,
-20,Construccion,CDU20,RF20,Administrador,P-B,Baja,14,24,350,2026-12-07,2026-12-09,iso2-reporting,1.2.0,R4
-21,Transicion,-,-,Todos,Todos,-,80,80,2000,2026-12-07,2026-12-14,iso2-app (integracion),1.0.0,R5
+0,Inicio,-,-,Todos,-,-,40,40,1000,2026-10-19,2026-10-25,iso2-parent + iso2-common + modulos (baseline contratos),1.0.0 (componentes) / 0.1.0 (apps),R0
+1,Elaboracion,CDU16,RF16,Administrador,P-A,Media,22,40,550,2026-11-09,2026-11-13,iso2-catalogo,1.1.0,
+2,Elaboracion,CDU17,RF17,Administrador,P-B,Media,22,40,550,2026-11-09,2026-11-13,iso2-seguridad,1.1.0,
+3,Elaboracion,CDU13,RF13,Administrativo,P-C,Alta,36,64,900,2026-11-09,2026-11-13,iso2-agendas,1.1.0,
+4,Elaboracion,CDU06,RF06,Medico,P-A,Alta,36,64,900,2026-11-16,2026-11-20,iso2-solicitudes,1.1.0,
+5,Elaboracion,CDU12,RF12,Administrativo,P-B,Alta,36,64,900,2026-11-16,2026-11-20,iso2-citas,1.1.0,
+6,Elaboracion,CDU19,RF19,Administrador,P-C,Alta,36,64,900,2026-11-16,2026-11-20,iso2-integracion,1.1.0,R1
+7,Construccion,CDU14,RF14,Administrativo,P-A,Media,22,40,550,2026-11-23,2026-11-27,iso2-citas,1.2.0,
+8,Construccion,CDU11,RF11,Administrativo,P-B,Media,22,40,550,2026-11-23,2026-11-27,iso2-pacientes + iso2-integracion,1.1.0 / 1.2.0,
+9,Construccion,CDU01,RF01,Paciente,P-C,Media,22,40,550,2026-11-23,2026-11-27,iso2-citas,1.3.0,
+10,Construccion,CDU02,RF02,Paciente,P-A,Media,22,40,550,2026-11-25,2026-11-27,iso2-comunicacion,1.1.0,
+11,Construccion,CDU07,RF07,Medico,P-B,Alta,36,64,900,2026-11-23,2026-11-27,iso2-solicitudes,1.2.0,
+12,Construccion,CDU08,RF08,Medico,P-C,Media,22,40,550,2026-11-25,2026-11-27,iso2-solicitudes + iso2-agendas,1.3.0 / 1.2.0,
+13,Construccion,CDU03,RF03,Paciente,P-A,Media,22,40,550,2026-11-30,2026-12-02,iso2-pacientes,1.2.0,
+14,Construccion,CDU05,RF05,Paciente,P-B,Media,22,40,550,2026-11-30,2026-12-02,iso2-solicitudes,1.4.0,
+15,Construccion,CDU18,RF18,Administrador,P-C,Media,22,40,550,2026-11-30,2026-12-02,iso2-seguridad,1.2.0,
+16,Construccion,CDU09,RF09,Medico,P-A,Alta,36,64,900,2026-11-30,2026-12-04,iso2-informes + iso2-integracion,1.1.0 / 1.3.0,
+17,Construccion,CDU10,RF10,Medico,P-B,Baja,14,24,350,2026-12-03,2026-12-04,iso2-reporting,1.1.0,
+18,Construccion,CDU04,RF04,Paciente,P-C,Baja,14,24,350,2026-12-03,2026-12-04,iso2-comunicacion,1.2.0,R3
+19,Construccion,CDU15,RF15,Administrativo,P-A,Baja,14,24,350,2026-12-07,2026-12-09,iso2-reporting,1.2.0,
+20,Construccion,CDU20,RF20,Administrador,P-B,Baja,14,24,350,2026-12-07,2026-12-09,iso2-reporting,1.3.0,R4
+21,Transicion,-,-,Todos,Todos,-,80,80,2000,2026-12-07,2026-12-14,iso2-server-app + iso2-client-app,1.0.0 / 1.5.0,R5

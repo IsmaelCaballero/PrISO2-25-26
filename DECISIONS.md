@@ -79,3 +79,25 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 
 ## D21. Repo del proyecto: github.com/IsmaelCaballero/PrISO2-25-26
 - Todo el trabajo (docs, código, modelo, informes) vive aquí; la wiki enlazará README + ficheros vivos.
+
+--- Decisiones sesión 3 (07/11/2026, planificación de componentes) ---
+
+## D22. Esquema de evolución de componentes: baseline 1.0.0 + incrementos 1.y.0 por riesgo decreciente
+- Cada componente = **submódulo Maven**. `v1.0.0` = baseline de contratos publicado en Iter0
+  (interfaces publicables, sin funcionalidad). A partir de ahí, cada `v1.y.0` es un **incremento**
+  (conjunto de artefactos que lleva de la versión inmediatamente inferior a la superior).
+- Orden de los incrementos dentro de cada componente: **riesgo de desarrollo de mayor a menor**
+  (T1→T2→T3→T4, con desempate por prioridad de negocio/dependencias). `v1.y.z` = fixes intra-iteración.
+- Los 20 CDU se priorizan por riesgo en 4 niveles (T1: 19,12,13,06,17,16 · T2: 07,14,02,11,09,01,08,18 ·
+  T3: 03,05 · T4: 10,15,20,04). Criterios: incertidumbre técnica, impacto arquitectónico,
+  dependencias y dificultad de prueba.
+- Las dos aplicaciones (`iso2-server-app`, `iso2-client-app`) y `iso2-common` siguen el **tren de
+  versiones de release** (0.x→1.0.0; common 1.0.0→1.5.0), no el esquema de incrementos por riesgo.
+- Documento completo: `docs/componentes-versionado.md` (+ CSV `docs/componentes-versiones.csv`).
+- Criterio de aceptación de cada iteración = la versión objetivo de sus componentes funcionando
+  con sus tests (negrita de la matriz §5 del documento).
+
+## D23. Inversión Iter7↔9 (CDU14 antes que CDU01)
+- Para que los incrementos de `iso2-citas` respeten riesgo decreciente (1.2.0=CDU14 T2-alto antes
+  de 1.3.0=CDU01 T2-bajo), se invierten las iteraciones 7 y 9 del plan de sesión 1.
+- No altera fechas, pareja responsable ni coste total; solo el orden CDU01↔CDU14.

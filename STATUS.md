@@ -1,6 +1,6 @@
 # STATUS.md — Estado vivo del proyecto
 
-**Última actualización:** 2026-11-07 (sesión 2)
+**Última actualización:** 2026-11-07 (sesión 3)
 
 ## Estado global
 
@@ -29,6 +29,7 @@ diseño humano de TC, diagramas, módulo `iso2-catalogo` 1.0.0 + vistas admin.
 |---|---|---|---|
 | 1 | 07/11/2026 | Planificación PUD Teoría 1: RF→CDU (20), 21 iteraciones, releases, coste ≈16.530 € vs 26.230 € sin IA. Ficheros: docs/planificacion-PUD.md, docs/planificacion-iteraciones.csv, DECISIONS.md (D1–D9) | ~15k |
 | 2 | 07/11/2026 | Reglas del equipo registradas (CONTEXT.md), PLAN.md operativo con desglose servidor/cliente + plan de despliegue alfa/beta/final + presupuesto de tokens por iteración, STATUS.md. Clonado repo GitHub, main+develop, pendientes D18 (StarUML) y decisiones D10–D20 | ~12k |
+| 3 | 07/11/2026 | Planificación de evolución de componentes: docs/componentes-versionado.md (13 submódulos Maven, mapeo CDU→componente, riesgo T1–T4, incrementos 1.y.0, esfuerzo 492 h/12.300 €/≈2,1M tokens, matriz componente×iteración) + docs/componentes-versiones.csv. Alineados PLAN.md y planificacion-iteraciones.csv (baseline 1.0.0 + versiones 1.x.0). ADRs D22–D23 (esquema de versionado + inversión Iter7↔9) | ~14k |
 
 ## Deuda / pendientes inmediatos
 
@@ -39,5 +40,7 @@ diseño humano de TC, diagramas, módulo `iso2-catalogo` 1.0.0 + vistas admin.
 
 ## Punto exacto de continuación para la próxima sesión
 
-Leer CONTEXT.md → este fichero → PLAN.md sección 4 fila Iter1. Esperar instrucciones de código;
-mientras tanto queda pendiente resolver D18 y aprobar el PR de docs.
+Leer CONTEXT.md → este fichero → docs/componentes-versionado.md §5 (matriz componente×iteración) →
+PLAN.md sección 4 fila Iter1 (objetivo: `iso2-catalogo` **1.1.0** + vistas admin, CDU16).
+Esperar instrucciones de código de Ismael; siguen pendientes: resolver D18 (formato diagramas),
+confirmar stack D11–D13 y aprobar el PR #1.

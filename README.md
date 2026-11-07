@@ -12,6 +12,8 @@ Ingeniería del Software II — Proyecto de curso.
 | [DECISIONS.md](DECISIONS.md) | Decisiones y supuestos (estilo ADR) que usan los agentes como contexto |
 | [docs/planificacion-PUD.md](docs/planificacion-PUD.md) | Planificación PUD completa (entrega Teoría 1) |
 | [docs/planificacion-iteraciones.csv](docs/planificacion-iteraciones.csv) | Agenda de iteraciones en CSV |
+| [docs/componentes-versionado.md](docs/componentes-versionado.md) | Componentes (submódulos Maven), mapeo CDU→componente, evolución por versiones/incrementos priorizada por riesgo, esfuerzo |
+| [docs/componentes-versiones.csv](docs/componentes-versiones.csv) | Matriz componente × iteración (versión que se construye) en CSV |
 
 ## Arquitectura (v1.0)
 

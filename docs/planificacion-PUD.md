@@ -3,7 +3,8 @@
 **Proyecto:** Sistema Integral de Gestión de Radiodiagnóstico e Imagen Médica del SESCAM
 **Grupo:** ISO2-2026-27 · **Equipo:** 6 miembros
 **Entrega Teoría 1:** 13/11/2026 · **Entrega práctica:** 15/12/2026
-**Versión del documento:** 1.0.0
+**Versión del documento:** 1.1.0 (rev. 07/11/2026: arquitectura servidor+cliente D10 y esquema de
+evolución de componentes por riesgo D22/D23; ver §5 y `docs/componentes-versionado.md`)
 
 ---
 
@@ -65,28 +66,28 @@ Del enunciado se extraen **20 requisitos funcionales** (5 pacientes + 5 médicos
 
 | Iter. | CDU asociado | Semana (fechas) | Pareja | Cplx | Esfuerzo (h c/IA) | Coste € | Componente Maven generado | Release |
 |-------|--------------|-----------------|--------|------|-------------------|---------|---------------------------|---------|
-| **0** | — (visión, RUP preliminar, arquitectura candidata) | S0: 19–25/10 | Todos | — | 40 h (fijo) | **1.000** | `iso2-parent` + esqueleto multi-módulo + `iso2-common` 0.1.0 | **R0** 25/10 (v0.1.0) |
-| **1** | CDU16 Catálogo/parámetros | S1: 09–13/11 | P-A | M | 22 | 550 | `iso2-catalogo` 0.1.0→1.0.0 | |
-| **2** | CDU17 Roles y permisos (RBAC+SSO) | S1: 09–13/11 | P-B | M | 22 | 550 | `iso2-seguridad` 0.1.0→1.0.0 | |
-| **3** | CDU13 Agendas médicos/técnicos | S1: 09–13/11 | P-C | A | 36 | 900 | `iso2-agendas` 0.1.0→1.0.0 | |
-| **4** | CDU06 Solicitud/prescripción de pruebas | S2: 16–20/11 | P-A | A | 36 | 900 | `iso2-solicitudes` 0.1.0→1.0.0 | |
-| **5** | CDU12 Gestión de citas (asignación) | S2: 16–20/11 | P-B | A | 36 | 900 | `iso2-citas` 0.1.0→1.0.0 | |
-| **6** | CDU19 Integraciones (spike SSO+HCE/FHIR+DICOM) | S2: 16–20/11 | P-C | A | 36 | 900 | `iso2-integracion` 0.1.0→1.0.0 | **R1** 20/11 (v0.2.0) — *línea base de arquitectura* |
-| **7** | CDU01 Citas del portal paciente | S3: 23–27/11 | P-A | M | 22 | 550 | `iso2-citas` 1.1.0 (API para paciente) | |
-| **8** | CDU11 CRUD de pacientes | S3: 23–27/11 | P-B | M | 22 | 550 | `iso2-pacientes` 0.1.0→1.0.0; `iso2-integracion` 1.1.0 (Admisión) | |
-| **9** | CDU14 Listas de espera y huecos | S3: 23–27/11 | P-C | M | 22 | 550 | `iso2-citas` 1.2.0 | |
-| **10** | CDU02 Notificaciones y recordatorios | S3: 23–27/11 | P-A | M | 22 | 550 | `iso2-comunicacion` 0.1.0→1.0.0 | |
-| **11** | CDU07 Seguimiento periódico (recurrencias) | S3: 23–27/11 | P-B | A | 36 | 900 | `iso2-solicitudes` 1.1.0 | |
-| **12** | CDU08 Estado de solicitudes y agendas | S3: 23–27/11 | P-C | M | 22 | 550 | `iso2-solicitudes` 1.2.0; `iso2-agendas` 1.1.0 | |
-| **13** | CDU03 Historial de pruebas del paciente | S4: 30/11–04/12 | P-A | M | 22 | 550 | `iso2-pacientes` 1.1.0 | |
-| **14** | CDU05 Información de seguimiento/revisiones | S4: 30/11–04/12 | P-B | M | 22 | 550 | `iso2-solicitudes` 1.3.0 | |
-| **15** | CDU18 Auditoría de accesos | S4: 30/11–04/12 | P-C | M | 22 | 550 | `iso2-seguridad` 1.1.0 | |
-| **16** | CDU09 Informes e imágenes (visor DICOM) | S4: 30/11–04/12 | P-A | A | 36 | 900 | `iso2-informes` 0.1.0→1.0.0; `iso2-integracion` 1.2.0 (DICOM) | |
-| **17** | CDU10 Estadísticas del médico | S4: 30/11–04/12 | P-B | B | 14 | 350 | `iso2-reporting` 0.1.0→1.0.0 | |
-| **18** | CDU04 Incidencias y encuestas | S4: 30/11–04/12 | P-C | B | 14 | 350 | `iso2-comunicacion` 1.1.0 | |
-| **19** | CDU15 Informes operativos | S5: 07–11/12 | P-A | B | 14 | 350 | `iso2-reporting` 1.1.0 | |
-| **20** | CDU20 Estadísticas globales | S5: 07–11/12 | P-B | B | 14 | 350 | `iso2-reporting` 1.2.0 | **R4** 11/12 (v0.9.0-RC) |
-| **21** | — (integración final, pruebas de sistema, despliegue, manual, wiki) | S6: 07–14/12 | Todos | — | 80 h (fijo) | **2.000** | Integración de los 11 módulos → `iso2-app` | **R5** 15/12 (v1.0.0) |
+| **0** | — (visión, RUP preliminar, arquitectura candidata) | S0: 19–25/10 | Todos | — | 40 h (fijo) | **1.000** | `iso2-parent` + esqueleto multi-módulo + `iso2-common` 1.0.0 + **baseline contractual 1.0.0** de los 10 componentes de dominio (apps: 0.1.0) | **R0** 25/10 (v0.1.0) |
+| **1** | CDU16 Catálogo/parámetros | S1: 09–13/11 | P-A | M | 22 | 550 | `iso2-catalogo` 1.1.0 | |
+| **2** | CDU17 Roles y permisos (RBAC+SSO) | S1: 09–13/11 | P-B | M | 22 | 550 | `iso2-seguridad` 1.1.0 | |
+| **3** | CDU13 Agendas médicos/técnicos | S1: 09–13/11 | P-C | A | 36 | 900 | `iso2-agendas` 1.1.0 | |
+| **4** | CDU06 Solicitud/prescripción de pruebas | S2: 16–20/11 | P-A | A | 36 | 900 | `iso2-solicitudes` 1.1.0 | |
+| **5** | CDU12 Gestión de citas (asignación) | S2: 16–20/11 | P-B | A | 36 | 900 | `iso2-citas` 1.1.0 | |
+| **6** | CDU19 Integraciones (spike SSO+HCE/FHIR+DICOM) | S2: 16–20/11 | P-C | A | 36 | 900 | `iso2-integracion` 1.1.0 | **R1** 20/11 (v0.2.0) — *línea base de arquitectura* |
+| **7** | CDU14 Listas de espera y huecos | S3: 23–27/11 | P-A | M | 22 | 550 | `iso2-citas` 1.2.0 | |
+| **8** | CDU11 CRUD de pacientes | S3: 23–27/11 | P-B | M | 22 | 550 | `iso2-pacientes` 1.1.0; `iso2-integracion` 1.2.0 (Admisión) | |
+| **9** | CDU01 Citas del portal paciente | S3: 23–27/11 | P-C | M | 22 | 550 | `iso2-citas` 1.3.0 (self-service paciente) | |
+| **10** | CDU02 Notificaciones y recordatorios | S3: 23–27/11 | P-A | M | 22 | 550 | `iso2-comunicacion` 1.1.0 | |
+| **11** | CDU07 Seguimiento periódico (recurrencias) | S3: 23–27/11 | P-B | A | 36 | 900 | `iso2-solicitudes` 1.2.0 | |
+| **12** | CDU08 Estado de solicitudes y agendas | S3: 23–27/11 | P-C | M | 22 | 550 | `iso2-solicitudes` 1.3.0; `iso2-agendas` 1.2.0 | |
+| **13** | CDU03 Historial de pruebas del paciente | S4: 30/11–04/12 | P-A | M | 22 | 550 | `iso2-pacientes` 1.2.0 | |
+| **14** | CDU05 Información de seguimiento/revisiones | S4: 30/11–04/12 | P-B | M | 22 | 550 | `iso2-solicitudes` 1.4.0 | |
+| **15** | CDU18 Auditoría de accesos | S4: 30/11–04/12 | P-C | M | 22 | 550 | `iso2-seguridad` 1.2.0 | |
+| **16** | CDU09 Informes e imágenes (visor DICOM) | S4: 30/11–04/12 | P-A | A | 36 | 900 | `iso2-informes` 1.1.0; `iso2-integracion` 1.3.0 (DICOM) | |
+| **17** | CDU10 Estadísticas del médico | S4: 30/11–04/12 | P-B | B | 14 | 350 | `iso2-reporting` 1.1.0 | |
+| **18** | CDU04 Incidencias y encuestas | S4: 30/11–04/12 | P-C | B | 14 | 350 | `iso2-comunicacion` 1.2.0 | |
+| **19** | CDU15 Informes operativos | S5: 07–11/12 | P-A | B | 14 | 350 | `iso2-reporting` 1.2.0 | |
+| **20** | CDU20 Estadísticas globales | S5: 07–11/12 | P-B | B | 14 | 350 | `iso2-reporting` 1.3.0 | **R4** 11/12 (v0.9.0-RC) |
+| **21** | — (integración final, pruebas de sistema, despliegue, manual, wiki) | S6: 07–14/12 | Todos | — | 80 h (fijo) | **2.000** | Integración → `iso2-server-app` 1.0.0 + `iso2-client-app` 1.5.0 | **R5** 15/12 (v1.0.0) |
 
 > **Regla del enunciado respetada:** en cada iteración se trabaja exclusivamente en su CDU. La incrementalidad se manifiesta en la **evolución semver de los componentes**: un CDU posterior no rompe el módulo anterior, le añade una *minor* a través de interfaces (programación orientada a interfaces, MVC, SOLID).
 
@@ -152,7 +153,7 @@ iso2-parent (agregador)
 ├── iso2-seguridad     · CDU17 (+credenciales/login) → +CDU18
 ├── iso2-agendas       · CDU13 → +CDU08
 ├── iso2-solicitudes   · CDU06 → +CDU07 → +CDU08 → +CDU05
-├── iso2-citas         · CDU12 → +CDU01 → +CDU14
+├── iso2-citas         · CDU12 → +CDU14 → +CDU01
 ├── iso2-integracion   · CDU19 → +CDU11 (Admisión) → +CDU09 (DICOM)
 ├── iso2-pacientes     · CDU11 → +CDU03
 ├── iso2-comunicacion  · CDU02 → +CDU04
