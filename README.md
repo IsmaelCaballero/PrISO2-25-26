@@ -33,3 +33,15 @@ Una persona = un rol en v1; credenciales locales gestionadas por `iso2-seguridad
 Git Flow estricto: `main` ← solo releases · `develop` ← solo PRs aprobados por Ismael ·
 `feature/iterXX-CDUyy-…` para el trabajo. Cada iteración: diagramas (StarUML), casos de prueba
 diseñados a mano + JUnit, informes Surefire+JaCoCo, Javadoc completo, versiones SemVer 2.0.
+
+## Código (Iter0 / CFG-00 en adelante)
+
+Reactor Maven de 14 módulos (`iso2-parent`): `iso2-common` (contratos) + 10 módulos de dominio
++ `iso2-server-app` + `iso2-client-app`.
+
+```bash
+mvn -B verify javadoc:javadoc                    # compilar + test + JaCoCo + Javadoc (igual que el CI)
+mvn spring-boot:run -pl iso2-server-app          # servidor en http://localhost:8080 (H2 en ./data)
+mvn javafx:run -pl iso2-client-app               # cliente JavaFX (ventana base en Iter0)
+```
+
