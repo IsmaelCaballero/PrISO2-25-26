@@ -1,23 +1,32 @@
 package es.uclm.iso2.client;
 
+import es.uclm.iso2.client.api.ApiClienteCatalogo;
+import es.uclm.iso2.client.ui.VistaAdminCatalogo;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 /**
- * Punto de arranque del cliente JavaFX (Iter0/CFG-00, v0.1.0).
+ * Punto de arranque del cliente JavaFX (release train 0.1.x, D22).
  *
- * <p>En Iter0 solo se muestra la ventana base con el nombre del sistema.
- * La interfaz por rol (medico, tecnico, recepcion, administrativo, paciente,
- * administrador) se construira CDU a CDU con sus casos de uso.</p>
+ * <p>En CFG-01 (Iter1/CDU16) abre directamente la vista de administrador con el
+ * catalogo de pruebas, autenticada por HTTP Basic contra el servidor. Las credenciales
+ * y la URL se pueden ajustar por propiedades de sistema para poder probarlo contra
+ * otro servidor o con otras cuentas:</p>
+ * <ul>
+ *   <li>{@code -Diso2.server=http://localhost:8080}</li>
+ *   <li>{@code -Diso2.usuario=admin} / {@code -Diso2.password=iso2-admin}</li>
+ * </ul>
+ *
+ * <p>El login por rol con JWT definitivo llega con CDU17 (Iter2); hasta entonces la
+ * interfaz mostrada es solo la de administrador (matriz CFG-01).</p>
  *
  * <p>Arranque en desarrollo: {@code mvn javafx:run -pl iso2-client-app}.</p>
  */
 public class Iso2ClientApplication extends Application {
 
     /** Version del release train de la aplicacion (D22). */
-    public static final String VERSION = "0.1.0";
+    public static final String VERSION = "0.1.1-SNAPSHOT";
 
     /**
      * Constructor estandar requerido por la plataforma JavaFX.
@@ -27,13 +36,14 @@ public class Iso2ClientApplication extends Application {
 
     @Override
     public void start(Stage escenario) {
-        Label titulo = new Label(
-                "Sistema Integral de Gestion de Radiodiagnostico e Imagen Medica (SESCAM)");
-        Label version = new Label("Cliente v" + VERSION + " - Iter0 (CFG-00): interfaz por roles pendiente CDU a CDU");
-        javafx.scene.layout.VBox raiz = new javafx.scene.layout.VBox(12, titulo, version);
-        raiz.setStyle("-fx-padding: 24; -fx-alignment: center-left;");
-        escenario.setTitle("ISO2 - Radiodiagnostico SESCAM");
-        escenario.setScene(new Scene(raiz, 720, 240));
+        String servidor = System.getProperty("iso2.server", "http://localhost:8080");
+        String usuario = System.getProperty("iso2.usuario", "admin");
+        String password = System.getProperty("iso2.password", "iso2-admin");
+
+        ApiClienteCatalogo api = new ApiClienteCatalogo(servidor, usuario, password);
+        VistaAdminCatalogo vista = new VistaAdminCatalogo(api);
+        escenario.setTitle("ISO2 - Radiodiagnostico SESCAM (cliente v" + VERSION + ")");
+        escenario.setScene(new Scene(vista.raiz(), 1100, 640));
         escenario.show();
     }
 
