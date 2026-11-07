@@ -1,0 +1,30 @@
+name: CI
+
+# CFG-00..CFG-21: cada PR (y cada push en develop/main) ejecuta la misma puerta.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compilar, testear (JaCoCo + Surefire) y generar Javadoc
+        run: mvn -B -ntp verify javadoc:javadoc
+      - name: Publicar reportes como artefactos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informes-calidad
+          path: |
+            **/target/site/jacoco/**
+            **/target/surefire-reports/**
+            **/target/site/apidocs/**
+          if-no-files-found: warn
