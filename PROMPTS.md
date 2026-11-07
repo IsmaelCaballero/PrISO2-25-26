@@ -129,7 +129,7 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 
 ### Prompt 08 — Iter0 de código: esqueleto Maven multi-módulo (CFG-00) [✔ ejecutado]
 
-> Issue: Iter0 · CFG-00. Arranca la iteración 0 de código sobre la rama `feature/iter00-cfg00`:
+> Issue #6. Arranca la iteración 0 de código sobre la rama `feature/iter00-cfg00`:
 > crea la estructura Maven multi-módulo en la raíz del repo (`iso2-parent`, pom empaquetador) con
 > los 14 submódulos: `iso2-common` y los 10 módulos de dominio a versión **1.0.0** (línea base
 > contractual: interfaces de fachada publicables en `iso2-common` + `package-info.java` con
