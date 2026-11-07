@@ -127,9 +127,9 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 
 ## Etapa 2 — Iteraciones de código — prompts 08 en adelante
 
-### Prompt 08 — Iter0 de código: esqueleto Maven multi-módulo (CFG-00) [● preparado]
+### Prompt 08 — Iter0 de código: esqueleto Maven multi-módulo (CFG-00) [✔ ejecutado]
 
-> Issue: Iter0 · CFG-00. Arranca la iteración 0 de código sobre la rama `feature/iter00-cfg00`:
+> Issue #6. Arranca la iteración 0 de código sobre la rama `feature/iter00-cfg00`:
 > crea la estructura Maven multi-módulo en la raíz del repo (`iso2-parent`, pom empaquetador) con
 > los 14 submódulos: `iso2-common` y los 10 módulos de dominio a versión **1.0.0** (línea base
 > contractual: interfaces de fachada publicables en `iso2-common` + `package-info.java` con
@@ -140,6 +140,10 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 > ciclos entre módulos, capas), Javadoc sin errores, y un workflow de GitHub Actions que ejecute
 > `mvn -B verify javadoc:javadoc` en cada PR. Ejecuta `mvn verify` en local antes de subir.
 > Abre PR a `develop` asociado al issue; al fusionarse, tags `cfg-iter00` y `v0.1.0` (R0).
+>
+> (Ejecutado sesión 6: commit `e89863b` en `feature/iter00-cfg00`, PR #7 → `develop`. 14/14
+> módulos OK con `mvn -B -ntp verify javadoc:javadoc`; ArchUnit verde en `iso2-common`. Queda
+> pendiente de Ismael: merge de #7 y tags `cfg-iter00` + `v0.1.0` sobre `develop`.)
 
 ### Prompt 09 — Iter1 · CDU16 catálogo de parámetros (`iso2-catalogo` 1.1.0, CFG-01) [○ pendiente]
 
