@@ -141,18 +141,20 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 > `mvn -B verify javadoc:javadoc` en cada PR. Ejecuta `mvn verify` en local antes de subir.
 > Abre PR a `develop` asociado al issue; al fusionarse, tags `cfg-iter00` y `v0.1.0` (R0).
 
-### Prompt 09 — Iter1 · CDU16 catálogo de parámetros (`iso2-catalogo` 1.1.0, CFG-01) [○ pendiente]
+### Prompt 09 — Iter1 · CDU16 catálogo de parámetros (`iso2-catalogo` 1.1.0, CFG-01) [● ejecutando]
 
-> Requiere antes dos entradas del alumno (bloqueantes por D16 y D18):
-> (a) tabla de casos de prueba TC de CDU16 diseñada a mano (1 flujo feliz + ≥2 de error + 1 de
-> permisos; columnas: id, entrada, salida esperada, criterio de permisos);
-> (b) confirmación de D18: fuentes PlantUML en `docs/modelo/iter01/` + exportación manual a
-> StarUML (propuesta del agente) vs. generar `.staruml` directos.
+> Prompt lanzado por Ismael (07/11/2026):
+> "Los casos de pruebas los diseñaremos una vez que tengamos el código, y sobre la decisión D18,
+> mejor las fuentes de PlantUML en docs/modelo/iter01 + export a StarUML. ... con esto, podemos
+> abordar la iteración 01"
 >
-> Estructura del prompt a lanzar: arranca la Iter1 (CDU16, CFG-01) en `feature/iter01-cdu16-catalogo`;
-> diagramas PlantUML de casos de uso, secuencia y clases de análisis/diseño en `docs/modelo/iter01/`;
-> implementa `iso2-catalogo` hasta **1.1.0** (modelo de dominio de tipos de prueba, protocolos y
-> políticas + endpoints REST protegidos con RBAC para rol Administrador + vistas JavaFX de
-> administración en `iso2-client-app`); traduce MI tabla TC a JUnit 5 (Surefire+JaCoCo ≥60 % en
-> el módulo); migración `db/migration/V1.1.0__cdu16_catalogo.sql`; bump de versiones según matriz
-> CFG-01 y PR a `develop` con el cuerpo enlazando al issue.
+> Ejecución: issue #9, rama `feature/iter01-cdu16-catalogo` (base: tip de Iter0 `e89863b`).
+> Las dos entradas que bloqueaban el prompt quedan resueltas así: (a) D18 **aceptada** con fuentes
+> PlantUML en `docs/modelo/iter01/` + export manual a StarUML; (b) los TC de CDU16 los diseñará
+> Ismael sobre el código ya funcional (**D28**, revisión del orden de D16) — el agente deja pruebas
+> técnicas de humo para las puertas (JaCoCo ≥ 60 % en `iso2-catalogo`) y los TC humanos cierran la
+> iteración. Alcance ejecutado: contratos `iso2-common` 1.1.0-SNAPSHOT (CRUD fachada catálogo),
+> `iso2-catalogo` 1.1.0 (dominio tipo de prueba + protocolo + política, auditoría hash encadenado,
+> REST `/api/catalogo/pruebas`), RBAC transitorio Basic+ADMIN en `iso2-server-app` (JWT llega en
+> CDU17) con migración Flyway `V1.1.0__cdu16_catalogo.sql`, pantalla JavaFX Admin·catálogo en
+> `iso2-client-app`; versiones CFG-01 (apps 0.1.1-SNAPSHOT).
