@@ -127,7 +127,7 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 
 ## Etapa 2 — Iteraciones de código — prompts 08 en adelante
 
-### Prompt 08 — Iter0 de código: esqueleto Maven multi-módulo (CFG-00) [● preparado]
+### Prompt 08 — Iter0 de código: esqueleto Maven multi-módulo (CFG-00) [✔ ejecutado]
 
 > Issue: Iter0 · CFG-00. Arranca la iteración 0 de código sobre la rama `feature/iter00-cfg00`:
 > crea la estructura Maven multi-módulo en la raíz del repo (`iso2-parent`, pom empaquetador) con
@@ -140,8 +140,14 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 > ciclos entre módulos, capas), Javadoc sin errores, y un workflow de GitHub Actions que ejecute
 > `mvn -B verify javadoc:javadoc` en cada PR. Ejecuta `mvn verify` en local antes de subir.
 > Abre PR a `develop` asociado al issue; al fusionarse, tags `cfg-iter00` y `v0.1.0` (R0).
+>
+> Resultado (07/11/2026): commit `e89863b` en `feature/iter00-cfg00` — reactor `iso2-parent` + 14
+> submódulos (10 de dominio + common a 1.0.0, apps 0.1.0), contratos baseline con Javadoc, ArchUnit
+> (guardarrailes D8), Surefire+JaCoCo, CI con `mvn -B verify javadoc:javadoc`. Build verde en local y
+> en CI. PR **#7** abierto a `develop` (número #6 se perdió al cerrar un PR previo con base errónea);
+> pendientes de Ismael: fusión + tags `cfg-iter00`/`v0.1.0`.
 
-### Prompt 09 — Iter1 · CDU16 catálogo de parámetros (`iso2-catalogo` 1.1.0, CFG-01) [● ejecutando]
+### Prompt 09 — Iter1 · CDU16 catálogo de parámetros (`iso2-catalogo` 1.1.0, CFG-01) [✔ ejecutado]
 
 > Prompt lanzado por Ismael (07/11/2026):
 > "Los casos de pruebas los diseñaremos una vez que tengamos el código, y sobre la decisión D18,
@@ -158,3 +164,19 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 > REST `/api/catalogo/pruebas`), RBAC transitorio Basic+ADMIN en `iso2-server-app` (JWT llega en
 > CDU17) con migración Flyway `V1.1.0__cdu16_catalogo.sql`, pantalla JavaFX Admin·catálogo en
 > `iso2-client-app`; versiones CFG-01 (apps 0.1.1-SNAPSHOT).
+>
+> Resultado (07/11/2026, rama `feature/iter01-cdu16-catalogo`, commits `bb337f5`..`ad99b21`):
+> - `iso2-catalogo` 1.1.0: dominio `TipoPrueba` (+`Protocolo`/`Politica` embebidos), auditoría con
+>   hash SHA-256 encadenado y `auditoriaVerificable()`, baja lógica idempotente, códigos no reutilizables;
+>   REST `/api/catalogo/pruebas` (201/200/204, reactivación 200, errores 400/404/409 con `ApiError`).
+>   24/24 tests, JaCoCo 96,5 % líneas.
+> - `iso2-server-app` 0.1.1: Flyway `V1.1.0__cdu16_catalogo.sql`, `ConfigSeguridad` Basic+ADMIN
+>   (JWT definitivo en CDU17), smoke 401/403/200/201/400. 6/6 tests, 91,7 %.
+> - `iso2-client-app` 0.1.1: `ApiClienteCatalogo`/`ApiException` + `VistaAdminCatalogo`. 6/6 tests,
+>   capa `api` 79,2 % (UI JavaFX excluida del gate, patrón de `iso2-common`).
+> - `docs/modelo/iter01/`: 4 diagramas PlantUML (casos de uso, secuencia, clases análisis/diseño) +
+>   README de exportación a StarUML (D18). El de casos de uso lleva actores de rol (Médico, Técnico
+>   facultativo, Celador, Recepcionista) con solo consulta a UC16.5 y UC7 de auditoría fuera de la
+>   frontera; revalidados los 4 con PlantUML 1.2025.2.
+> - Falta de Ismael: fusión del PR #7 (Iter0) + tags, fusión del PR de Iter1, **TC humanos de CDU16**
+>   (D28) y exportación `.staruml`.
