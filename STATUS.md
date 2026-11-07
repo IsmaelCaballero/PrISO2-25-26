@@ -17,8 +17,9 @@ diseño humano de TC, diagramas, módulo `iso2-catalogo` 1.0.0 + vistas admin.
 
 ## Estado del repositorio
 
-- Repo: https://github.com/IsmaelCaballero/PrISO2-25-26 · rama `main` inicializada (README, .gitignore).
-- Rama `develop` creada (Git Flow). Pendiente: PR `feature/docs-plan-inicial` → **aprobación de Ismael**.
+- Repo: https://github.com/IsmaelCaballero/PrISO2-25-26 · `main` inicializada (README, .gitignore) y `develop` creada (Git Flow).
+- **PR #1 abierto** (`feature/docs-plan-inicial` → `develop`): https://github.com/IsmaelCaballero/PrISO2-25-26/pull/1 — **a la espera de aprobación de Ismael**.
+- Identidad git del repo: IsmaelCaballero@users.noreply.github.com (cambiar si se prefiere el correo UCLM).
 - Estructura Maven: **aún no creada** (se hará al aprobarse la rama de docs, con Ismael dando las
   instrucciones de código pendientes).
 
