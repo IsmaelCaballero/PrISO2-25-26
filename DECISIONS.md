@@ -62,14 +62,14 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 - Título: `tipo(módulo · IterX/CDUyy): descripción`; cuerpo: una línea por tarea realizada (con métricas de tests). Ejemplo canónico en CONTEXT.md §3.
 
 ## D16. Pruebas por iteración: casos diseñados por humanos + JUnit 5; informes Surefire + JaCoCo
-- Los casos de prueba (tabla TC) los diseña el alumno ANTES de implementar; el agente los traduce a JUnit. `mvn verify` genera Surefire + JaCoCo; umbrales de cobertura por release en PLAN.md.
+- ~~Los casos de prueba (tabla TC) los diseña el alumno ANTES de implementar~~ → **orden revisado por D28** (el alumno los diseña sobre el código ya funcional); el agente los traduce a JUnit. `mvn verify` genera Surefire + JaCoCo; umbrales de cobertura por release en PLAN.md.
 
 ## D17. SemVer 2.0 en todos los artefactos + Javadoc completo
 - `<version>` del módulo en pom + tags Git `vX.Y.Z`. Javadoc obligatorio en todas las clases y paquetes (`package-info.java`); `mvn javadoc:javadoc` sin errores como criterio de aceptación.
 
-## D18. Modelado: diagramas por iteración en StarUML — PENDIENTE DE CONFIRMAR
+## D18. Modelado: diagramas por iteración en StarUML — ACEPTADA (07/11/2026, Ismael)
 - Por iteración: casos de uso, secuencia/interacción, clases de análisis y clases de diseño relevantes.
-- **Propuesta del agente:** fuente PlantUML en `docs/modelo/iterXX/` (diferenciable, barata en tokens) + exportación a `.staruml` hecha por el equipo. Generar `.staruml` directamente es factible pero frágil y caro (JSON). → Ismael debe confirmar.
+- **Decisión:** fuente **PlantUML** en `docs/modelo/iterXX/` (versionable en Git, barata en tokens, diferenciable entre iteraciones) + **exportación manual a StarUML** por el equipo para entregar los `.staruml`. Los `.puml` son el ítem de configuración (D25); el `.staruml` es artefacto de entrega de cada release.
 
 ## D19. Presupuesto de tokens por iteración y partida en 2 si Alta
 - Baja 50–70k · Media 90–130k · Alta 150–220k tokens (6 CUs Altos se dividen en 2 sesiones: servidor | cliente+tests). Si el contexto amenaza con agotarse: avisar, cerrar lo en curso, guardar STATUS.md/PLAN.md y abrir sesión nueva (regla en CONTEXT.md §7).
@@ -145,3 +145,15 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
   (diseño humano de TC, revisión de arquitectura, CI) y de las 80 h fijas de Iter21: **el presupuesto
   no cambia** respecto del plan v1.1.0. La tabla de puertas §8.4 del PUD +Calidad es la referencia
   para el criterio de paso entre releases (trazabilidad RF→CU→TC: 6/12/18/20/20 CDU).
+
+## D28. Diseño humano de TC: sobre el código funcional de la iteración (revisión de D16)
+- **Fecha:** 07/11/2026 · **Estado:** aceptada (Ismael, al arrancar Iter1)
+- La tabla TC de cada CDU la diseña el alumno **una vez el código funcional está visible** (firmas
+  de API, códigos de error y pantallas reales), y el agente la traduce a JUnit 5 antes de cerrar la
+  iteración. Justificación: los TC se diseñan mejor contra comportamiento observable y el alumno los
+  revisa contra la API real, no contra un boceto.
+- Hasta que llegan los TC del alumno, el agente solo escribe **pruebas técnicas de humo/integración**
+  para arranque y puertas (JaCoCo, ArchUnit); no sustituyen a los TC humanos, que siguen siendo
+  obligatorios por RF (1 feliz + ≥2 error + 1 permisos, D24) y son criterio de cierre de iteración.
+- Se mantiene todo lo demás de D16: JUnit 5, informes Surefire + JaCoCo en `mvn verify`, umbrales por
+  release. Cada iteración deja una tarea explícita "TC humanos del CDU" en STATUS.md.

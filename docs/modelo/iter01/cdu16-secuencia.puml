@@ -1,0 +1,45 @@
+@startuml cdu16-secuencia
+' CDU16 (Iter1/CFG-01) - Secuencia de "dar de alta una prueba" con auditoria encadenada
+' Autor: agente (prompt 09) - exportacion a StarUML: Ismael (D18)
+title CDU16 - Alta de prueba de imagen (flujo principal + conflicto de codigo)
+
+skinparam sequence {
+  LifeLineParticipant true
+}
+
+actor "Administrador" as ADMIN
+participant "VistaAdminCatalogo\n(cliente JavaFX)" as VISTA
+participant "ApiClienteCatalogo\n(cliente, HTTP Basic)" as API
+boundary "CatalogoControlador\n/api/catalogo/pruebas" as CTRL
+control "CatalogoServicio" as SVC
+entity "TipoPrueba\n(JPA)" as ENT
+entity "AuditoriaCatalogo\n(hash encadenado)" as AUD
+
+ADMIN -> VISTA : rellena formulario y pulsa Alta
+VISTA -> API : crear(PruebaImagenDTO)
+API -> CTRL : POST /api/catalogo/pruebas (JSON, Basic)
+CTRL -> CTRL : Jackson valida el DTO\n(constructores del contrato 1.1.0)
+CTRL -> SVC : crear(dto)
+SVC -> ENT : findByCodigo(codigo)
+
+alt codigo libre
+  SVC -> ENT : save(TipoPrueba activa)
+  SVC -> AUD : registrar(ALTA, usuario=SecurityContext,\nhash = SHA-256(ultimo.hash + datos))
+  SVC --> CTRL : dto del alta real
+  CTRL --> API : 201 Created + Location + JSON
+  API --> VISTA : PruebaImagenDTO
+  VISTA --> ADMIN : tabla recargada con la prueba nueva
+else codigo ya existente (incluso dado de baja)
+  SVC --> CTRL : CatalogoConflictoException
+  note right of SVC : el rechazo NO se audita:\nsolo se registran los cambios validos
+  CTRL --> API : 409 Conflict + ApiError(CODIGO_EN_USO)
+  API --> VISTA : ApiException(409, CODIGO_EN_USO)
+  VISTA --> ADMIN : alerta con el mensaje del contrato
+end
+
+note over AUD
+  Cada fila guarda hash_anterior: la tabla es una
+  cadena verificable (auditoriaVerificable()) para el
+  criterio de calidad "responsabilidad / integridad".
+end note
+@enduml

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  iso2-client-app · CFG-01 · v0.1.1-SNAPSHOT (Iter1/CDU16)
+  Cliente JavaFX: vista de administrador del catalogo (CDU16) sobre una capa API
+  JSON/HTTP con Basic (el JWT definitivo llega en CDU17/Iter2).
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -9,10 +14,17 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-client-app</artifactId>
-  <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00, 1.5.0 en CFG-21/R5. -->
-  <version>0.1.0</version>
+  <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00; 0.1.1-SNAPSHOT en la rama
+       de Iter1/CFG-01; 1.5.0 en CFG-21/R5. -->
+  <version>0.1.1-SNAPSHOT</version>
   <name>iso2-client-app</name>
   <description>Aplicacion cliente JavaFX con interfaz por rol. Consume los contratos de iso2-common.</description>
+
+  <properties>
+    <!-- Puerta de calidad CFG-01 (D24/D27): >= 60 % de linea sobre el codigo no-UI
+         (las vistas JavaFX quedan excluidas: su verificacion es el TC manual, D28). -->
+    <jacoco.line.min>0.60</jacoco.line.min>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -23,6 +35,11 @@
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
+    </dependency>
+    <!-- (De)serializacion JSON de los DTOs del contrato comun contra la API REST. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -39,6 +56,18 @@
         <artifactId>javafx-maven-plugin</artifactId>
         <configuration>
           <mainClass>es.uclm.iso2.client.Iso2ClientApplication</mainClass>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <!-- La capa UI JavaFX no se ejecuta en CI headless; se excluye de la puerta
+               y se verifica con el TC manual de la CDU (D28). La capa api si se cubre. -->
+          <excludes>
+            <exclude>es/uclm/iso2/client/Iso2ClientApplication*.class</exclude>
+            <exclude>es/uclm/iso2/client/ui/**</exclude>
+          </excludes>
         </configuration>
       </plugin>
     </plugins>

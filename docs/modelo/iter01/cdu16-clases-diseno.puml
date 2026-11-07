@@ -1,0 +1,180 @@
+@startuml cdu16-clases-diseno
+' CDU16 (Iter1/CFG-01) - Diagrama de clases de diseno (implementacion real, v1.1.0-SNAPSHOT)
+' Autor: agente (prompt 09) - revision y exportacion a StarUML: Ismael (D18)
+title CDU16 - Clases de diseno: iso2-common + iso2-catalogo + apps (Iter1/CFG-01)
+
+package "iso2-common (contratos 1.1.0)" {
+  interface PruebaCatalogoFacade {
+    +listar(Paginacion): List<PruebaImagenDTO>
+    +buscarPorCodigo(String): Optional<PruebaImagenDTO>
+    +crear(PruebaImagenDTO): PruebaImagenDTO
+    +actualizar(String, PruebaImagenDTO): PruebaImagenDTO
+    +desactivar(String): PruebaImagenDTO
+    +reactivar(String): PruebaImagenDTO
+  }
+  class PruebaImagenDTO <<record>> {
+    -codigo: String
+    -nombre: String
+    -categoria: String
+    -requiereCita: boolean
+    -duracionMinutos: int
+    -activa: boolean
+    -protocolo: ProtocoloDTO
+    -politica: PoliticaDTO
+    +sinEstado(...): PruebaImagenDTO
+    ..validacion en el constructor compacto..
+  }
+  class ProtocoloDTO <<record>> {
+    -preparacion: String
+    -ayunoHoras: int
+    -contraindicaciones: String
+  }
+  class PoliticaDTO <<record>> {
+    -plazoCancelacionHoras: int
+    -maxCancelaciones: int
+  }
+  class Paginacion <<record>> {
+    -pagina: int
+    -tamano: int
+    -orden: String
+  }
+  class ApiError <<record>> {
+    -codigo: String
+    -mensaje: String
+    -instante: Instant
+  }
+  class CatalogoNoEncontradoException <<exception>>
+  class CatalogoConflictoException <<exception>>
+}
+
+package "iso2-catalogo (1.1.0-SNAPSHOT)" {
+  class CatalogoServicio <<@Service>> {
+    -pruebas: TipoPruebaRepositorio
+    -auditoria: AuditoriaCatalogoRepositorio
+    +crear/actualizar/desactivar/reactivar(...)
+    +auditoriaVerificable(): boolean
+    ..unico punto que escribe el catalogo..
+  }
+  class TipoPrueba <<@Entity catalogo_prueba>> {
+    -id: Long
+    -codigo: String {unique}
+    -nombre: String
+    -categoria: String
+    -requiereCita: boolean
+    -duracionMinutos: int
+    -activa: boolean
+    -protocolo: Protocolo
+    -politica: Politica
+    +actualizarDatos(...)
+    +cambiarEstado(boolean)
+  }
+  class Protocolo <<@Embeddable>> {
+    -preparacion: String
+    -ayunoHoras: int
+    -contraindicaciones: String
+  }
+  class Politica <<@Embeddable>> {
+    -plazoCancelacionHoras: int
+    -maxCancelaciones: int
+  }
+  class AuditoriaCatalogo <<@Entity catalogo_auditoria>> {
+    -id: Long
+    -accion: AccionAuditoria
+    -codigoPrueba: String
+    -usuario: String
+    -instante: Instant
+    -hash: String
+    -hashAnterior: String
+  }
+  enum AccionAuditoria {
+    ALTA
+    MODIFICACION
+    BAJA
+    REACTIVACION
+  }
+  interface TipoPruebaRepositorio <<JpaRepository>> {
+    +findByCodigo(String): Optional<TipoPrueba>
+    +existsByCodigo(String): boolean
+  }
+  interface AuditoriaCatalogoRepositorio <<JpaRepository>> {
+    +findTopByOrderByIdDesc(): Optional<AuditoriaCatalogo>
+  }
+  class CatalogoControlador <<@RestController /api/catalogo/pruebas>> {
+    -catalogo: PruebaCatalogoFacade
+    +listar GET -> 200
+    +detalle GET -> 200/404
+    +crear POST -> 201
+    +actualizar PUT -> 200
+    +desactivar DELETE -> 204
+    +reactivar PUT /{codigo}/reactivar -> 200
+  }
+  class CatalogoManejadorErrores <<@ControllerAdvice>> {
+    +a404 / a409 / a400 / a500 -> ApiError
+  }
+}
+
+package "iso2-server-app (0.1.1-SNAPSHOT)" {
+  class Iso2ServerApplication <<@SpringBootApplication>> {
+    ..escanea es.uclm.iso2 completo\nEntityScan + EnableJpaRepositories..
+  }
+  class ConfigSeguridad <<@Configuration>> {
+    ..Basic transitorio: /api/catalogo/** y\nh2-console solo ROLE_ADMIN\nusuarios memoria admin/celador (BCrypt)\nJWT definitivo: CDU17 (Iter2)..
+  }
+}
+
+package "iso2-client-app (0.1.1-SNAPSHOT)" {
+  class ApiClienteCatalogo {
+    -baseUrl: String
+    -http: HttpClient
+    -json: ObjectMapper
+    +listar / crear / actualizar / desactivar / reactivar
+    -traducirError(HttpResponse): ApiException
+  }
+  class ApiException <<RuntimeException>> {
+    -status: int
+    -codigo: String
+  }
+  class VistaAdminCatalogo <<JavaFX>> {
+    -tabla: TableView<PruebaImagenDTO>
+    -campos del formulario
+    +raiz(): BorderPane
+    ..alta / modificacion / baja logica / reactivacion..
+  }
+}
+
+CatalogoServicio ..|> PruebaCatalogoFacade
+CatalogoServicio o--> TipoPruebaRepositorio
+CatalogoServicio o--> AuditoriaCatalogoRepositorio
+CatalogoServicio ..> CatalogoConflictoException : lanza
+CatalogoServicio ..> CatalogoNoEncontradoException : lanza
+
+TipoPrueba "1" *-> "1" Protocolo : @Embedded
+TipoPrueba "1" *-> "1" Politica : @Embedded
+AuditoriaCatalogo "1" --> AccionAuditoria
+TipoPruebaRepositorio --> TipoPrueba
+AuditoriaCatalogoRepositorio --> AuditoriaCatalogo
+
+CatalogoControlador o--> PruebaCatalogoFacade
+CatalogoControlador ..> PruebaImagenDTO : JSON
+CatalogoManejadorErrores ..> ApiError : produce
+CatalogoManejadorErrores ..> CatalogoNoEncontradoException : 404
+CatalogoManejadorErrores ..> CatalogoConflictoException : 409
+
+PruebaImagenDTO *-> ProtocoloDTO
+PruebaImagenDTO *-> PoliticaDTO
+
+Iso2ServerApplication ..> CatalogoControlador : escanea
+Iso2ServerApplication ..> ConfigSeguridad : RBAC
+ConfigSeguridad ..> CatalogoControlador : protege /api/catalogo/**
+
+VistaAdminCatalogo o--> ApiClienteCatalogo
+ApiClienteCatalogo ..> PruebaImagenDTO : (de)serializa
+ApiClienteCatalogo ..> ApiException : lanza
+ApiException ..> ApiError : traduce
+ApiClienteCatalogo ..> CatalogoControlador : HTTP Basic\n(POST/GET/PUT/DELETE)
+
+note right of AuditoriaCatalogo
+  hash = SHA-256(hashAnterior + datos del cambio)
+  Cadena verificable con auditoriaVerificable()
+end note
+@enduml

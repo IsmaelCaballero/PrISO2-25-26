@@ -141,22 +141,42 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 > `mvn -B verify javadoc:javadoc` en cada PR. Ejecuta `mvn verify` en local antes de subir.
 > Abre PR a `develop` asociado al issue; al fusionarse, tags `cfg-iter00` y `v0.1.0` (R0).
 >
-> (Ejecutado sesión 6: commit `e89863b` en `feature/iter00-cfg00`, PR #7 → `develop`. 14/14
-> módulos OK con `mvn -B -ntp verify javadoc:javadoc`; ArchUnit verde en `iso2-common`. Queda
-> pendiente de Ismael: merge de #7 y tags `cfg-iter00` + `v0.1.0` sobre `develop`.)
+> Resultado (07/11/2026): commit `e89863b` en `feature/iter00-cfg00` — reactor `iso2-parent` + 14
+> submódulos (10 de dominio + common a 1.0.0, apps 0.1.0), contratos baseline con Javadoc, ArchUnit
+> (guardarrailes D8), Surefire+JaCoCo, CI con `mvn -B verify javadoc:javadoc`. Build verde en local y
+> en CI. PR **#7** abierto a `develop` (número #6 se perdió al cerrar un PR previo con base errónea);
+> pendientes de Ismael: fusión + tags `cfg-iter00`/`v0.1.0`.
 
-### Prompt 09 — Iter1 · CDU16 catálogo de parámetros (`iso2-catalogo` 1.1.0, CFG-01) [○ pendiente]
+### Prompt 09 — Iter1 · CDU16 catálogo de parámetros (`iso2-catalogo` 1.1.0, CFG-01) [✔ ejecutado]
 
-> Requiere antes dos entradas del alumno (bloqueantes por D16 y D18):
-> (a) tabla de casos de prueba TC de CDU16 diseñada a mano (1 flujo feliz + ≥2 de error + 1 de
-> permisos; columnas: id, entrada, salida esperada, criterio de permisos);
-> (b) confirmación de D18: fuentes PlantUML en `docs/modelo/iter01/` + exportación manual a
-> StarUML (propuesta del agente) vs. generar `.staruml` directos.
+> Prompt lanzado por Ismael (07/11/2026):
+> "Los casos de pruebas los diseñaremos una vez que tengamos el código, y sobre la decisión D18,
+> mejor las fuentes de PlantUML en docs/modelo/iter01 + export a StarUML. ... con esto, podemos
+> abordar la iteración 01"
 >
-> Estructura del prompt a lanzar: arranca la Iter1 (CDU16, CFG-01) en `feature/iter01-cdu16-catalogo`;
-> diagramas PlantUML de casos de uso, secuencia y clases de análisis/diseño en `docs/modelo/iter01/`;
-> implementa `iso2-catalogo` hasta **1.1.0** (modelo de dominio de tipos de prueba, protocolos y
-> políticas + endpoints REST protegidos con RBAC para rol Administrador + vistas JavaFX de
-> administración en `iso2-client-app`); traduce MI tabla TC a JUnit 5 (Surefire+JaCoCo ≥60 % en
-> el módulo); migración `db/migration/V1.1.0__cdu16_catalogo.sql`; bump de versiones según matriz
-> CFG-01 y PR a `develop` con el cuerpo enlazando al issue.
+> Ejecución: issue #9, rama `feature/iter01-cdu16-catalogo` (base: tip de Iter0 `e89863b`).
+> Las dos entradas que bloqueaban el prompt quedan resueltas así: (a) D18 **aceptada** con fuentes
+> PlantUML en `docs/modelo/iter01/` + export manual a StarUML; (b) los TC de CDU16 los diseñará
+> Ismael sobre el código ya funcional (**D28**, revisión del orden de D16) — el agente deja pruebas
+> técnicas de humo para las puertas (JaCoCo ≥ 60 % en `iso2-catalogo`) y los TC humanos cierran la
+> iteración. Alcance ejecutado: contratos `iso2-common` 1.1.0-SNAPSHOT (CRUD fachada catálogo),
+> `iso2-catalogo` 1.1.0 (dominio tipo de prueba + protocolo + política, auditoría hash encadenado,
+> REST `/api/catalogo/pruebas`), RBAC transitorio Basic+ADMIN en `iso2-server-app` (JWT llega en
+> CDU17) con migración Flyway `V1.1.0__cdu16_catalogo.sql`, pantalla JavaFX Admin·catálogo en
+> `iso2-client-app`; versiones CFG-01 (apps 0.1.1-SNAPSHOT).
+>
+> Resultado (07/11/2026, rama `feature/iter01-cdu16-catalogo`, commits `bb337f5`..`ad99b21`):
+> - `iso2-catalogo` 1.1.0: dominio `TipoPrueba` (+`Protocolo`/`Politica` embebidos), auditoría con
+>   hash SHA-256 encadenado y `auditoriaVerificable()`, baja lógica idempotente, códigos no reutilizables;
+>   REST `/api/catalogo/pruebas` (201/200/204, reactivación 200, errores 400/404/409 con `ApiError`).
+>   24/24 tests, JaCoCo 96,5 % líneas.
+> - `iso2-server-app` 0.1.1: Flyway `V1.1.0__cdu16_catalogo.sql`, `ConfigSeguridad` Basic+ADMIN
+>   (JWT definitivo en CDU17), smoke 401/403/200/201/400. 6/6 tests, 91,7 %.
+> - `iso2-client-app` 0.1.1: `ApiClienteCatalogo`/`ApiException` + `VistaAdminCatalogo`. 6/6 tests,
+>   capa `api` 79,2 % (UI JavaFX excluida del gate, patrón de `iso2-common`).
+> - `docs/modelo/iter01/`: 4 diagramas PlantUML (casos de uso, secuencia, clases análisis/diseño) +
+>   README de exportación a StarUML (D18). El de casos de uso lleva actores de rol (Médico, Técnico
+>   facultativo, Celador, Recepcionista) con solo consulta a UC16.5 y UC7 de auditoría fuera de la
+>   frontera; revalidados los 4 con PlantUML 1.2025.2.
+> - Falta de Ismael: fusión del PR #7 (Iter0) + tags, fusión del **PR #10** (Iter1), **TC humanos de CDU16**
+>   (D28) y exportación `.staruml`.

@@ -1,0 +1,62 @@
+@startuml cdu16-clases-analisis
+' CDU16 (Iter1/CFG-01) - Diagrama de clases de analisis (conceptos del dominio, sin tecnologia)
+' Autor: agente (prompt 09) - revision y exportacion a StarUML: Ismael (D18)
+title CDU16 - Clases de analisis: catalogo de pruebas de imagen (Iter1/CFG-01)
+
+class "Prueba de imagen" as Prueba {
+  codigo (unico, no reutilizable)
+  nombre
+  categoria
+  requiere cita previa
+  duracion estimada
+  estado (activa / de baja logica)
+}
+
+class "Protocolo de preparacion" as Protocolo {
+  preparacion
+  ayuno (horas)
+  contraindicaciones
+}
+
+class "Politica de cancelacion" as Politica {
+  plazo minimo de cancelacion (horas)
+  maximo de cancelaciones
+}
+
+class "Auditoria de cambios" as Auditoria {
+  accion (alta / modificacion / baja / reactivacion)
+  autor
+  instante
+  firma de la entrada
+  firma anterior (encadenamiento)
+}
+
+class "Catalogo" as Catalogo {
+  consultar por codigo
+  paginar
+}
+
+class "Tipo de usuario" as Usuario {
+  rol administrador
+}
+
+Catalogo "1" o-> "0..*" Prueba : contiene
+Prueba "1" *-> "1" Protocolo : define su\npreparacion
+Prueba "1" *-> "1" Politica : define su\ncancelacion
+Usuario "1" o-> "0..*" Auditoria : provoca
+Prueba "1" <- "0..*" Auditoria : registra\ncada cambio
+note right of Auditoria
+  La cadena de firmas (cada entrada
+  incluye la firma anterior) hace el
+  historico verificable: criterio de
+  calidad "responsabilidad / no repudio".
+end note
+
+note bottom of Prueba
+  Reglas del PUD (CDU16):
+  - el codigo es unico y NO se libera
+    al dar de baja (solo baja logica)
+  - ningun cambio queda sin autor ni
+    motivo registrados
+end note
+@enduml
