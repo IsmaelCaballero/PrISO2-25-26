@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  iso2-server-app · CFG-01 · v0.1.1-SNAPSHOT (Iter1/CDU16)
+  Ensambla el catalogo de pruebas (CDU16) sobre Spring Boot: API REST + JPA/H2 +
+  Flyway (esquema versionado) + RBAC transitorio con Basic/usuarios en memoria
+  (el JWT definitivo llega en CDU17/Iter2).
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -9,10 +15,18 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-server-app</artifactId>
-  <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00, 1.0.0 en CFG-21/R5. -->
-  <version>0.1.0</version>
+  <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00; 0.1.1-SNAPSHOT en la rama
+       de Iter1/CFG-01; 1.0.0 en CFG-21/R5. -->
+  <version>0.1.1-SNAPSHOT</version>
   <name>iso2-server-app</name>
   <description>Aplicacion servidora: API REST Spring Boot + JPA/H2. Ensambla los modulos de dominio.</description>
+
+  <properties>
+    <!-- Puerta de calidad CFG-01 (D24/D27): cobertura de linea >= 60 % en la aplicacion. -->
+    <jacoco.line.min>0.60</jacoco.line.min>
+    <!-- Javadoc estricto: la aplicacion ya tiene clases publicas (config de seguridad). -->
+    <javadoc.failOnError>true</javadoc.failOnError>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -20,57 +34,58 @@
       <artifactId>iso2-common</artifactId>
       <version>${iso2.version}</version>
     </dependency>
-    <!-- Los modulos de dominio se ensamblan aqui. En Iter0 solo existen como baseline
-         (paquete + Javadoc); se iran anadiendo con su CDU correspondiente. -->
+    <!-- Unicos modulos de dominio con CDU en CFG-01: catalogo (CDU16) y sus contratos. -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-catalogo</artifactId>
       <version>${iso2.version}</version>
     </dependency>
+    <!-- Resto de modulos: baseline 1.0.0 sin CDU en esta configuracion (matriz CFG-01);
+         se iran subiendo a ${iso2.version} cuando les toque su CDU. -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-seguridad</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-agendas</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-solicitudes</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-citas</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-integracion</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-pacientes</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-comunicacion</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-informes</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-reporting</artifactId>
-      <version>${iso2.version}</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -84,6 +99,16 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+    <!-- RBAC transitorio (hasta CDU17): Basic + usuarios en memoria con BCrypt. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <!-- Esquema de base de datos versionado con migraciones (D de trazabilidad). -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
@@ -92,6 +117,11 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

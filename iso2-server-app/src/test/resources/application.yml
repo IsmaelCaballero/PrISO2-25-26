@@ -1,0 +1,5 @@
+# Configuracion de tests: H2 en memoria para que Flyway no toque el fichero ./data
+# (el resto de la configuracion se hereda del application.yml principal).
+spring:
+  datasource:
+    url: jdbc:h2:mem:iso2-test;DB_CLOSE_DELAY=-1
