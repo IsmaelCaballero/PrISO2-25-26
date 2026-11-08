@@ -1,0 +1,326 @@
+{
+  "cdu": "CDU16",
+  "iter": "iter01",
+  "config": "CFG-01",
+  "modulo": "iso2-catalogo",
+  "idPrefijo": "TC16",
+  "generado": "2026-11-08",
+  "semilla": 20261108,
+  "metodo": "Clases de equivalencia + teorema de valores limite + conjetura de errores, compuestas con pairwise (todo par de niveles de factores distintos queda cubierto).",
+  "leyendaTokens": {
+    "EMPTY": "cadena vacia",
+    "SPACE": "un solo espacio",
+    "VACIO": "parametro ausente (null)",
+    "REP:<n>:<c>": "el caracter <c> repetido n veces",
+    "-": "no aplica"
+  },
+  "estados": {
+    "CREADO": 201,
+    "OK": 200,
+    "INVALIDOS": 400,
+    "NO_ENCONTRADA": 404,
+    "CONFLICTO": 409,
+    "NO_ACEPTABLE": 415
+  },
+  "tabla_A": {
+    "id": "A",
+    "nombre": "Alta de prueba (POST /api/catalogo/pruebas)",
+    "kind": "pairwise",
+    "csv": "tdop-cdu16-alta.csv",
+    "puerta": "AF correccion: el alta rechaza las cotas del esquema y del contrato (D35) sin llegar al INSERT",
+    "solicitud": "POST /api/catalogo/pruebas",
+    "tipoTC": "feliz + error (TDOP)",
+    "noCombinaInvalidos": true,
+    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS", "CONFLICTO": "CODIGO_DUPLICADO", "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"},
+    "factores": [
+      {
+        "nombre": "codigo",
+        "campo": "codigo",
+        "descripcion": "codigo de prueba: VARCHAR(40); el contrato solo exige no en blanco (la cota 2-20 del PUD queda pendiente de formalizar)",
+        "niveles": [
+          {"valor": "EMPTY", "valido": false, "motivo": "codigo en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
+          {"valor": "SPACE", "valido": false, "motivo": "codigo en blanco (contrato)", "criterio": "clase de equivalencia solo espacios"},
+          {"valor": "A", "valido": true, "motivo": "longitud minima usable", "criterio": "minimo observado en el contrato"},
+          {"valor": "REP:40:C", "valido": true, "motivo": "justo la cota de almacenamiento", "criterio": "justo la cota"},
+          {"valor": "REP:41:C", "valido": false, "motivo": "pasa la cota de codigo (40)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "nombre",
+        "campo": "nombre",
+        "descripcion": "nombre legible: VARCHAR(120)",
+        "niveles": [
+          {"valor": "EMPTY", "valido": false, "motivo": "nombre en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
+          {"valor": "T", "valido": true, "motivo": "longitud minima usable", "criterio": "minimo observado en el contrato"},
+          {"valor": "NOMBRE-TIPO-41", "valido": true, "motivo": "nombre real de 41 caracteres", "criterio": "valor tipico"},
+          {"valor": "REP:120:N", "valido": true, "motivo": "justo la cota de nombre", "criterio": "justo la cota"},
+          {"valor": "REP:121:N", "valido": false, "motivo": "pasa la cota de nombre (120)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "categoria",
+        "campo": "categoria",
+        "descripcion": "modalidad: VARCHAR(20) + lista blanca RX/TAC/RM/ECO/MED-NUC/DENS/OTRO",
+        "niveles": [
+          {"valor": "EMPTY", "valido": false, "motivo": "categoria en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
+          {"valor": "RX", "valido": true, "motivo": "dentro de la lista blanca", "criterio": "valor tipico"},
+          {"valor": "MED-NUC", "valido": true, "motivo": "la categoria admitida mas larga", "criterio": "valor tipico alto"},
+          {"valor": "USG", "valido": false, "motivo": "categoria fuera de la lista blanca", "criterio": "fuera de dominio"},
+          {"valor": "REP:21:C", "valido": false, "motivo": "pasa la longitud de categoria (20)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "requiereCita",
+        "campo": "requiereCita",
+        "descripcion": "booleano del contrato",
+        "niveles": [
+          {"valor": "true", "valido": true, "motivo": "con cita", "criterio": "valor tipico"},
+          {"valor": "false", "valido": true, "motivo": "sin cita", "criterio": "valor tipico"}
+        ]
+      },
+      {
+        "nombre": "duracionMinutos",
+        "campo": "duracionMinutos",
+        "descripcion": "duracion estimada: el contrato exige > 0; cota 1440",
+        "niveles": [
+          {"valor": "0", "valido": false, "motivo": "duracion no positiva (contrato)", "criterio": "bajo el minimo del contrato"},
+          {"valor": "1", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
+          {"valor": "60", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
+          {"valor": "1440", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
+          {"valor": "1441", "valido": false, "motivo": "pasa la cota de duracion (1440)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "preparacion",
+        "campo": "protocolo.preparacion",
+        "descripcion": "texto de preparacion: VARCHAR(1000)",
+        "niveles": [
+          {"valor": "EMPTY", "valido": false, "motivo": "preparacion en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
+          {"valor": "AYUNAR-4H", "valido": true, "motivo": "texto tipico", "criterio": "valor tipico"},
+          {"valor": "REP:1000:P", "valido": true, "motivo": "justo la cota de texto", "criterio": "justo la cota"},
+          {"valor": "REP:1001:P", "valido": false, "motivo": "pasa la cota de preparacion (1000)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "ayunoHoras",
+        "campo": "protocolo.ayunoHoras",
+        "descripcion": "horas de ayuno: el contrato exige >= 0; cota 720",
+        "niveles": [
+          {"valor": "-1", "valido": false, "motivo": "ayuno negativo (contrato)", "criterio": "bajo el minimo del contrato"},
+          {"valor": "0", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
+          {"valor": "12", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
+          {"valor": "720", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
+          {"valor": "721", "valido": false, "motivo": "pasa la cota de ayuno (720)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "contraindicaciones",
+        "campo": "protocolo.contraindicaciones",
+        "descripcion": "texto de contraindicaciones: VARCHAR(1000)",
+        "niveles": [
+          {"valor": "EMPTY", "valido": false, "motivo": "contraindicaciones en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
+          {"valor": "NINGUNA", "valido": true, "motivo": "valor pactado para sin contraindicaciones", "criterio": "valor tipico"},
+          {"valor": "REP:1000:D", "valido": true, "motivo": "justo la cota de texto", "criterio": "justo la cota"},
+          {"valor": "REP:1001:D", "valido": false, "motivo": "pasa la cota de contraindicaciones (1000)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "plazoCancelacionHoras",
+        "campo": "politica.plazoCancelacionHoras",
+        "descripcion": "antelacion minima de cancelacion: el contrato exige > 0; cota 8760",
+        "niveles": [
+          {"valor": "0", "valido": false, "motivo": "plazo no positivo (contrato)", "criterio": "bajo el minimo del contrato"},
+          {"valor": "1", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
+          {"valor": "24", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
+          {"valor": "8760", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
+          {"valor": "8761", "valido": false, "motivo": "pasa la cota de plazo (8760)", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "maxCancelaciones",
+        "campo": "politica.maxCancelaciones",
+        "descripcion": "cancelaciones admitidas: el contrato exige >= 0; cota 100",
+        "niveles": [
+          {"valor": "0", "valido": true, "motivo": "minimo del contrato: cancelacion prohibida", "criterio": "minimo del contrato"},
+          {"valor": "3", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
+          {"valor": "100", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
+          {"valor": "101", "valido": false, "motivo": "pasa la cota de cancelaciones (100)", "criterio": "un punto sobre la cota"}
+        ]
+      }
+    ],
+    "setups": ["NINGUNO", "CREA_OTRA_ACTIVA"],
+    "reglas": [
+      {"si": {"invalido": true}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "hay al menos un nivel fuera de la clase valida"},
+      {"si": {}, "estado": "CREADO", "codigo": "-", "porque": "todos los niveles dentro de las clases validas"}
+    ]
+  },
+  "tabla_B": {
+    "id": "B",
+    "nombre": "Modificacion de prueba (PUT /api/catalogo/pruebas/{codigo})",
+    "kind": "full",
+    "csv": "tdop-cdu16-modificacion.csv",
+    "puerta": "AF correccion: coherencia ruta/cuerpo, estado del recurso y cotas en la modificacion",
+    "solicitud": "PUT /api/catalogo/pruebas/{codigo}",
+    "tipoTC": "feliz + error (TDOP)",
+    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS", "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"},
+    "factores": [
+      {
+        "nombre": "estadoRecurso",
+        "setupPor": {"ACTIVA": "CREA_COD_ACTIVA", "INACTIVA": "CREA_COD_INACTIVA", "NO_EXISTE": "NINGUNO"},
+        "descripcion": "estado de la fila a la que apunta la ruta antes de la peticion",
+        "niveles": [
+          {"valor": "ACTIVA", "valido": true, "motivo": "prueba dada de alta"},
+          {"valor": "INACTIVA", "valido": true, "motivo": "prueba dada de baja logica: se puede modificar"},
+          {"valor": "NO_EXISTE", "valido": false, "motivo": "la ruta no apunta a ninguna fila"}
+        ]
+      },
+      {
+        "nombre": "codigoRuta",
+        "setupPor": {"DISTINTO_EXISTENTE": "CREA_OTRA_ACTIVA"},
+        "descripcion": "codigo de la ruta comparado con el codigo del cuerpo",
+        "niveles": [
+          {"valor": "IGUAL", "valido": true, "motivo": "ruta y cuerpo coinciden"},
+          {"valor": "DISTINTO_INVENTADO", "valido": false, "motivo": "la ruta no coincide con el cuerpo"},
+          {"valor": "DISTINTO_EXISTENTE", "valido": false, "motivo": "la ruta apunta a otra prueba existente"},
+          {"valor": "LARGO41", "valido": false, "motivo": "ruta y cuerpo de 41 caracteres: pasa la cota de codigo", "criterio": "un punto sobre la cota"}
+        ]
+      },
+      {
+        "nombre": "validezCuerpo",
+        "descripcion": "cuerpo valido salvo la marca que se indica",
+        "niveles": [
+          {"valor": "VALIDO", "valido": true, "motivo": "cuerpo dentro de todas las cotas"},
+          {"valor": "NOMBRE_LARGO121", "valido": false, "motivo": "nombre de 121 caracteres", "campo": "nombre", "nivel": "REP:121:N", "criterio": "un punto sobre la cota"},
+          {"valor": "CATEGORIA_FUERA", "valido": false, "motivo": "categoria fuera de la lista blanca", "campo": "categoria", "nivel": "USG", "criterio": "fuera de dominio"},
+          {"valor": "MAXCANCEL_101", "valido": false, "motivo": "maxCancelaciones 101", "campo": "politica.maxCancelaciones", "nivel": "101", "criterio": "un punto sobre la cota"},
+          {"valor": "PROTO_LOMAX1001", "valido": false, "motivo": "preparacion de 1001 caracteres", "campo": "protocolo.preparacion", "nivel": "REP:1001:P", "criterio": "un punto sobre la cota"}
+        ]
+      }
+    ],
+    "reglas": [
+      {"si": {"factor": "codigoRuta", "distinto": "IGUAL"}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "el codigo de la ruta no coincide con el del cuerpo (se mira antes de buscar la fila)"},
+      {"si": {"factor": "validezCuerpo", "invalido": true}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "el cuerpo pasa una cota del servicio"},
+      {"si": {"factor": "estadoRecurso", "igual": "NO_EXISTE"}, "estado": "NO_ENCONTRADA", "codigo": "PRUEBA_NO_ENCONTRADA", "porque": "no hay fila que modificar"},
+      {"si": {}, "estado": "OK", "codigo": "-", "porque": "modificacion admitida"}
+    ],
+    "columnasExtra": ["campoInvalido", "valorInvalido"]
+  },
+  "tabla_C": {
+    "id": "C",
+    "nombre": "Listado del catalogo (GET /api/catalogo/pruebas)",
+    "kind": "pairwise",
+    "csv": "tdop-cdu16-listado.csv",
+    "puerta": "AF completitud: paginacion y orden del listado de gestion, incluyendo parametros mal tipados",
+    "solicitud": "GET /api/catalogo/pruebas",
+    "tipoTC": "feliz + error (TDOP)",
+    "noCombinaInvalidos": true,
+    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS"},
+    "factores": [
+      {
+        "nombre": "pagina",
+        "descripcion": "parametro pagina: el contrato exige >= 0 y debe caber en un entero",
+        "niveles": [
+          {"valor": "-1", "valido": false, "motivo": "pagina negativa (contrato)", "criterio": "bajo el minimo del contrato"},
+          {"valor": "0", "valido": true, "motivo": "minimo del contrato y valor por defecto", "criterio": "minimo del contrato"},
+          {"valor": "2", "valido": true, "motivo": "pagina dentro del catalogo", "criterio": "valor tipico"},
+          {"valor": "200", "valido": true, "motivo": "pagina mas alla del catalogo: pagina vacia", "criterio": "limite de paginacion"},
+          {"valor": "REP:12:9", "valido": false, "motivo": "no cabe en un entero de la peticion", "criterio": "parametro mal tipado"},
+          {"valor": "abc", "valido": false, "motivo": "no es un numero", "criterio": "parametro mal tipado"}
+        ]
+      },
+      {
+        "nombre": "tamano",
+        "descripcion": "parametro tamano: el contrato admite 1..200",
+        "niveles": [
+          {"valor": "0", "valido": false, "motivo": "tamano bajo el minimo (contrato)", "criterio": "bajo el minimo del contrato"},
+          {"valor": "1", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
+          {"valor": "25", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
+          {"valor": "200", "valido": true, "motivo": "justo la cota del contrato", "criterio": "justo la cota"},
+          {"valor": "201", "valido": false, "motivo": "tamano sobre la cota (contrato)", "criterio": "un punto sobre la cota"},
+          {"valor": "REP:12:9", "valido": false, "motivo": "no cabe en un entero de la peticion", "criterio": "parametro mal tipado"}
+        ]
+      },
+      {
+        "nombre": "orden",
+        "descripcion": "parametro orden: lista blanca; sin parametro = codigo",
+        "niveles": [
+          {"valor": "VACIO", "valido": true, "motivo": "sin parametro: orden por defecto", "criterio": "ausencia"},
+          {"valor": "codigo", "valido": true, "motivo": "campo admitido (es el defecto)", "criterio": "valor tipico"},
+          {"valor": "categoria", "valido": true, "motivo": "campo admitido", "criterio": "valor tipico"},
+          {"valor": "duracionMinutos", "valido": true, "motivo": "campo admitido", "criterio": "valor tipico"},
+          {"valor": "INVENTADO", "valido": false, "motivo": "campo fuera de la lista blanca", "criterio": "fuera de dominio"}
+        ]
+      }
+    ],
+    "reglas": [
+      {"si": {"invalido": true}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "un parametro de consulta esta fuera de clase o mal tipado"},
+      {"si": {}, "estado": "OK", "codigo": "-", "porque": "listado admitido"}
+    ]
+  },
+  "tabla_D": {
+    "id": "D",
+    "nombre": "Estados del recurso (GET/DELETE /{codigo} y PUT /{codigo}/reactivar)",
+    "kind": "full",
+    "csv": "tdop-cdu16-estados.csv",
+    "puerta": "SEG integridad: baja logica, reactivacion idempotente y codigos que no se reutilizan",
+    "solicitud": "GET/DELETE /api/catalogo/pruebas/{codigo} · PUT /{codigo}/reactivar",
+    "tipoTC": "feliz + error (TDOP)",
+    "codigosError": {"NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"},
+    "factores": [
+      {
+        "nombre": "operacion",
+        "descripcion": "operacion de estado invocada",
+        "niveles": [
+          {"valor": "DETALLE", "valido": true, "motivo": "GET /api/catalogo/pruebas/{codigo}"},
+          {"valor": "BAJA", "valido": true, "motivo": "DELETE /api/catalogo/pruebas/{codigo}"},
+          {"valor": "REACTIVAR", "valido": true, "motivo": "PUT /api/catalogo/pruebas/{codigo}/reactivar"}
+        ]
+      },
+      {
+        "nombre": "estadoRecurso",
+        "setupPor": {"ACTIVA": "CREA_COD_ACTIVA", "INACTIVA": "CREA_COD_INACTIVA", "NO_EXISTE": "NINGUNO"},
+        "descripcion": "estado de la fila antes de la peticion",
+        "niveles": [
+          {"valor": "ACTIVA", "valido": true, "motivo": "prueba activa"},
+          {"valor": "INACTIVA", "valido": true, "motivo": "prueba desactivada: detalle y reactivacion la ven"},
+          {"valor": "NO_EXISTE", "valido": false, "motivo": "codigo inexistente"}
+        ]
+      }
+    ],
+    "reglas": [
+      {"si": {"factor": "estadoRecurso", "igual": "NO_EXISTE"}, "estado": "NO_ENCONTRADA", "codigo": "PRUEBA_NO_ENCONTRADA", "porque": "la ruta no apunta a ninguna fila"},
+      {"si": {}, "estado": "OK", "codigo": "-", "porque": "operacion de estado admitida (baja y reactivacion son idempotentes)"}
+    ]
+  },
+  "tabla_E": {
+    "id": "E",
+    "nombre": "Conjetura de errores (casos explicitos, sin combinacion)",
+    "kind": "conjetura",
+    "csv": "tdop-cdu16-conjetura.csv",
+    "puerta": "SEG integridad y robustez: conjetura de errores sobre el alta, la modificacion y el detalle",
+    "solicitud": "ALTA/MODIFICACION/DETALLE sobre /api/catalogo/pruebas/{codigo}",
+    "tipoTC": "conjetura de errores",
+    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS", "CONFLICTO": "CODIGO_DUPLICADO", "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA", "NO_ACEPTABLE": "CONTENIDO_NO_ACEPTADO"},
+    "columnas": ["id", "operacion", "estadoRecurso", "cuerpo", "setup", "rutaExtra", "esperadoStatus", "esperadoCodigo", "nota"],
+    "filas": [
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "VALIDO", "setup": "CREA_OTRA_ACTIVA", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "linea de base: alta valida sobre un catalogo con otra fila"},
+      {"operacion": "ALTA", "estadoRecurso": "ACTIVA", "cuerpo": "VALIDO", "setup": "CREA_COD_ACTIVA", "rutaExtra": "-", "esperadoStatus": "CONFLICTO", "esperadoCodigo": "CODIGO_DUPLICADO", "nota": "reutilizar el codigo de una prueba activa"},
+      {"operacion": "ALTA", "estadoRecurso": "INACTIVA", "cuerpo": "VALIDO", "setup": "CREA_COD_INACTIVA", "rutaExtra": "-", "esperadoStatus": "CONFLICTO", "esperadoCodigo": "CODIGO_DUPLICADO", "nota": "los codigos no se reutilizan: dar de alta una fila dada de baja es conflicto, no reactivacion implicita"},
+      {"operacion": "ALTA", "estadoRecurso": "ACTIVA", "cuerpo": "ACTIVA_FALSA", "setup": "CREA_COD_ACTIVA", "rutaExtra": "-", "esperadoStatus": "CONFLICTO", "esperadoCodigo": "CODIGO_DUPLICADO", "nota": "activa=false en el cuerpo no convierte el alta en reactivacion"},
+      {"operacion": "MODIFICACION", "estadoRecurso": "ACTIVA", "cuerpo": "ACTIVA_FALSA", "setup": "CREA_COD_ACTIVA", "rutaExtra": "-", "esperadoStatus": "OK", "esperadoCodigo": "-", "nota": "activa=false en el cuerpo se ignora: la prueba sigue activa"},
+      {"operacion": "MODIFICACION", "estadoRecurso": "INACTIVA", "cuerpo": "ACTIVA_VERDADERA", "setup": "CREA_COD_INACTIVA", "rutaExtra": "-", "esperadoStatus": "OK", "esperadoCodigo": "-", "nota": "activa=true en el cuerpo no reactiva: reactivar es su propia operacion"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "VACIO_JSON", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "cuerpo {} : faltan todos los campos del contrato"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "SIN_PROTOCOLO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "falta el objeto protocolo: el contrato exige anidados no nulos"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "MALFORMADO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "JSON malformado: HttpMessageNotReadableException"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "SIN_CUERPO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "POST sin cuerpo"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "TEXTO_PLANO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "NO_ACEPTABLE", "esperadoCodigo": "CONTENIDO_NO_ACEPTADO", "nota": "Content-Type text/plain: 415 con codigo estable desde D35 (antes caia en el capturador general y devolvia 500)"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CAMPO_DESCONOCIDO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "Jackson descarta campos desconocidos: se ignora y se crea - caracterizacion"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "DURACION_COMO_TEXTO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "Jackson convierte 60 a numero: se acepta - caracterizacion"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CATEGORIA_MINUSCULA", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "la lista blanca de categorias distingue mayusculas"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CATEGORIA_20_FUERA", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "categoria de 20 caracteres cabe en el VARCHAR pero esta fuera de la lista blanca"},
+      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CODIGO_CON_ESPACIOS", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "no hay regla de recorte: el codigo se guarda con espacios - caracterizacion"},
+      {"operacion": "DETALLE", "estadoRecurso": "ACTIVA", "cuerpo": "NINGUNO", "setup": "CREA_COD_ACTIVA", "rutaExtra": "COD-MINUS", "esperadoStatus": "NO_ENCONTRADA", "esperadoCodigo": "PRUEBA_NO_ENCONTRADA", "nota": "H2 distingue mayusculas: el detalle en minusculas no encuentra la fila - caracterizacion, revisar con MySQL (collation ci)"},
+      {"operacion": "DETALLE", "estadoRecurso": "ACTIVA", "cuerpo": "NINGUNO", "setup": "CREA_COD_ACTIVA", "rutaExtra": "COD+ESP", "esperadoStatus": "NO_ENCONTRADA", "esperadoCodigo": "PRUEBA_NO_ENCONTRADA", "nota": "codigo de ruta con espacio final: no se recorta - caracterizacion"}
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+id;operacion;estadoRecurso;setup;esperadoStatus;esperadoCodigo;nota
+TC16-D01;DETALLE;ACTIVA;CREA_COD_ACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
+TC16-D02;DETALLE;INACTIVA;CREA_COD_INACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
+TC16-D03;DETALLE;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;la ruta no apunta a ninguna fila | estadoRecurso: codigo inexistente
+TC16-D04;BAJA;ACTIVA;CREA_COD_ACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
+TC16-D05;BAJA;INACTIVA;CREA_COD_INACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
+TC16-D06;BAJA;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;la ruta no apunta a ninguna fila | estadoRecurso: codigo inexistente
+TC16-D07;REACTIVAR;ACTIVA;CREA_COD_ACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
+TC16-D08;REACTIVAR;INACTIVA;CREA_COD_INACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
+TC16-D09;REACTIVAR;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;la ruta no apunta a ninguna fila | estadoRecurso: codigo inexistente
