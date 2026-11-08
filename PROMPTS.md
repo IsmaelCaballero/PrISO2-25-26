@@ -371,10 +371,17 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     actualizado a `b072b34`.
   - **Issues nuevas de seguimiento:** #20 publicar R0 con `v0.1.0`, #21 TC humanos de CDU16/CDU17/CDU13
     (CFG-01/02/03, D28), #22 export `.staruml` de Iter1-3 (D18), #23 Kanban de GitHub Project + wiki.
+    Al final de la sesión se comprueba su estado: **#20 cerrada correctamente por Ismael** (R0 publicada) y
+    **#21, #22 y #23 reabiertas** — se habían cerrado a las 12:34–12:35 con motivo `completed` sin
+    artefactos detrás: ningún commit ni rama nueva en `develop` con las tablas de TC, `git ls-tree -r
+    origin/develop` sin ningún `.staruml` y `GET /repos/…/wiki` en 404 (wiki sin páginas). Cada issue lleva
+    un comentario con la comprobación; CFG-01/02/03 siguen abiertas en el mapa por D28 y D18. El Kanban de
+    GitHub Project no se pudo verificar (el token del agente carece de scope `read:project`).
   - **Nueva decisión D30** en `DECISIONS.md`: `main` solo recibe merges de rama `release/RN` (nunca
     `feature/…`), con la incidencia del PR #17 documentada y la comprobación previa obligatoria
     (`git log --oneline origin/main --not origin/develop`). Actualizado el §4 de
     `docs/mapa-configuraciones.md` (flujo de ramas y etiquetado).
   - **Siguiente sesión:** Iter4 · CDU06 solicitudes (CFG-04) desde `develop` = `b072b34`
     (`iso2-solicitudes` 1.1.0, apps 0.1.4-SNAPSHOT, puertas: cobertura de solicitudes ≥ 85 % y huella
-    de contenido). Antes solo queda cerrar #20 a mano (D29) y fusionar el PR de docs #24.
+    de contenido). En GitHub solo queda fusionar el PR de docs #24 y retomar #21 (TC humanos), #22
+    (`.staruml`) y #23 (Kanban + wiki), todas reabiertas al final de la sesión.
