@@ -26,5 +26,5 @@ jobs:
           path: |
             **/target/site/jacoco/**
             **/target/surefire-reports/**
-            **/target/site/apidocs/**
+            **/target/reports/apidocs/**
           if-no-files-found: warn

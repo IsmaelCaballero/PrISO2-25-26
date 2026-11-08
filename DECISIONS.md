@@ -206,3 +206,22 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
   "Modelado por iteración (PlantUML)". Los `.png` se regeneran de forma reproducible (verificado byte a byte
   sobre dos diagramas de iter01). Si el PUD exigiera modelo UML nativo, plan B: reimportar los `.puml` en
   StarUML con el plugin PlantUML y guardar; no ejecutado por ahora.
+
+## D32. Javadoc publicado en GitHub Pages desde `develop` (solo la última compilación) — ACEPTADA (08/11/2026, Ismael)
+- **Contexto:** las páginas de la wiki por iteración quieren enlazar, para cada clase, su ficha de
+  Javadoc generado. Hasta ahora el Javadoc solo se generaba en el CI (`mvn … javadoc:javadoc`) y
+  quedaba en un artefacto con caducidad de 90 días: no había una URL estable que enlazar (issue #27).
+- **Decisión:**
+  - workflow nuevo `.github/workflows/javadoc.yml`: en push a `develop` (y `workflow_dispatch`)
+    ejecuta `mvn -B -ntp javadoc:aggregate` y publica el sitio en GitHub Pages con
+    `actions/upload-pages-artifact` + `actions/deploy-pages`; Pages se configura con `build_type=workflow`.
+  - **Solo la última compilación de `develop`**, sin instantáneas por tag `cfg-iterNN`: el sitio y el
+    CI pesarían ~8 MB por iteración y el Javadoc de una CFG concreta se puede regenerar localmente
+    desde su tag. Cada página de la wiki indica la versión de módulo a la que corresponde.
+  - URL base: `https://ismaelcaballero.github.io/PrISO2-25-26/apidocs/…`; un `index.html` en la raíz
+    (plantilla `docs/javadoc-index.html`) redirige al índice de paquetes.
+- **Nota técnica:** `javadoc:aggregate` escribe en `<raíz>/target/reports/apidocs`, no en
+  `target/site/apidocs`; por eso se corrige el `path` del artefacto `informes-calidad` del `ci.yml`
+  a `**/target/reports/apidocs/**` (hasta ahora ese `path` no cogía nada y el artefacto salía con aviso).
+- **Efectos:** las tablas de clases de las páginas de la wiki enlazan la ficha Javadoc de cada clase;
+  el sitio refleja siempre `develop`, así que los enlaces no se reescriben al cerrar iteraciones.
