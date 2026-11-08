@@ -3,11 +3,14 @@ package es.uclm.iso2.client;
 import es.uclm.iso2.client.api.ApiClienteAgendas;
 import es.uclm.iso2.client.api.ApiClienteAutenticacion;
 import es.uclm.iso2.client.api.ApiClienteCatalogo;
+import es.uclm.iso2.client.api.ApiClienteSolicitudes;
 import es.uclm.iso2.client.ui.VistaAdminCatalogo;
 import es.uclm.iso2.client.ui.VistaConsultaAgendas;
 import es.uclm.iso2.client.ui.VistaConsultaCatalogo;
+import es.uclm.iso2.client.ui.VistaConsultaSolicitudes;
 import es.uclm.iso2.client.ui.VistaGestionAgendas;
 import es.uclm.iso2.client.ui.VistaInicioSesion;
+import es.uclm.iso2.client.ui.VistaSolicitudesMedico;
 import es.uclm.iso2.common.seguridad.AutenticacionFacade.SesionDTO;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -22,10 +25,11 @@ import javafx.stage.Stage;
  *
  * <p>En CFG-02 (Iter2/CDU17) el arranque empieza en la vista de inicio de sesion:
  * login real por API (BCrypt + emision JWT en el servidor). Al conseguir la sesion,
- * la aplicacion abre una barra de secciones (CDU13, Iter3/CFG-03) decidida por el rol
- * del token ({@link NavegacionPorRol}): catalogo (editar solo ADMINISTRADOR, el resto
- * solo lectura) y agendas (gestionar ADMINISTRADOR/RECEPCIONISTA, consultar
- * MEDICO/TECNICO, y sin seccion para el CELADOR).</p>
+ * la aplicacion abre una barra de secciones (CDU13, Iter3/CFG-03; CDU06, Iter4/CFG-04)
+ * decidida por el rol del token ({@link NavegacionPorRol}): catalogo (editar solo
+ * ADMINISTRADOR, el resto solo lectura), agendas (gestionar ADMINISTRADOR/RECEPCIONISTA,
+ * consultar MEDICO/TECNICO, y sin seccion para el CELADOR) y solicitudes (prescribir
+ * ADMINISTRADOR/MEDICO, consultar RECEPCIONISTA, y sin seccion para TECNICO/CELADOR).</p>
  *
  * <p>Unica propiedad de configuracion: la URL del servidor
  * {@code -Diso2.server=http://localhost:8080}. Las credenciales ya no van por
@@ -36,7 +40,7 @@ import javafx.stage.Stage;
 public class Iso2ClientApplication extends Application {
 
     /** Version del release train de la aplicacion (D22). */
-    public static final String VERSION = "0.1.3-SNAPSHOT";
+    public static final String VERSION = "0.1.4-SNAPSHOT";
 
     /**
      * Constructor estandar requerido por la plataforma JavaFX.
@@ -57,8 +61,9 @@ public class Iso2ClientApplication extends Application {
 
     /**
      * Tras el login, cambia la escena a la aplicacion con barra de secciones
-     * (Catálogo y, segun el rol, Agendas) y la vista del rol dentro de cada seccion.
-     * Los clientes HTTP quedan autenticados por Bearer con el token recien emitido.
+     * (Catálogo, Agendas y Solicitudes segun el rol) y la vista del rol dentro de cada
+     * seccion. Los clientes HTTP quedan autenticados por Bearer con el token recien
+     * emitido.
      *
      * @param escenario la ventana principal
      * @param servidor  raiz de la API
@@ -67,26 +72,37 @@ public class Iso2ClientApplication extends Application {
     private void abrirAplicacion(Stage escenario, String servidor, SesionDTO sesion) {
         ApiClienteCatalogo catalogo = new ApiClienteCatalogo(servidor, sesion.token());
         ApiClienteAgendas agendas = new ApiClienteAgendas(servidor, sesion.token());
+        ApiClienteSolicitudes solicitudes = new ApiClienteSolicitudes(servidor, sesion.token());
         boolean veAgendas = NavegacionPorRol.agendasVisiblePara(sesion.rol());
         boolean gestionaAgendas = NavegacionPorRol.agendasEditablesPara(sesion.rol());
         boolean editaCatalogo = NavegacionPorRol.catalogoEditablePara(sesion.rol());
+        boolean veSolicitudes = NavegacionPorRol.solicitudesVisiblesPara(sesion.rol());
+        boolean prescribeSolicitudes = NavegacionPorRol.solicitudesPrescribiblesPara(sesion.rol());
 
         BorderPane raiz = new BorderPane();
         Button irCatalogo = new Button("Catalogo");
         Button irAgendas = new Button("Agendas");
+        Button irSolicitudes = new Button("Solicitudes");
         irAgendas.setVisible(veAgendas);
+        irSolicitudes.setVisible(veSolicitudes);
         Runnable alCatalogo = () -> raiz.setCenter(editaCatalogo
                 ? new VistaAdminCatalogo(catalogo).raiz()
                 : new VistaConsultaCatalogo(catalogo).raiz());
         Runnable aAgendas = () -> raiz.setCenter(gestionaAgendas
                 ? new VistaGestionAgendas(agendas).raiz()
                 : new VistaConsultaAgendas(agendas).raiz());
+        // CDU06: el autor de la prescripcion es el usuario de la sesion; el servidor lo
+        // toma del claim del token (no repudio), aqui solo se pasa para validar RF06.1.
+        Runnable aSolicitudes = () -> raiz.setCenter(prescribeSolicitudes
+                ? new VistaSolicitudesMedico(solicitudes, sesion.usuario()).raiz()
+                : new VistaConsultaSolicitudes(solicitudes).raiz());
         irCatalogo.setOnAction(e -> alCatalogo.run());
         irAgendas.setOnAction(e -> aAgendas.run());
+        irSolicitudes.setOnAction(e -> aSolicitudes.run());
 
         raiz.setTop(new HBox(10,
                 new Label("Sesion: " + sesion.usuario() + " (" + sesion.rol() + ")"),
-                irCatalogo, irAgendas));
+                irCatalogo, irAgendas, irSolicitudes));
         alCatalogo.run();
         escenario.setScene(new Scene(raiz, 1100, 680));
     }
