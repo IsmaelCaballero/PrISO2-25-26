@@ -18,6 +18,8 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 3. A partir de Iter0 de código: cada prompt se **registra aquí ANTES de ejecutarlo** y se enlaza
    con su issue de GitHub (título del issue = iteración/CDU; cuerpo = prompt ejecutable). Flujo:
    issue → prompt (este fichero) → rama `feature/iterXX-cduyy-…` → PR → merge de Ismael → tag `cfg-iterXX`.
+   Los hitos de release salen siempre de una rama `release/RN` creada desde el tag de la CFG hito → PR a
+   `main` → merge commit (`--no-ff`) → tag `v<versión>`; nunca un PR `feature/…` → `main` (D30).
 4. Leyenda: **[✔ ejecutado]** · **[● preparado, listo para lanzar]** · **[○ pendiente: requiere
    entrada del alumno]**.
 
@@ -335,3 +337,43 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
   - **De Ismael:** fusionar PR #18, cerrar #15 a mano (D29) y crear el tag anotado `cfg-iter03`;
     siguen adeudados el tag `cfg-iter02` sobre `870524e`, los TC humanos y exports `.staruml` de
     CFG-01/CFG-02 y los TC humanos de CDU13 (criterio de cierre de CFG-03).
+
+### Prompt 11c — Cierre de Iter3 en GitHub: tags, reparación de `main` y release R0 (CFG-00) [✔ ejecutado]
+
+> Prompt lanzado por Ismael (08/11/2026): tras ver las tres opciones que el agente propuso para publicar
+> R0 en `main`, «me parecen bien las tres opciones… me quedo con la recomendada, la 1. Prepárala y
+> avísame cuando la tengas. Crea por favor también los tags». Opción 1 = rama `release/R0` desde el tag
+> `cfg-iter00`, PR a `main`, fusión con merge commit y `v0.1.0` sobre ese merge. Después, al pedir el
+> agente visto bueno sobre tres puntos, Ismael autoriza: **force-push** a `main` + abrir el PR,
+> **borrar** la rama `feature/iter03-cdu13-agendas` y crear **issues + ADR** de los pendientes.
+
+- Resultado (08/11/2026, sesión 12; rama `docs/cierre-iter03-y-r0` para los ficheros de proceso):
+  - **Tags anotados creados y subidos** con el mismo estilo que `cfg-iter00/01` (asunto del merge +
+    resumen de la CFG, puertas técnicas y pendientes D28/D18):
+    `cfg-iter02` → `870524e` (PR #14, Iter2/CDU17) y `cfg-iter03` → `b072b34` (PR #18, Iter3/CDU13).
+    Iter3 queda cerrada en `develop`: CI verde e issue #15 cerrada a mano por Ismael (D29).
+  - **Hallazgo sobre `main`:** el PR #17 (`feature/iter03-cdu13-agendas` → `main`, merge `5e0ef29`) se
+    abrió por error. Comprobado con `git log --oneline origin/main --not origin/develop` que el **único**
+    commit de `main` no alcanzable desde `develop` era el propio merge, y que antes del PR #17 `main`
+    estaba justo en el raíz `1245138`: descartarlo no pierde trabajo (los 15 ficheros / 1432 líneas del
+    lado cliente-integración-404 ya estaban en `develop`). `main` no tenía protección de rama (404).
+  - **Reparación ejecutada con visto bueno explícito:**
+    `git push --force-with-lease=refs/heads/main:5e0ef29… origin 1245138:refs/heads/main` →
+    `origin/main` = `1245138`. Descartado `git revert -m 1` (dejaría los ficheros revertidos y el futuro
+    merge de `develop` no los re-aplicaría) y dejar `main` tal cual (una release parcial sin etiquetar).
+  - **Release R0 preparada:** rama `release/R0` creada sobre `cfg-iter00` (`641e72d`, árbol idéntico a
+    CFG-00: 14 módulos + apps `0.1.0`) y **PR #19 `release/R0` → `main`** abierto
+    (https://github.com/IsmaelCaballero/PrISO2-25-26/pull/19), sin `Closes` (D29). Fusión con
+    **"Create a merge commit"** (`--no-ff`, nunca squash ni rebase) y tag anotado **`v0.1.0`** sobre el
+    merge: es el hito R0 del mapa (`tag_git = v0.1.0;cfg-iter00`). **Pendiente de Ismael.**
+  - **Limpieza:** rama `feature/iter03-cdu13-agendas` borrada en remoto y local; `develop` local
+    actualizado a `b072b34`.
+  - **Issues nuevas de seguimiento:** #20 publicar R0 con `v0.1.0`, #21 TC humanos de CDU16/CDU17/CDU13
+    (CFG-01/02/03, D28), #22 export `.staruml` de Iter1-3 (D18), #23 Kanban de GitHub Project + wiki.
+  - **Nueva decisión D30** en `DECISIONS.md`: `main` solo recibe merges de rama `release/RN` (nunca
+    `feature/…`), con la incidencia del PR #17 documentada y la comprobación previa obligatoria
+    (`git log --oneline origin/main --not origin/develop`). Actualizado el §4 de
+    `docs/mapa-configuraciones.md` (flujo de ramas y etiquetado).
+  - **Siguiente sesión:** Iter4 · CDU06 solicitudes (CFG-04) desde `develop` = `b072b34`
+    (`iso2-solicitudes` 1.1.0, apps 0.1.4-SNAPSHOT, puertas: cobertura de solicitudes ≥ 85 % y huella
+    de contenido). Antes, Ismael fusiona el PR #19 y se crea `v0.1.0`.

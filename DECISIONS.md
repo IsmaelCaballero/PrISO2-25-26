@@ -166,3 +166,25 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 - A partir de ahora: al fusionar un PR a `develop`, Ismael cierra a mano el issue de la tarea
   (o se cierra al publicar el release correspondiente en `main`). El agente lo recuerda en cada
   PR nuevo con una línea "Cerrar #N a mano al fusionar" en el cuerpo.
+
+## D30. `main` solo recibe merges de rama `release/RN` (lección del 08/11/2026)
+
+- **Fecha:** 08/11/2026 · **Estado:** aceptada (Ismael, tras la incidencia del PR #17)
+- **Qué pasó:** el PR #17 (`feature/iter03-cdu13-agendas` → `main`, merge `5e0ef29`) se abrió y fusionó
+  por error. Dejó en `main` solo la mitad servidora de Iter3 (faltaban 15 ficheros y 1432 líneas del
+  lado cliente/integración/fix 404) y rompió la correspondencia `main` ↔ releases etiquetadas del §4 del
+  mapa. Al revisarlo: ningún fichero de `main` era exclusivo — el único commit no alcanzable desde
+  `develop` era el propio merge `5e0ef29`.
+- **Decisión:** `main` **no acepta nunca un PR de rama `feature/…`**. Cada hito se publica como está
+  dicho en el mapa §4: rama `release/RN` creada desde el tag de configuración del hito (R0 desde
+  `cfg-iter00`), PR a `main`, fusión con merge commit (`--no-ff`, nunca squash ni rebase) y tag anotado
+  de release (`v0.1.0`, `v0.2.0-alpha`, …) sobre ese commit de merge. Los `cfg-iterNN` siguen en el merge
+  de iteración dentro de `develop`; `main` no los lleva.
+- **Reparación ejecutada 08/11:** `git push --force-with-lease origin 1245138:main` descarta `5e0ef29`
+  (`main` estaba justo en el commit raíz antes del PR #17, así que no se pierde trabajo) + rama `release/R0`
+  sobre `641e72d` + PR #19 → `main`, con `v0.1.0` sobre su merge. Se descartó revertir (`revert -m 1`
+  impediría que el futuro merge de `develop` re-aplicase esos ficheros) y dejar `main` tal cual (dejaría
+  una release parcial sin etiquetar).
+- **Comprobación previa obligatoria antes de tocar `main`:** `git log --oneline origin/main --not
+  origin/develop` (el PR no debe aportar nada que no esté ya en `develop`) y revisar la protección de
+  rama. Si hace falta reescribir `main`, solo lo hace Ismael o con su visto bueno explícito.

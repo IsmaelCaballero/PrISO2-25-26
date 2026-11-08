@@ -116,7 +116,7 @@ la agenda. Si una CFG no cumple los criterios, la etiqueta se retrasa y se regis
 
 ```
 main ──────●───────────●─────────●────────●──────  solo releases etiquetadas
-           v0.1.0   v0.2.0-alpha v0.4.0-beta v1.0.0      (merge --no-ff desde develop)
+           v0.1.0   v0.2.0-alpha v0.4.0-beta v1.0.0      (merge --no-ff desde release/Rn, D30)
 develop ─●───●───●───●───●───●───●───●───●───●──  merges de iteración, tag cfg-iterNN
         c00  c01  c02  c03 ...              c21
 feature/CDUxx-<nombre> ──●──●──PR──▶ develop        (1 rama por CDU, Git Flow + PR obligatorio)
@@ -129,6 +129,9 @@ release/Rn ───────────────────────
 - Merge de iteración → tag **anotado** `cfg-iterNN` (identifica la configuración completa).
 - CFG hito → rama temporal `release/Rn`, ajuste de versiones de app en el POM agregador, tag
   `v<versión>` y merge `--no-ff` a `main`; luego backport de los fixes a `develop`.
+- **`main` no acepta PRs de rama `feature/…`** (D30, incidencia del PR #17 el 08/11/2026): todo lo que
+  llega a `main` sale de una `release/Rn` sobre el tag de la CFG hito. Antes de tocar `main`, comprobar
+  que no aporta ficheros que no estén ya en `develop`.
 - **Rollback:** `git checkout cfg-iterNN` + `mvn clean verify` + desplegar ese par de artefactos;
   los datos se recuperan con la copia H2 asociada a la CFG (cada release guarda `backup/`).
 - Ningún `SNAPSHOT` en una CFG etiquetada: antes de un tag de release las dependencias del
