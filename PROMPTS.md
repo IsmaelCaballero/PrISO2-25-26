@@ -240,3 +240,54 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     de Ismael: fusionar PR #14, tag anotado `cfg-iter02`, cerrar #13 a mano (D29), **TC humanos de
     CDU17** (D28) y export `docs/modelo/iter02/staruml/iso2-iter02.staruml` (D18). Sigue pendiente
     también el cierre de CFG-01 (TC de CDU16 + export iter01).
+
+### Prompt 11 — Iter3 · CDU13 gestionar agendas (`iso2-agendas` 1.1.0, CFG-03) [✔ ejecutado · parte servidora; cliente queda para el 11b]
+
+> Prompt lanzado por Ismael (08/11/2026): arrancar la Iteración 3 (CDU13, CFG-03) con el prompt
+> ejecutable del issue #15: `iso2-agendas` 1.1.0 con franjas de disponibilidad y festivos (reglas
+> de solape y "el festivo manda"), auditoría encadenada y REST `/api/agendas`; extensión MINOR de
+> `AgendaFacade` sin tocar el baseline congelado; RBAC de agenda en `iso2-seguridad`; server-app
+> 0.1.3 con Flyway de tablas de agenda y semilla dev; diagramas PlantUML en `docs/modelo/iter03/`.
+> Puertas CFG-03: TC de solapes/festivos, frontera ArchUnit, JaCoCo ≥ 60 % en `iso2-agendas`.
+>
+> Ejecución: por ser iteración de alta complejidad se divide en dos sesiones (CONTEXT.md §7):
+> esta (11) hace diagramas + módulo servidor + pruebas del servidor; la siguiente (11b) hará
+> client-app 0.1.3 + tests de integración + apertura del PR. Iter2 se dio por cerrada antes de
+> arrancar: Ismael fusionó **PR #14** (merge `870524e` = tip de `develop`) y cerró #13; el tag
+> `cfg-iter02` queda aún pendiente.
+
+- Resultado (08/11/2026, rama `feature/iter03-cdu13-agendas`, base `870524e`, commits `e02f425`..`0366247`, **subida sin PR a propósito**):
+  - `iso2-common` 1.1.0-SNAPSHOT: `AgendaFacade` extendida en MINOR — `franjasLibres`+`FranjaDTO`
+    del baseline intactos; añadidos `listarAgendas`/`buscarPorProfesional`/`crearAgenda`/
+    `anadirFranja`/`eliminarFranja`/`anadirFestivo`/`eliminarFestivo` con registros `AgendaDTO`,
+    `FranjaGestionDTO` y `FestivoDTO`; nuevas `AgendaNoEncontradoException` y
+    `AgendaConflictoException` (conflictos `SOLAPE`, `FESTIVO`, `AGENDA_DUPLICADA`).
+  - `iso2-agendas` 1.1.0-SNAPSHOT: dominio JPA `Agenda` (una por profesional, duplicada →
+    `AGENDA_DUPLICADA`), `Franja` (invariante `inicio < fin`; sin solape el mismo día — los bordes
+    que se tocan **no** solapan), `Festivo` (el festivo manda: franja en festivo, festivo con
+    franjas y festivo repetido → `FESTIVO`) y auditoría SHA-256 encadenada con GENESIS
+    (`ALTA_AGENDA`/`ALTA_FRANJA`/`BAJA_FRANJA`/`ALTA_FESTIVO`/`BAJA_FESTIVO`) con
+    `auditoriaVerificable()`. REST `/api/agendas` con mapa 404 `AGENDA_NO_ENCONTRADA` /
+    409 `CONFLICTO_SOLAPE|CONFLICTO_FESTIVO|CONFLICTO_AGENDA_EXISTENTE` / 400 `DATOS_INVALIDOS`.
+  - Fix notable: Hibernate inserta los hijos en cascada pero con id `@IDENTITY` **no reasigna el id
+    en la instancia en memoria** (probado con test de descarte: DTO con `id=null` mientras la fila
+    nacía con id) → `FranjaRepositorio`/`FestivoRepositorio` persisten los hijos directamente para
+    que el DTO de alta devuelva el id.
+  - `iso2-seguridad` 1.1.0-SNAPSHOT: `Permiso` suma `AGENDA_LEER`/`AGENDA_ESCRIBIR`; matriz: ADMIN
+    en bloque, MEDICO/TECNICO/RECEPCIONISTA solo lectura, RECEPCIONISTA también escritura, CELADOR
+    sin agendas. `MatrizPermisosTest` 5 roles × 5 permisos; módulo 36/36.
+  - `iso2-server-app` 0.1.3-SNAPSHOT: monta `iso2-agendas` `${iso2.version}` (resto de módulos sigue
+    anclado a 1.0.0); `ConfigSeguridad`: GET `/api/agendas/**` para ADMIN/MEDICO/TECNICO/
+    RECEPCIONISTA, escritura solo ADMIN/RECEPCIONISTA; Flyway `V1.3.0__cdu13_agendas.sql` (4 tablas
+    + FKs + índices + semilla dev de medico/tecnico con festivo 2026-11-10).
+  - Pruebas técnicas (D28): `AgendaServicioTest` 15/15 + `ArquitecturaAgendasTest` 4/4 + baseline
+    1/1 (JaCoCo ≥ 60 % en verde); `AgendasApiTest` 16/16 — RBAC completo y reglas de solape/festivo
+    por HTTP contra la app servidora con H2. Reactor: `mvn -B -ntp verify` BUILD SUCCESS 14/14 y
+    `javadoc:javadoc` OK.
+  - `docs/modelo/iter03/`: `cdu13-casos-uso.puml`, `cdu13-secuencia.puml`,
+    `cdu13-clases-analisis.puml`, `cdu13-clases-diseno.puml` + README (D18). Los 4 renderizados a
+    SVG, exit 0.
+  - **Pendiente para el Prompt 11b:** `iso2-client-app` 0.1.3 + tests de integración + apertura del
+    PR de Iter3 → `develop` (sin `Closes`, D29; issue #15). De Ismael sigue adeudado: tag
+    `cfg-iter02` sobre `870524e`, TC humanos de CDU17 + export `iso2-iter02.staruml`, y los de
+    CFG-01 (TC CDU16 + `iso2-iter01.staruml`).
