@@ -8,6 +8,7 @@ public class ApiException extends RuntimeException {
 
     private final int status;
     private final String codigo;
+    private final String mensaje;
 
     /**
      * Construye el error de API.
@@ -20,6 +21,7 @@ public class ApiException extends RuntimeException {
         super(codigo + " (" + status + "): " + mensaje);
         this.status = status;
         this.codigo = codigo;
+        this.mensaje = mensaje;
     }
 
     /**
@@ -38,5 +40,16 @@ public class ApiException extends RuntimeException {
      */
     public String codigo() {
         return codigo;
+    }
+
+    /**
+     * Mensaje legible original del servidor (sin el prefijo {@code CODIGO (HTTP):}),
+     * pensado para mostrar directamente en alertas de la interfaz (CDU13, CFG-03).
+     *
+     * @return el mensaje del cuerpo {@code ApiError}
+     * @since 0.1.3 (CFG-03)
+     */
+    public String mensaje() {
+        return mensaje;
     }
 }

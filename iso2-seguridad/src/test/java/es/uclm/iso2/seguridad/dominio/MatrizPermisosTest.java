@@ -9,28 +9,32 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test parametrico de la matriz RBAC autoritativa (CFG-02): 5 roles x 3 permisos.
- * La matriz espera exactamente lo pactado en el issue #13: ADMINISTRADOR con todo;
- * los demas roles, solo lectura de catalogo. Cualquier cambio en la matriz obliga a
- * actualizar esta tabla (y a revisarla con el cliente).
+ * Test parametrico de la matriz RBAC autoritativa (CFG-02 ampliada en CFG-03):
+ * 5 roles x 5 permisos. La matriz espera exactamente lo pactado en los issues #13 y #15:
+ * ADMINISTRADOR con todo; recepcionista gestiona agendas; medico y tecnico leen su
+ * agenda; celador solo lee catalogo. Cualquier cambio en la matriz obliga a actualizar
+ * esta tabla (y a revisarla con el cliente).
  */
 class MatrizPermisosTest {
 
     /**
      * Tabla completa de la matriz: fila = rol, columnas = tiene_permiso esperado para
-     * catalogo:leer, catalogo:escribir, usuario:gestionar.
+     * catalogo:leer, catalogo:escribir, agenda:leer, agenda:escribir, usuario:gestionar.
      */
     @ParameterizedTest
     @CsvSource({
-            "ADMINISTRADOR,   true,  true,  true",
-            "MEDICO,          true,  false, false",
-            "TECNICO,         true,  false, false",
-            "CELADOR,         true,  false, false",
-            "RECEPCIONISTA,   true,  false, false",
+            "ADMINISTRADOR,   true,  true,  true,  true,  true",
+            "MEDICO,          true,  false, true,  false, false",
+            "TECNICO,         true,  false, true,  false, false",
+            "CELADOR,         true,  false, false, false, false",
+            "RECEPCIONISTA,   true,  false, true,  true,  false",
     })
-    void laMatrizConcedeExactamenteLoPactado(Rol rol, boolean leer, boolean escribir, boolean gestionar) {
-        assertEquals(leer, MatrizPermisos.tienePermiso(rol, Permiso.CATALOGO_LEER), rol + " catalogo:leer");
-        assertEquals(escribir, MatrizPermisos.tienePermiso(rol, Permiso.CATALOGO_ESCRIBIR), rol + " catalogo:escribir");
+    void laMatrizConcedeExactamenteLoPactado(Rol rol, boolean catLeer, boolean catEscribir,
+                                             boolean agLeer, boolean agEscribir, boolean gestionar) {
+        assertEquals(catLeer, MatrizPermisos.tienePermiso(rol, Permiso.CATALOGO_LEER), rol + " catalogo:leer");
+        assertEquals(catEscribir, MatrizPermisos.tienePermiso(rol, Permiso.CATALOGO_ESCRIBIR), rol + " catalogo:escribir");
+        assertEquals(agLeer, MatrizPermisos.tienePermiso(rol, Permiso.AGENDA_LEER), rol + " agenda:leer");
+        assertEquals(agEscribir, MatrizPermisos.tienePermiso(rol, Permiso.AGENDA_ESCRIBIR), rol + " agenda:escribir");
         assertEquals(gestionar, MatrizPermisos.tienePermiso(rol, Permiso.USUARIO_GESTIONAR), rol + " usuario:gestionar");
     }
 
@@ -41,8 +45,9 @@ class MatrizPermisosTest {
     @Test
     void losPermisosDeRolSonInmutables() {
         var permisos = MatrizPermisos.permisosDe(Rol.MEDICO);
-        assertEquals(1, permisos.size());
+        assertEquals(2, permisos.size());
         assertTrue(permisos.contains(Permiso.CATALOGO_LEER));
+        assertTrue(permisos.contains(Permiso.AGENDA_LEER));
         assertThrowsUnsupported(permisos);
     }
 
@@ -53,6 +58,8 @@ class MatrizPermisosTest {
     void codigosEstablesDeRolYPermiso() {
         assertEquals("catalogo:leer", Permiso.CATALOGO_LEER.codigo());
         assertEquals("catalogo:escribir", Permiso.CATALOGO_ESCRIBIR.codigo());
+        assertEquals("agenda:leer", Permiso.AGENDA_LEER.codigo());
+        assertEquals("agenda:escribir", Permiso.AGENDA_ESCRIBIR.codigo());
         assertEquals("usuario:gestionar", Permiso.USUARIO_GESTIONAR.codigo());
         assertTrue(Permiso.desdeCodigo("catalogo:leer").orElseThrow() == Permiso.CATALOGO_LEER);
         assertTrue(Permiso.desdeCodigo("no:existe").isEmpty());

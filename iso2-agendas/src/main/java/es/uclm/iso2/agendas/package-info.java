@@ -1,9 +1,11 @@
 /**
- * Modulo {@code iso2-agendas}: agendas de medicos y tecnicos.
+ * Modulo {@code iso2-agendas}: agendas de medicos y tecnicos (CDU13).
  *
- * <p>En Iter0 (CFG-00) el modulo queda como <strong>baseline contractual 1.0.0</strong>:
- * solo define el paquete y su Javadoc. La implementacion y los contratos de fachada
- * se anaden con el CDU asociado, subiendo la version MINOR en cada CDU (SemVer + D22/D23).</p>
+ * <p>Desde Iter3 (CFG-03) el modulo esta implementado en su version <strong>1.1.0</strong>:
+ * dominio Agenda/Franja/Festivo con auditoria de hash encadenado, servicio que implementa
+ * {@code AgendaFacade} con las reglas del CDU (sin solapes entre franjas; los festivos
+ * mandan sobre las franjas) y API REST {@code /api/agendas}. Las capas siguen la frontera
+ * dominio &lt;- repositorio &lt;- servicio &lt;- web verificada por ArchUnit.</p>
  *
  * <p>Mapa de incrementos (autoritativo en docs/planificacion-iteraciones.csv):
  * CDU13 (Iter3) -> 1.1.0; CDU08 (Iter12) -> 1.2.0.</p>
