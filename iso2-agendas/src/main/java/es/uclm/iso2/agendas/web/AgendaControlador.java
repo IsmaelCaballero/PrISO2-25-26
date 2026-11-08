@@ -2,6 +2,7 @@ package es.uclm.iso2.agendas.web;
 
 import es.uclm.iso2.common.agendas.AgendaFacade;
 import es.uclm.iso2.common.agendas.AgendaFacade.AgendaDTO;
+import es.uclm.iso2.common.agendas.AgendaNoEncontradoException;
 import es.uclm.iso2.common.agendas.AgendaFacade.FestivoDTO;
 import es.uclm.iso2.common.agendas.AgendaFacade.FranjaDTO;
 import es.uclm.iso2.common.agendas.AgendaFacade.FranjaGestionDTO;
@@ -70,13 +71,13 @@ public class AgendaControlador {
      * Estado completo de la agenda de un profesional.
      *
      * @param profesionalId identificador del profesional
-     * @return 200 con la agenda o 404 si no existe
+     * @return 200 con la agenda o 404 con {@code AGENDA_NO_ENCONTRADA} si no existe
      */
     @GetMapping("/{profesionalId}")
     public ResponseEntity<AgendaDTO> detalle(@PathVariable String profesionalId) {
-        return agendas.buscarPorProfesional(profesionalId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(agendas.buscarPorProfesional(profesionalId)
+                .orElseThrow(() -> new AgendaNoEncontradoException(
+                        "no hay agenda para el profesional " + profesionalId)));
     }
 
     /**
