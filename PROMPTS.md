@@ -192,3 +192,51 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 - Hecho: rama `docs/cierre-sesion-7` desde `develop` con PR de sincronización: STATUS.md (fila
   sesión 7, punto de continuación y cierre de jornada), DECISIONS.md (D29) y esta entrada en
   PROMPTS.md. Sin cambios de código. El trabajo de Iter1/CDU16 queda fusionado en `develop`.
+
+### Prompt 10 — Iter2 · CDU17 seguridad RBAC+JWT (`iso2-seguridad` 1.1.0, CFG-02) [✔ ejecutado]
+
+> Prompt lanzado por Ismael (08/11/2026): arrancar la Iteración 2 (CDU17, CFG-02) con el prompt
+> ejecutable del issue #13: `iso2-seguridad` 1.1.0 con dominio de cuentas (BCrypt + bloqueo por
+> intentos), 5 roles SESCAM y matriz RBAC; JWT stateless con secreto solo por `ISO2_JWT_SECRET`;
+> `POST /api/auth/login` + filtro; server-app 0.1.2 con la matriz por endpoints y Flyway de
+> cuentas semilla; client-app 0.1.2 con login por rol y vista de solo lectura; diagramas PlantUML
+> en `docs/modelo/iter02/`. Puertas CFG-02: RBAC en el 100 % de endpoints, `JwtUtils` ≥ 90 %,
+> secretos fuera del repo.
+>
+> Ejecución: rama `feature/iter02-cdu17-seguridad` (base: tip de `develop` `67ed627`). Versions
+> CFG-02: `iso2.version` 1.1.0-SNAPSHOT (módulo nuevo incluido), apps 0.1.2-SNAPSHOT, jjwt 0.12.6
+> en el `dependencyManagement` del parent. El agente escribe solo pruebas técnicas (D28); los TC
+> humanos de CDU17 los diseñará Ismael tras la fusión.
+
+- Resultado (08/11/2026, rama `feature/iter02-cdu17-seguridad`, commits `c8213ee`..`2f8090a` + docs sync):
+  - `iso2-seguridad` 1.1.0-SNAPSHOT (módulo nuevo): dominio `Usuario` JPA (tabla `seguridad_usuario`,
+    hash BCrypt, contador de intentos y `bloqueadoHasta`; bloqueo a los 5 intentos), `Rol`
+    (ADMINISTRADOR/MEDICO/TECNICO/CELADOR/RECEPCIONISTA), `Permiso` (`catalogo:leer`,
+    `catalogo:escribir`, `usuario:gestionar`) y `MatrizPermisos` como fuente autoritativa única;
+    `SeguridadServicio` implementa la fachada congelada `AutenticacionFacade`; `JwtUtils` HS256 con
+    claim `rol`, caducidad corta y secreto solo por `ISO2_JWT_SECRET` (aborta el arranque si falta);
+    `ControladorAutenticacion` (`POST /api/auth/login`, advice 401/401/400 con `ApiError`) y
+    `JwtAutenticacionFiltro` stateless. 36/36 tests; JwtUtils 100 % de líneas (gate ≥ 90 %).
+  - Fix clave: `@Transactional(noRollbackFor = CredencialesInvalidasException)` en el login — sin él
+    el rollback dejaba el contador de intentos a 0 y la cuenta nunca se bloqueaba; lo destapó el
+    test de integración de server-app (los unitarios con mock no podían verlo).
+  - `iso2-server-app` 0.1.2-SNAPSHOT: `ConfigSeguridad` stateless con la matriz RBAC por endpoint
+    (login público; GET `/api/catalogo/**` para cualquier rol autenticado; escritura solo
+    `ADMINISTRADOR`; h2-console solo ADMIN vía JWT), 401/403 con `ApiError` JSON y Flyway
+    `V1.2.0__cdu17_seguridad.sql` con 6 cuentas semilla BCrypt. 23/23 tests: `SeguridadApiTest`
+    (lectura para los 5 roles, 16 combinaciones 403, 401 anónimo/manipulado/otra clave/caducado,
+    bloqueo real tras 5 intentos → `CUENTA_BLOQUEADA`, 400 `DATOS_INVALIDOS`) + smoke catálogo
+    Bearer con el contrato real de Iter1. Evidencia de la puerta "RBAC 100 % endpoints".
+  - `iso2-client-app` 0.1.2-SNAPSHOT: `ApiClienteAutenticacion` (traduce `ApiError` a `ApiException`),
+    `ApiClienteCatalogo` pasa de Basic a Bearer, `NavegacionPorRol.catalogoEditablePara(rol)` (regla
+    de menú testeable fuera de JavaFX), `VistaInicioSesion` + `VistaConsultaCatalogo` (solo lectura)
+    y arranque login-first (fuera `-Diso2.usuario/-Diso2.password`). 16/16 tests.
+  - `docs/modelo/iter02/`: `cdu17-casos-uso.puml`, `cdu17-secuencia.puml`,
+    `cdu17-clases-analisis.puml`, `cdu17-clases-diseno.puml` + README (D18). Los 4 renderizados a
+    SVG con PlantUML 1.2025.2 (`-Playout smetana`), exit 0, sin errores sintácticos.
+  - Reactor completo: `mvn -B -ntp verify javadoc:javadoc` BUILD SUCCESS 14/14, ArchUnit sin
+    violaciones, puertas JaCoCo OK.
+  - **PR #14 → `develop` abierto** (https://github.com/IsmaelCaballero/PrISO2-25-26/pull/14). Falta
+    de Ismael: fusionar PR #14, tag anotado `cfg-iter02`, cerrar #13 a mano (D29), **TC humanos de
+    CDU17** (D28) y export `docs/modelo/iter02/staruml/iso2-iter02.staruml` (D18). Sigue pendiente
+    también el cierre de CFG-01 (TC de CDU16 + export iter01).
