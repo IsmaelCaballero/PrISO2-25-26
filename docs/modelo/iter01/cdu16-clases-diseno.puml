@@ -137,6 +137,7 @@ package "iso2-catalogo (1.1.0-SNAPSHOT)" {
     +manejarConflicto(CatalogoConflictoException) -> 409 CODIGO_DUPLICADO
     +manejarDatosInvalidos(IllegalArgumentException) -> 400 DATOS_INVALIDOS
     +manejarParametroMalTipado(...) -> 400 DATOS_INVALIDOS
+    +manejarMedioNoSoportado(HttpMediaTypeNotSupportedException) -> 415 CONTENIDO_NO_ACEPTADO
     +manejarInesperado(Exception) -> 500 ERROR_INTERNO
   }
 }
