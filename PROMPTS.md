@@ -291,3 +291,47 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     PR de Iter3 → `develop` (sin `Closes`, D29; issue #15). De Ismael sigue adeudado: tag
     `cfg-iter02` sobre `870524e`, TC humanos de CDU17 + export `iso2-iter02.staruml`, y los de
     CFG-01 (TC CDU16 + `iso2-iter01.staruml`).
+
+### Prompt 11b — Iter3 · CDU13 cliente JavaFX + integración real + PR (CFG-03) [✔ ejecutado]
+
+> Prompt lanzado por Ismael (08/11/2026): rematar la Iteración 3 — `iso2-client-app` 0.1.3 con
+> cliente HTTP de agendas y vistas JavaFX según el rol (edición para ADMIN/RECEPCIONISTA, solo
+> lectura para MEDICO/TECNICO, sin agendas para CELADOR), tests de integración con el cliente y el
+> servidor reales, y apertura del PR de Iter3 → `develop` sin `Closes` (issue #15, cierre manual
+> tras el merge, D29). Puertas CFG-03 pendientes: TC solapes/festivos por HTTP y ambas apps 0.1.3.
+
+- Resultado (08/11/2026, misma rama `feature/iter03-cdu13-agendas`, commits `ae79d7e`..`56dac60`,
+  **PR #18 → `develop` abierto, pendiente de fusión de Ismael**):
+  - `iso2-client-app` 0.1.3-SNAPSHOT: `ApiClienteAgendas` contra `/api/agendas` (listar, detalle,
+    alta/baja de franjas y festivos, alta de agenda, franjas libres) reutilizando el token del
+    login real; los errores del servidor llegan como `ApiException` con `codigo` y **`mensaje()`
+    (método nuevo)** para mostrarlos en la UI.
+  - Navegación: barra de secciones Catálogo/Agendas en `Iso2ClientApplication` (escena 1100x680);
+    reglas nuevas en `NavegacionPorRol` (`agendasVisiblePara`: CELADOR no; `agendasEditablesPara`:
+    solo ADMIN/RECEPCIONISTA); `VistaGestionAgendas` (edición) y `VistaConsultaAgendas` (solo
+    lectura). Ventana 0.1.3 con la barra y las vistas montadas según el rol en sesión.
+  - Detalle del contrato JSON: Jackson del cliente serializa `LocalTime` **con segundos**
+    (`"08:00:00"`, comprobado con jshell sobre jsr310 2.19.2) — es lo que Spring espera al
+    deserializar; la aserción del humo lo refleja.
+  - Pruebas técnicas (D28): `ApiClienteAgendasTest` 11/11 con servidor HTTP local (cuerpos ISO,
+    mapa de errores 400/404/409); `NavegacionPorRolTest` ampliado; `ClienteCaparazonTest` a 0.1.3
+    — cliente 37/37 en verde.
+  - `iso2-server-app`: dependencia **test-scoped** de `iso2-client-app` 0.1.3-SNAPSHOT (versión
+    explícita, no `${iso2.version}`; sin ciclo porque el reactor reordena) →
+    `AgendasClienteServidorIntegracionTest` 7/7: app servidora en `RANDOM_PORT` consumida por
+    `ApiClienteAutenticacion` y `ApiClienteAgendas` reales — flujo completo de la recepcionista con
+    `CONFLICTO_SOLAPE` (bordes que se tocan admitidos) y `CONFLICTO_FESTIVO`, festivo que manda en
+    ambos sentidos, agenda duplicada 409, 404 con código en el cuerpo, CELADOR 403 `FORBIDDEN` y
+    franjas libres de la semilla del 9 al 13/11 con el festivo del 10/11 fuera. ids `it-*` y
+    fechas 2027 para no chocar con la semilla ni con los `api-*` de `AgendasApiTest`.
+  - fix(agendas) destapado por la integración: `AgendaControlador.detalle` de profesional sin
+    agenda respondía 404 **con cuerpo vacío** (el cliente se quedaba sin código ni mensaje para la
+    UI) → lanza `AgendaNoEncontradoException` y el advice devuelve `AGENDA_NO_ENCONTRADA` en el
+    cuerpo, igual que el resto de rutas.
+  - Puertas CFG-03: TC solapes/festivos ✔ (servicio + API + HTTP de integración en ambos
+    sentidos), frontera ArchUnit ✔, JaCoCo ≥ 60 % en `iso2-agendas` ✔, ambas apps 0.1.3-SNAPSHOT
+    ✔. `mvn -B -ntp verify` BUILD SUCCESS (server-app 46/46, client-app 37/37). Falta el tag
+    `cfg-iter03`, que se creará al fusionar.
+  - **De Ismael:** fusionar PR #18, cerrar #15 a mano (D29) y crear el tag anotado `cfg-iter03`;
+    siguen adeudados el tag `cfg-iter02` sobre `870524e`, los TC humanos y exports `.staruml` de
+    CFG-01/CFG-02 y los TC humanos de CDU13 (criterio de cierre de CFG-03).
