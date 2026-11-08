@@ -4,8 +4,9 @@ Diagramas de la CDU13 "Gestion de agendas de medicos y tecnicos" (Iteracion 3,
 configuracion CFG-03: agendas con franjas de disponibilidad sin solapes, festivos
 que mandan sobre las franjas, RBAC ampliado con `agenda:leer`/`agenda:escribir` y
 auditoria encadenada). Igual que en el resto de iteraciones, las fuentes editables
-del modelo son los ficheros PlantUML (`.puml`) de este directorio; los diagramas
-`.staruml` se generan a mano a partir de ellos (decision D18).
+del modelo son los ficheros PlantUML (`.puml`) de este directorio; los `.png`
+incrustados mas abajo se renderizan a partir de esas fuentes con `tools/plantuml.jar`
+(decision D31, que descarta la exportacion a StarUML de D18).
 
 ## Fuentes PlantUML (lo que versiona el proyecto)
 
@@ -20,37 +21,46 @@ Convencion de las fuentes: ASCII puro en comentarios y etiquetas de PlantUML (si
 tildes ni emes quenas acentuadas: se escriben "contrasena", "Queda", etc. con
 `'`) para que no haya ambiguedad de codificacion; UTF-8 para el resto.
 
+## Diagramas (clic sobre la imagen para abrirla a tamano completo)
+
+### Casos de uso
+
+<a href="cdu13-casos-uso.png"><img src="cdu13-casos-uso.png" alt="CDU13 - diagrama de casos de uso" width="700"/></a>
+
+### Secuencia
+
+<a href="cdu13-secuencia.png"><img src="cdu13-secuencia.png" alt="CDU13 - diagrama de secuencia" width="900"/></a>
+
+### Clases de analisis
+
+<a href="cdu13-clases-analisis.png"><img src="cdu13-clases-analisis.png" alt="CDU13 - clases de analisis" width="700"/></a>
+
+### Clases de diseno
+
+<a href="cdu13-clases-diseno.png"><img src="cdu13-clases-diseno.png" alt="CDU13 - clases de diseno" width="980"/></a>
+
 ## Visualizar / exportar a imagen
 
-Con PlantUML local (o la extension de VS Code/IntelliJ):
+Los `.png` de arriba estan versionados en este directorio; para regenerarlos tras tocar
+un `.puml`, desde la raiz del repositorio:
 
 ```text
-java -jar plantuml.jar -tpng docs/modelo/iter03/*.puml
+java -jar tools/plantuml.jar -tpng docs/modelo/iter03/*.puml
 ```
 
-(En PlantUML >= 1.2025 sin Graphviz instalado, anadir `-Playout smetana`.)
+(`tools/plantuml.jar` se descarga de plantuml.com y no se versiona, ver D31; si no hay
+Graphviz instalado, anadir `-Playout smetana`.)
 La sintaxis es la estandar de PlantUML (`@startuml`/`@enduml`); no usa macros ni
 includes entre ficheros, asi que cada diagrama se procesa por separado.
-Los cuatro fuentes de este directorio se comprobaron renderizando a SVG sin errores
-(PlantUML + smetana, prompt 11).
+Los cuatro fuentes de este directorio se comprobaron renderizando a PNG sin errores
+(PlantUML + smetana, prompts 11 y 11d).
 
-## Exportacion a StarUML (artefactos de entrega, D18)
+## Artefactos de entrega (D31)
 
-La entrega pide modelos en StarUML (`.staruml`). Procedimiento acordado:
-
-1. Abrir StarUML 6 (o 5) con el complemento **PlantUML** instalado
-   (StarUML > Extension Manager > `staruml-plantuml` / PlantUML for StarUML).
-2. Para cada `.puml` de este directorio: en StarUML, `File > PlantUML > Import`
-   (o pegar el fuente) y dejar que genere el diagrama dentro del modelo `iso2-iter03`.
-3. Revisar el diagrama importado (el plugin reposiciona elementos: ordenar y
-   renombrar si hace falta) y anadirlo al modelo de la iteracion.
-4. Guardar el resultado en `docs/modelo/iter03/staruml/iso2-iter03.staruml`
-   (un unico modelo StarUML por iteracion, con los 4 diagramas como subdiagramas).
-5. Subir ese fichero al repositorio como artefacto de entrega de CFG-03.
-
-Este paso es manual y le corresponde a Ismael (D18): el agente deja las fuentes
-`.puml` revisables en GitHub (los `.puml` se ven como texto y las imagenes se pueden
-pegar en la wiki/PR si hace falta).
+Los artefactos de modelado de CFG-03 son los `.puml` (fuente, item de configuracion D25)
+y los `.png` renderizados con `tools/plantuml.jar`, ambos en este directorio. La
+exportacion a StarUML prevista en D18 no se hizo y queda descartada (D31): no existe
+ningun proyecto `.staruml` y el trabajo se ha hecho integramente con PlantUML.
 
 ## Relacion con el codigo
 
@@ -83,4 +93,4 @@ auditoria verificable y rotura por manipulacion), `ArquitecturaAgendasTest`
 humanos de CDU13 los ejecuta Ismael (D28) contra la semilla de desarrollo.
 
 Si el codigo cambia tras los TC humanos de CDU13 (D28), actualizar primero el
-`.puml` y volver a exportar el `.staruml`.
+`.puml` y volver a renderizar el `.png` con `tools/plantuml.jar`.
