@@ -34,6 +34,10 @@ import java.time.Instant;
  *       TECNICO, RECEPCIONISTA); CELADOR queda fuera por matriz.</li>
  *   <li>Escritura de agendas: solo {@code ADMINISTRADOR} y {@code RECEPCIONISTA}
  *       ({@code agenda:escribir}, actor Administrativo del CDU13).</li>
+ *   <li>GET de solicitudes (CDU06): roles con {@code solicitud:leer} (ADMINISTRADOR,
+ *       MEDICO, RECEPCIONISTA); TECNICO y CELADOR quedan fuera por matriz.</li>
+ *   <li>Alta de solicitudes: solo {@code ADMINISTRADOR} y {@code MEDICO}
+ *       ({@code solicitud:escribir}, actor Medico del CDU06).</li>
  *   <li>{@code /h2-console/**}: solo {@code ADMINISTRADOR}. Como el navegador no puede
  *       enviar la cabecera {@code Authorization} en la navegación HTML, la consola se
  *       usa en desarrollo con herramientas que sí pueden (curl/scripts) adjuntando el
@@ -74,6 +78,11 @@ public class ConfigSeguridad {
                         // escritura solo para ADMINISTRADOR y RECEPCIONISTA (agenda:escribir).
                         .requestMatchers(HttpMethod.GET, "/api/agendas/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "TECNICO", "RECEPCIONISTA")
                         .requestMatchers("/api/agendas/**").hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
+                        // CDU06: lectura para roles con solicitud:leer (tecnico y celador, sin
+                        // el permiso, fuera); prescribir solo ADMINISTRADOR y MEDICO
+                        // (solicitud:escribir, actor Medico del CDU06).
+                        .requestMatchers(HttpMethod.GET, "/api/solicitudes/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
+                        .requestMatchers("/api/solicitudes/**").hasAnyRole("ADMINISTRADOR", "MEDICO")
                         .anyRequest().authenticated())
                 .exceptionHandling(manejo -> manejo
                         .authenticationEntryPoint((peticion, respuesta, causa) ->

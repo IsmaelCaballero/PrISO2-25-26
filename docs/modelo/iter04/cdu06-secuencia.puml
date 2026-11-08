@@ -75,7 +75,10 @@ CTRL --> TECNICO : 403 + ApiError(FORBIDDEN)\n(sin llegar al servicio)
 note over SOL
   La huella se calcula una sola vez con el
   Clock inyectado (testable) y ya no cambia:
-  no existen endpoints PUT/PATCH de solicitudes.
+  creadaEn se trunca a microsegundos, la precision
+  de la BD, para que el recalculo sobre la fila
+  leida coincida. No existen endpoints PUT/PATCH
+  de solicitudes.
   Si alguien manipula la fila en BD, trazaIntegra()
   devuelve false y el JSON de integridad lo revela
   (SolicitudesApiTest + SolicitudServicioTest).

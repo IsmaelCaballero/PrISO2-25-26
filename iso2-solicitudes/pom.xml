@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  iso2-solicitudes — CFG-04 — v1.1.0 (CDU06)
+  Solicitudes de prueba desde Atencion Primaria: dominio (solicitud con huella de no
+  repudio SHA-256), servicio que implementa SolicitudFacade con validacion de campos
+  obligatorios, prueba activa del catalogo (CDU16) y anti-duplicado, y endpoints REST
+  /api/solicitudes.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -9,25 +16,50 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-solicitudes</artifactId>
-  <!-- Baseline contractual 1.0.0 (D22). Subira MINOR con el CDU que le corresponda (D23). -->
-  <version>1.0.0</version>
+  <!-- CFG-04 (D22/D23): sube MINOR de 1.0.0 a 1.1.0 al implementar CDU06. En la rama
+       feature queda 1.1.0-SNAPSHOT; al fusionar a develop perdera el sufijo. -->
+  <version>1.1.0-SNAPSHOT</version>
   <name>iso2-solicitudes</name>
+
   <properties>
-    <!-- Baseline sin clases publicas: el Javadoc no rompe el CI. Cambiar a true
-         (o quitar la propiedad) al anadir la primera clase del CDU. -->
-    <javadoc.failOnError>false</javadoc.failOnError>
+    <!-- Puerta de calidad CFG-04 (D24/D27 + SOFTWAREQUALITY.md §2.5): el CDU de
+         solicitudes exige cobertura de linea >= 85 % en el modulo. -->
+    <jacoco.line.min>0.85</jacoco.line.min>
   </properties>
 
-  <description>Solicitudes de prueba (baseline Iter0).</description>
+  <description>Solicitudes de prueba desde Atencion Primaria con no repudio (CDU06, CFG-04).</description>
+
   <dependencies>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-common</artifactId>
       <version>${iso2.version}</version>
     </dependency>
+
+    <!-- Persistencia JPA/Hibernate y web MVC: el modulo se ensambla en iso2-server-app. -->
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Tests tecnicos de humo/integracion (los TC humanos de CDU06 llegan segun D28). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

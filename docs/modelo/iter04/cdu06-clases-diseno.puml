@@ -200,7 +200,10 @@ end note
 
 note bottom of Solicitud
   La huella se calcula UNA vez en la construccion
-  con Instant.now(Clock inyectable). No hay
+  con Instant.now(Clock inyectable), truncando
+  creadaEn a microsegundos (precision TIMESTAMP(6)
+  de la BD) para que el canonico leido de la fila
+  dé el mismo texto que el sellado. No hay
   PUT/PATCH: el unico cambio de estado previsto
   es cancelar(). trazaIntegra() recalcula el
   SHA-256 del canonico y detecta manipulaciones
