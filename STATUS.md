@@ -3,7 +3,9 @@
 **Última actualización:** 2026-11-08 (sesión 16 · Iter4 · CDU06 **fusionada** (PR #31 → merge `a3fe109`) y
 cerrada con el tag `cfg-iter04`; nuevas directrices de Ismael: **testing con clases de equivalencia, valores
 límite, conjetura de errores y pairwise** (D33) y **persistencia MySQL con Docker + DAO + patrón Agente**
-(D34, aceptada y redactada; implementación pendiente). Sesión 15: PRs #31 y #32. Prompts 13 y 14)
+(D34, aceptada y redactada; implementación pendiente) y **D35** (las cotas se validan en el servicio, no en la
+BD). Issues **#35** y **#34** abiertas; PR **#33** abierto con este cierre. Sesión 15: PRs #31 y #32. Prompts 13
+y 14)
 
 ## Estado global
 
@@ -20,12 +22,16 @@ doclint `7f85678` → cliente `b4c4e27`) **fusionada por Ismael en `develop` con
 y el PR de docs **#32** (merge `3b02718`). Tag anotado **`cfg-iter04`** creado sobre `a3fe109` y página de
 wiki `Iter4-CDU06-solicitudes` publicada. La issue **#30 ya la había cerrado Ismael** (19:01, antes del
 merge: D29 cumplida por adelantado). **La siguiente es Iter5 · CDU12 citas (CFG-05)**, que arranca desde
-`develop` = `3b02718` **con dos cambios de enfoque pedidos por Ismael**: (1) **nuevo método de pruebas**
+`develop` = `a3fe109` **con dos cambios de enfoque pedidos por Ismael**: (1) **nuevo método de pruebas**
 (D33: clases de equivalencia + valores límite + conjetura de errores, compuesto con **pairwise**, ejecutado
 con **JUnit/Maven** y usando **esos mismos casos** en las plantillas de TC; se empieza **revisando y
 ampliando las pruebas de la Iter1**); (2) **nueva capa de persistencia MySQL** con Docker (MySQL +
 phpMyAdmin) y los patrones **DAO** y **Agente** (`AgenteMySQL`) — **D34** ya aceptada y redactada, con la
-implementación pendiente y cinco puntos por concretar con Ismael (ver Deuda 19). Iter2 e Iter3 cerradas también con sus tags (`cfg-iter02` → `870524e`, `cfg-iter03` →
+implementación pendiente y **sus cinco puntos ya concretados por Ismael** (pruebas con Testcontainers MySQL 8,
+migraciones Flyway duales `db/migration/h2` + `db/migration/mysql`, `gestoroperaciones` solo DML con usuario
+DDL aparte para Flyway, driver `mysql-connector-j` sobre MySQL 8.4 con volumen persistente, y rama propia;
+ver D34). Los dos trabajos llevan **issue y rama propia**: **#35** `feature/iter01-pruebas-d33` (D33 sobre la
+Iter1, empezando por CDU16) y **#34** `feature/iter05-persistencia-mysql` (D34). Iter2 e Iter3 cerradas también con sus tags (`cfg-iter02` → `870524e`, `cfg-iter03` →
 `b072b34`). Pendientes que mantienen abiertas CFG-01/02/03/04: los **TC humanos** (D28) y, en CFG-01/02/03,
 la **regeneración de sus casos con el método D33**; las evidencias de modelado quedaron resueltas con
 PlantUML (D31).
@@ -44,8 +50,9 @@ PlantUML (D31).
   En la sesión 14 se fusiona el **PR #28** (`ci/javadoc-pages` → `develop`, commit `00f93e9`, merge
   `c8fe2d7`). En las sesiones 15-16 se fusionan **PR #31** (código Iter4/CDU06, merge **`a3fe109`**) y
   **PR #32** (`docs/cierre-iter04-sesiones-14-15` → `develop`, merge **`3b02718`**): **tip actual de
-  `develop` = `3b02718`**, CI `construir` en verde en ambos. **Rama `feature/iter04-cdu06-solicitudes`
-  borrada** (remoto y local) tras el merge.
+  `develop` = `a3fe109`** (el merge de #31, que tiene como ascendiente el merge `3b02718` de #32), CI
+  `construir` en verde en ambos. **Ramas `feature/iter04-cdu06-solicitudes` y
+  `docs/cierre-iter04-sesiones-14-15` borradas** (remoto y local) tras el merge.
 - **Release R0 publicada 08/11:** PR #19 (`release/R0` → `main`) fusionado por Ismael con merge commit
   `e165622` (padres `1245138` + `641e72d`) y tag anotado **`v0.1.0`** creado sobre ese merge: CFG-00 ya
   tiene las dos etiquetas de su fila del mapa (`v0.1.0;cfg-iter00`). Issue #20 **cerrada a mano por
@@ -53,10 +60,12 @@ PlantUML (D31).
   esté en `develop`: `git diff --stat origin/develop...origin/main` queda vacío, así que la publicación de
   R1 no arrastrará restos del PR #17. Rama `release/R0` conservada en remoto (como las demás ramas
   fusionadas).
-- **Open / en curso:** **no hay PRs abiertos** tras fusionarse **#31** (código de CDU06, merge `a3fe109`) y
-  **#32** (docs de las sesiones 14-15, merge `3b02718`). Tampoco hay issues abiertas. En curso de trabajo:
-  la rama `docs/cierre-iter04-material` (esta actualización de `STATUS.md`/`PROMPTS.md`/`DECISIONS.md` + la
-  plantilla nueva `docs/tc/cdu06-tc-humanos.md`).
+- **Open / en curso:** **PR #33 abierto** (`docs/cierre-iter04-material` → `develop`, commit `3750cdc`):
+  cierre documental de la sesión 16 (STATUS/PROMPTS), **D33 y D34** en `DECISIONS.md`, sección de origen de las
+  filas de `docs/tc/README.md` y plantilla nueva `docs/tc/cdu06-tc-humanos.md`. Solo markdown, sin código.
+  **Issues abiertas: #35** (pruebas D33 sobre la Iter1, empezando por CDU16) y **#34** (persistencia D34:
+  MySQL + phpMyAdmin en Docker y patrones DAO y Agente). Cada una tendrá su rama:
+  `feature/iter01-pruebas-d33` y `feature/iter05-persistencia-mysql`.
 - **Javadoc publicado en GitHub Pages (D32, sesión 14):** workflow nuevo `.github/workflows/javadoc.yml`
   (push a `develop` + `workflow_dispatch`) que ejecuta `mvn -B -ntp javadoc:aggregate` y publica
   `target/reports/apidocs`. URL base **`https://ismaelcaballero.github.io/PrISO2-25-26/apidocs/`**; solo la
@@ -74,13 +83,13 @@ PlantUML (D31).
 - **Tags de configuración creados:** `cfg-iter00` → `641e72d`, `cfg-iter01` → `df09bca`,
   `cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`, **`cfg-iter04` → `a3fe109`** (los cinco anotados y
   subidos) y la etiqueta de release **`v0.1.0` → `e165622`** (merge del PR #19 en `main`, anotada y subida).
-- **Nueva desviación en `main` (08/11 19:01, pendiente de decidir):** el **PR #29** (`develop` → `main`) se
-  fusionó con merge commit **`d12388b`** (padres `e165622` = `v0.1.0` + `c8fe2d7`). Contradice **D30** (`main`
-  solo recibe ramas `release/RN`) y **no lleva etiqueta de release**: `main` quedó por delante de `v0.1.0`
-  con contenido de `develop` sin CFG cerrada por release. Opciones planteadas a Ismael: (a) etiquetar
-  `d12388b` (p. ej. `v0.1.1`) normalizando lo ya hecho, (b) crear la rama `release/R1` sobre `cfg-iter04` y
-  publicarla al cerrar CFG-05 volviendo a D30, o (c) revertir `main` a `e165622`. **El agente no toca `main`**
-  (D30) y espera indicación.
+- **Nueva desviación en `main` (08/11 19:01) — cerrada documentando (decisión de Ismael, sesión 16):** el
+  **PR #29** (`develop` → `main`) se fusionó con merge commit **`d12388b`** (padres `e165622` = `v0.1.0` +
+  `c8fe2d7`). Contradice **D30** (`main` solo recibe ramas `release/RN`) y **no lleva etiqueta de release**:
+  `main` quedó por delante de `v0.1.0` con contenido de `develop` sin CFG cerrada por release. Ismael decide
+  **dejarlo y documentarlo**: se deja la historia como está (sin revert ni reescritura del remoto) y se cierra
+  la anomalía publicando **R1 desde una rama `release/R1` creada sobre el tag `cfg-iter04`** con su PR a `main`
+  y su tag `v0.1.1`, que es lo que fija D30. Registrado en D30. **El agente no toca `main`** en ningún caso.
 - **Issues cerradas a mano (D29):** #6 (Iter0/CFG-00), #9 (Iter1/CDU16), #13 (Iter2/CDU17),
   #15 (Iter3/CDU13), #20 (publicar R0, tras el merge `e165622` + tag `v0.1.0`), **#27 (publicar el Javadoc
   en Pages, 19:48, tras el merge `c8fe2d7` del PR #28)** y **#30 (Iter4/CDU06, 19:01)**.
@@ -163,25 +172,32 @@ PlantUML (D31).
     workflow `javadoc.yml` desde `develop`, URL `…/apidocs/` verificada y wiki enlazando las fichas.
     Sin instantáneas por tag: si una wiki de iteración futura necesita la ficha exacta de esa CFG, se
     enlaza a `develop` (siempre la última compilación).
-17. **Nueva desviación de D30 en `main` (pendiente de decisión de Ismael):** el PR #29 fusionó `develop` →
-    `main` (merge `d12388b`, 08/11 19:01) sin rama `release/RN` ni etiqueta. `main` quedó por delante de
-    `v0.1.0`. Se le ha planteado: etiquetar `d12388b`, volver a D30 con `release/R1` sobre `cfg-iter04`, o
-    revertir `main` a `e165622`. El agente no actúa sobre `main` sin visto bueno.
-18. **Rediseño de las pruebas con el método D33 (abierto, empieza por Iter1):** construir la matriz de
+17. **Nueva desviación de D30 en `main` — decidida y cerrada documentando (08/11, sesión 16):** el PR #29
+    fusionó `develop` → `main` (merge `d12388b`, 08/11 19:01) sin rama `release/RN` ni etiqueta, así que `main`
+    quedó por delante de `v0.1.0`. Ismael decide **dejarlo y documentarlo**: no se toca la historia de `main` y
+    la anomalía se cierra publicando **R1 desde `release/R1` sobre el tag `cfg-iter04`** con su tag `v0.1.1`.
+    Registrado en D30. El agente no actúa sobre `main` sin visto bueno.
+18. **Rediseño de las pruebas con el método D33 (abierto, **issue #35**, rama `feature/iter01-pruebas-d33`;
+    empieza por Iter1):** construir la matriz de
     **clases de equivalencia + valores límite + conjetura de errores** de `iso2-catalogo` (Iter1/CDU16),
     composarla con **pairwise**, implementar los JUnit con **JavaDoc** y `@DisplayName` con el id del caso,
     versionar la evidencia en `docs/test/iter01/`, **regenerar `docs/tc/cdu16-tc-humanos.md` con esos mismos
     casos** y actualizar la página de wiki de la Iter1 **con la clase probada**. Después se extiende a
-    Iter2 (CDU17) e Iter3 (CDU13). Huecos ya detectados en CDU16 que hay que cubrir o decidir: `codigo` de
-    catálogo más largo de 40 (revienta contra la BD en vez de devolver 400), `pagina` no numérico en
-    `GET /api/catalogo/pruebas` (500) y la discrepancia entre el test de cliente que espera
-    `CODIGO_EN_USO` y el servidor que emite `CODIGO_DUPLICADO`.
-19. **Nueva capa de persistencia MySQL — ADR D34 ya redactada, implementación pendiente:** desplegar
+    Iter2 (CDU17) e Iter3 (CDU13). Huecos ya detectados en CDU16, **decidido arreglarlos** (ver D35):
+    `codigo`/`nombre`/`categoria` y los textos del protocolo por encima de su `@Column` (revientan contra la BD
+    en vez de devolver 400), `pagina`/`tamano` no numéricos en `GET /api/catalogo/pruebas` (500),
+    `categoria` fuera de la lista del contrato (hoy se acepta) y la discrepancia entre el test de cliente que
+    espera `CODIGO_EN_USO` y el servidor que emite `CODIGO_DUPLICADO`. Al ser invariantes nuevas, se editan
+    antes los `.puml` de `docs/modelo/iter01/` (D31).
+19. **Nueva capa de persistencia MySQL — D34 aceptada y concretada, implementación pendiente (**issue #34**,
+    rama `feature/iter05-persistencia-mysql`):** desplegar
     **Docker** con **MySQL + phpMyAdmin** más el servidor y el cliente; base `iso2` con usuario de
     entrada/salida `gestoroperaciones`
     (password `Iso2Curso25-26`); acceso con **patrón DAO** y conexión con **patrón Agente** particularizado
-    en **`AgenteMySQL`** (permitir varios SGBD). Falta decidir si H2 sigue como perfil de test o se sustituye
-    por MySQL en contenedor (Testcontainers) y si Flyway mantiene migraciones duales.
+    en **`AgenteMySQL`** (permitir varios SGBD). Ya decidido: **Testcontainers con MySQL 8** en las pruebas
+    técnicas, **migraciones Flyway duales** (`db/migration/h2` + `db/migration/mysql` por perfil),
+    `gestoroperaciones` **solo DML** con usuario DDL aparte para Flyway, driver `com.mysql:mysql-connector-j`
+    contra **MySQL 8.4** con volumen persistente.
 
 ## Punto exacto de continuación para la próxima sesión
 
@@ -210,23 +226,22 @@ con el prompt de Iter4 en el cuerpo. Durante la sesión 13 se fusionaron **PR #2
 contra ese diseño; si un test o el compilador cambia una firma o un invariante, se edita primero el `.puml`
 y se sube junto al cambio. Está descrito en el cuerpo de #30 y en el PR #31, y no tiene ADR propio.
 
-**Nueva desviación detectada en `main` (08/11 19:01, pendiente de decidir):** el **PR #29** fusionó
+**Nueva desviación detectada en `main` (08/11 19:01) — cerrada documentando:** el **PR #29** fusionó
 `develop` → `main` con merge commit **`d12388b`** (padres `e165622` = `v0.1.0` + `c8fe2d7`) **sin rama
-`release/RN` y sin etiqueta de release**, en contra de **D30**. `main` quedó por delante de `v0.1.0` con
-contenido de `develop` no cerrado por release. Opciones planteadas a Ismael: (a) etiquetar `d12388b`
-(p. ej. `v0.1.1`) normalizando lo hecho, (b) volver a D30 creando `release/R1` sobre `cfg-iter04` y
-publicándola al cerrar CFG-05, o (c) revertir `main` a `e165622`. **El agente no toca `main`**: espera
-indicación.
+`release/RN` y sin etiqueta de release**, en contra de **D30**, así que `main` quedó por delante de `v0.1.0` con
+contenido de `develop` no cerrado por release. Ismael decide **dejarlo y documentarlo**: la historia de `main` no
+se toca y la anomalía se cierra publicando **R1 desde `release/R1` sobre el tag `cfg-iter04`** (tag `v0.1.1`).
+Queda registrado en D30. **El agente no toca `main`.**
 
-**Siguiente sesión — Iter5 (CFG-05 · CDU12 citas)**, desde `develop` = `3b02718` (Iter4 ya fusionada y tag
+**Siguiente sesión — Iter5 (CFG-05 · CDU12 citas)**, desde `develop` = `a3fe109` (Iter4 ya fusionada y tag
 `cfg-iter04` puesto): rama `feature/iter05-cdu12-citas`, issue nueva con el prompt ejecutable en el cuerpo
 (la abre Ismael, D29) y `Ref: #<issue>` en cada commit, `iso2.version` e `iso2-citas` a **1.1.0**, apps
 **0.1.5-SNAPSHOT**, migración Flyway `V1.5.0__…` y modelo en `docs/modelo/iter05/` (4 `.puml` + `.png`
 incrustados en su README, D31) **antes de escribir código**. Puertas de CFG-05 en
 `docs/mapa-configuraciones.csv`: **TC de concurrencia de hueco** (doble reserva sobre el mismo hueco → una
 sola cita) y **rollback transaccional**; fecha objetivo 20/11/2026. Antes de nada: leer CONTEXT.md →
-DECISIONS.md (D28-D32 y el nuevo **D33**) → STATUS.md → PLAN.md §4 → matriz CFG-05. Después de Iter5 queda
-**Iter6 · CDU19 integración (CFG-06)** con el hito **`v0.2.0-alpha`**.
+DECISIONS.md (D28-D32 y las nuevas **D33**, **D34** y **D35**) → STATUS.md → PLAN.md §4 → matriz CFG-05. Después
+de Iter5 queda **Iter6 · CDU19 integración (CFG-06)** con el hito **`v0.2.0-alpha`**.
 
 **Antes de programar CDU12 hay que aplicar los dos cambios de enfoque que pidió Ismael el 08/11:**
 
@@ -244,19 +259,23 @@ pares) y wiki de iteración **identificando la clase probada** en cada fila.
 / `Iso2Curso25-26` además del `root` (`Iso2Curso25-26`). Acceso a datos con **patrón DAO** y conexión con
 **patrón Agente** particularizado en **`AgenteMySQL`**, dejando la puerta abierta a conectar otros SGBD.
 
-**Huecos de CDU16 que el método D33 destapa** (arreglar o decidir, editando antes el `.puml` de iter01): un
-`codigo` de catálogo de más de 40 caracteres revienta contra la BD en lugar de devolver 400; `pagina` no
-numérico en `GET /api/catalogo/pruebas` produce 500 en vez de 400; y el test de cliente que espera
-`CODIGO_EN_USO` no coincide con el código que emite el servidor, `CODIGO_DUPLICADO`.
+**Huecos de CDU16 que el método D33 destapa — se arreglan en la rama `feature/iter01-pruebas-d33` (D35,
+editando antes el `.puml` de iter01 · D31):** un `codigo` de catálogo de más de 40 caracteres (y `nombre` > 120,
+`categoria` > 20, `preparacion`/`contraindicaciones` > 1000) revienta contra la BD en lugar de devolver 400;
+`pagina`/`tamano` no numéricos en `GET /api/catalogo/pruebas` producen 500 en vez de 400; `categoria` fuera de la
+lista del contrato se acepta sin validar; y el test de cliente que espera `CODIGO_EN_USO` no coincide con el
+código que emite el servidor, `CODIGO_DUPLICADO`.
 
-**Pasos de Ismael pendientes (D29/D28/D30):** (1) **decidir la desviación de `main`** del PR #29 y si se abre
-la release `R1`; (2) **rellenar y ejecutar los TC humanos** de CDU16/CDU17/CDU13 (**#21**) y los de CDU06
-(plantilla ya creada, #30 cerrada) — es criterio de cierre de CFG-01/02/03/04; (3) **abrir las issues** del
-trabajo de pruebas (rediseño D33 de Iter1/2/3) y de la persistencia MySQL si quiere trazabilidad en GitHub, y
-decidir si Iter5 se ejecuta con prompt de issue; (4) **decidir el alcance de MySQL**: si H2 sigue siendo el
-perfil de test o se sustituye por MySQL en contenedor (Testcontainers), si Flyway mantiene migraciones duales
-H2/MySQL o solo MySQL, y si las entidades JPA se conservan por encima del DAO o el DAO pasa a ser el acceso
-primario; (5) revisar visualmente el **Kanban** (GitHub Project, #23: el token del agente no puede verlo).
+**Pasos de Ismael pendientes (D29/D28/D30):** (1) **fusionar el PR #33** (cierre documental de la sesión 16:
+STATUS/PROMPTS/DECISIONS con D33, D34 y D35, `docs/tc/README.md` y la plantilla `docs/tc/cdu06-tc-humanos.md`);
+(2) **rellenar y ejecutar los TC humanos** de CDU16/CDU17/CDU13 (**#21**) y los de CDU06
+(plantilla ya creada, #30 cerrada) — es criterio de cierre de CFG-01/02/03/04; (3) **abierta la issue #35** para
+el rediseño de pruebas D33 (Iter1, luego Iter2 e Iter3) y **la issue #34** para la persistencia MySQL: quedan por
+abrir la de Iter5/CDU12 cuando arranque, y decidir si se ejecuta con prompt de issue; (4) el **alcance de MySQL
+ya está concretado en D34** (Testcontainers con MySQL 8 en las pruebas técnicas, migraciones Flyway duales
+H2/MySQL por perfil, `gestoroperaciones` solo DML con usuario DDL aparte para Flyway, MySQL 8.4 con volumen
+persistente) — solo falta por decir si las entidades JPA se conservan por encima del DAO o el DAO pasa a ser el
+acceso primario; (5) revisar visualmente el **Kanban** (GitHub Project, #23: el token del agente no puede verlo).
 #21/#22/#23/#27/#30 quedan cerradas: el seguimiento está en este fichero. El agente no fusiona PRs ni toca
 `main` sin visto bueno explícito (D30) y **los TC humanos de la CDU los diseña y ejecuta Ismael** (D28) — con
 D33 el agente **sí** genera los casos y las plantillas, pero sigue sin ejecutarlas.
@@ -270,12 +289,14 @@ Javadoc de `…/apidocs/` (D32) y la sección Testing (merge `5207bae`, con fila
 
 **Cierre de jornada 08/11/2026 (fin sesión 16):** repo estable y todo subido. **Iter1-Iter4 fusionadas y
 etiquetadas** (`cfg-iter00`…`cfg-iter04`) y **R0 publicada en `main`** (merge `e165622`, tag `v0.1.0`).
-`develop` en `3b02718` (tras los merges `a3fe109` del PR #31 y `3b02718` del PR #32) con CI `construir` en
-verde y **229 tests** en el reactor. Issues: ninguna abierta. Pendiente de Ismael: la desviación de `main`
-(PR #29) y los **TC humanos** de CDU16/17/13/06. Pages funcionando en `…/apidocs/` y wiki al día hasta
+`develop` en `a3fe109` (tras los merges `a3fe109` del PR #31 y `3b02718` del PR #32) con CI `construir` en
+verde y **229 tests** en el reactor. Issues abiertas: **#35** (pruebas D33) y **#34** (persistencia D34); PR
+abierto: **#33** (cierre documental). Pendiente de Ismael: fusionar #33 y los **TC humanos** de CDU16/17/13/06.
+Pages funcionando en `…/apidocs/` y wiki al día hasta
 **Iter4**. Reglas de referencia: **D28** (TC humanos los hace Ismael), **D29** (cierre manual de issues),
 **D30** (solo `release/RN` → `main`), **D31** (modelado PlantUML: `.puml` + `.png` versionados), **D32**
 (Javadoc en Pages desde `develop`), **D33** (pruebas por clases de equivalencia + valores límite + conjetura
 de errores compuestas con pairwise, y **los mismos casos** en JUnit y en las plantillas de TC) y el **flujo
-diseño-primero** (modelo antes que código). **D34** (MySQL + Docker + DAO + Agente) queda aceptada y redactada,
-a la espera de que Ismael concrete los cinco puntos pendientes.
+diseño-primero** (modelo antes que código). **D34** (MySQL + Docker + DAO + Agente) queda aceptada, redactada y
+con los cinco puntos ya concretados; **D35** fija que las cotas del contrato se validan en el servicio (400) y no
+se delegan a la base de datos (500).
