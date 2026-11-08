@@ -187,6 +187,7 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 - **Resultado verificado:** Ismael fusionó el PR #19 con merge commit `e165622` (dos padres: `1245138` +
   `641e72d`) y se creó sobre él el tag anotado **`v0.1.0`**, primera etiqueta de release del repo. CFG-00
   queda publicada en `main` con las dos etiquetas de su fila del mapa (`v0.1.0;cfg-iter00`).
+- **Segunda desviación detectada el 08/11 (sesión 16) y su cierre:** `origin/main` está en `d12388b`, merge de `develop` → `main` a las 19:01 (+0100) con padres `e165622` y `c8fe2d7`: entró trabajo de `develop` en `main` **sin** rama `release/RN` ni tag, así que incumple esta decisión. Ismael decide **dejarlo y documentarlo**: `main` queda como espejo de `develop` hasta R1, que se sacará como rama `release/R1` desde el tag `cfg-iter04` con su PR y su tag `v0.1.1`. No se toca la historia de `main`.
 - **Comprobación previa obligatoria antes de tocar `main`:** `git log --oneline origin/main --not origin/develop`
   (el PR no debe aportar nada que no esté ya en `develop`) y revisar la protección de rama. Si hace falta
   reescribir `main`, solo lo hace Ismael o con su visto bueno explícito.
@@ -225,3 +226,86 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
   a `**/target/reports/apidocs/**` (hasta ahora ese `path` no cogía nada y el artefacto salía con aviso).
 - **Efectos:** las tablas de clases de las páginas de la wiki enlazan la ficha Javadoc de cada clase;
   el sitio refleja siempre `develop`, así que los enlaces no se reescriben al cerrar iteraciones.
+
+## D33. Diseño de pruebas: clases de equivalencia + valores límite + conjetura de errores, compuestas con *pairwise*, y los mismos casos en JUnit y en los TC — ACEPTADA (08/11/2026, Ismael)
+
+- **Contexto:** hasta Iter4 las pruebas las iba escribiendo el agente de forma ad hoc (un test por caso que
+  parecía razonable) y las plantillas de TC humanos de D28 se escribían **a mano, por separado**, de forma que
+  JUnit y TC podían divergir y de hecho divergían (p. ej. en CDU16 el test de cliente esperaba `CODIGO_EN_USO`
+  y el servidor emite `CODIGO_DUPLICADO`). Ismael pide el 08/11 cambiar el método: las pruebas se desarrollan
+  **sobre la base de clases de equivalencia, el teorema de los valores límite y la conjetura de errores**, y
+  encima se pasa un filtro **pairwise** para reducir la combinatoria de parámetros.
+- **Decisión (método obligatorio a partir de ahora, hacia atrás y hacia delante):**
+  1. **Clases de equivalencia**: para cada entrada y cada estado relevante del dominio se listan sus clases
+     válidas y no válidas (una fila por clase), justificadas con la regla de negocio o la restricción de la
+     RF/`iso2-common` que las origina.
+  2. **Teorema del valor límite**: de cada clase ordenada se prueban los cuatro puntos del borde
+     (`min-1`, `min`, `max`, `max+1`) en la cota donde exista; los límites salen de una única fuente (los
+     `record` de `iso2-common`, las anotaciones JPA y la migración Flyway), nunca se inventan.
+  3. **Conjetura de errores**: se añaden casos escogidos por defecto plausible (valores nulos/vacíos,
+     unicode, campos largos, estados imposibles, reenvío de peticiones, concurrencia sobre el mismo recurso)
+     porque la experiencia dice que ahí están los fallos.
+  4. **Composición pairwise**: cuando un caso depende de varios factores, no se prueban todas las
+     combinaciones (comb exploding); se construye la tabla de factores × niveles y se cubre **todo par de
+     niveles**, que es lo que detecta casi todos los fallos por interacción. Se documenta la tabla y los pares
+     cubiertos.
+  5. **Un solo conjunto de casos, dos proyecciones**: **esos mismos casos** son los que se ejecutan con
+     **JUnit en Maven** y los que van en las **plantillas de TC humanos**. Cada caso tiene un id
+     (`TC16-01`, `TC17-03`, `TC13-05`, `TC06-02`…) y ese id aparece en el `@DisplayName` del test y en la
+     columna «Caso de prueba» de la plantilla de TC. **Una plantilla de TC pasa a ser la proyección legible de
+     la matriz**, ya no se escribe a mano.
+  6. **JavaDoc en los ficheros de test**: cada clase de test se documenta con JavaDoc indicando **la clase que
+     se prueba**, sus colaboradores (qué está simulado y qué es real) y la propiedad que se comprueba; los
+     métodos se documentan con el caso que implementan. El JavaDoc entra en el agregado de Pages (D32).
+  7. **Evidencia versionada**: la matriz (factores, niveles, clases de equivalencia, puntos límite, pares
+     pairwise) se versiona en **`docs/test/iterXX/`** junto al `.puml` de la iteración, de forma que el diseño
+     de las pruebas sea un ítem de configuración más, igual que el modelo (D31).
+  8. **Wiki**: la sección *Testing* de cada página de iteración identifica **claramente la clase probada** en
+     cada fila (no solo el número de tests por módulo).
+- **Orden de aplicación:** se empieza **revisando con más rigurosidad las pruebas de la Iteración 1**
+  (`iso2-catalogo`, CDU16: dominio `TipoPrueba`/`Protocolo`/`Politica` + `AuditoriaCatalogo`, servicio, REST y
+  ArchUnit), se regenera su plantilla `docs/tc/cdu16-tc-humanos.md` con los casos resultantes y se actualiza su
+  página de wiki. Después se extiende a Iter2 (CDU17) e Iter3 (CDU13), y **Iter5 (CDU12) nace ya con el
+  método**.
+- **Efectos:** los huecos que el método destapa en CDU16 se convierten en casos nuevos o en decisiones de
+  diseño: un `codigo` de catálogo de más de 40 caracteres hoy revienta contra la BD (500) en vez de devolver
+  400; `pagina` no numérico en `GET /api/catalogo/pruebas` da 500 en vez de 400; y la discrepancia
+  `CODIGO_EN_USO` (test de cliente) vs `CODIGO_DUPLICADO` (servidor). Si alguno obliga a cambiar una invariante
+  o una firma, **primero se edita el `.puml` de `docs/modelo/iter01/`** (D31) y luego el código. D28 **no**
+  cambia: los TC humanos los rellena y ejecuta Ismael; el agente genera los casos y las plantillas, pero no las
+  ejecuta. Las puertas de cobertura de JaCoCo y de ArchUnit se mantienen como están.
+- **Aplicación y huecos de CDU16 (decidido el 08/11, sesión 16):** se abre **una issue y una rama por cada trabajo**: **#35** → `feature/iter01-pruebas-d33` (D33 sobre Iter1: CDU16; después CDU17 y CDU13) y **#34** → `feature/iter05-persistencia-mysql` (D34). Los huecos que destapa la matriz de valores límite **se arreglan**: las cotas de longitud (`codigo` 40, `nombre` 120, `categoria` 20, `preparacion` y `contraindicaciones` 1000) se validan en el servicio y `pagina`/`tamano` no numéricos se mapean a **400 `DATOS_INVALIDOS`** en lugar del 500 actual; `categoria` se valida contra la lista del contrato. Como son invariantes nuevas, **primero se editan los `.puml` de `docs/modelo/iter01/`** (D31). Ver D35.
+
+## D34. Persistencia: MySQL en Docker, acceso con patrón DAO y conexión con patrón Agente (`AgenteMySQL`) — ACEPTADA (08/11/2026, Ismael) · implementación pendiente
+
+- **Contexto:** desde Iter1 la persistencia es **H2 en fichero** con Spring Data JPA y Flyway
+  (`V1.0.0`…`V1.4.0`), sin infraestructura de despliegue. Ismael decide el 08/11 que el trabajo siga sobre
+  **MySQL** y que se monte la infraestructura en contenedor.
+- **Decisión:**
+  - **Docker Compose** con cuatro servicios: **MySQL 8** (base de datos `iso2`), **phpMyAdmin** para
+    inspeccionar la base, y el **servidor** y el **cliente** de la aplicación.
+  - Cuentas de la instancia: `root` con password **`Iso2Curso25-26`** y el usuario de aplicación
+    **`gestoroperaciones` / `Iso2Curso25-26`**, que es el que maneja las **operaciones de entrada y salida**
+    (DML) de la aplicación.
+  - **Patrón DAO** para el acceso a los datos: el dominio deja de depender de `Repository` de Spring Data y se
+    introduce una interfaz `DAO` por agregado con su implementación sobre la base de datos.
+  - **Patrón Agente** para la conexión: una abstracción `Agente` que encapsula el conector del SGBD y se
+    particulariza en **`AgenteMySQL`**, de forma que se pueda **conectar a varios SGBD** añadiendo otro Agente
+    sin tocar el dominio ni el DAO.
+- **Cinco puntos pendientes, resueltos por Ismael el 08/11/2026 (sesión 16):** (a) las pruebas técnicas usan **Testcontainers con MySQL 8**, así que el SGBD de las pruebas es el mismo de producción (Docker pasa a ser requisito para `mvn verify`); (b) Flyway con **migraciones duales** en `db/migration/h2` y `db/migration/mysql`, misma numeración `V1.x` y carpeta elegida por perfil (`spring.flyway.locations`), porque las migraciones actuales están escritas en dialecto H2 (`GENERATED BY DEFAULT AS IDENTITY`, `TIMESTAMP(6) WITH TIME ZONE`); (c) `gestoroperaciones` queda con **solo DML** y se crea un **usuario de DDL aparte** para Flyway; (d) driver `com.mysql:mysql-connector-j` contra **MySQL 8.4** con volumen persistente nombrado en el Compose; (e) va en **rama propia** `feature/iter05-persistencia-mysql`, separada del trabajo de pruebas.
+- **Seguimiento:** issue **#34**.
+- **Efectos previstas:** hay que tocar los `pom.xml` (driver MySQL), la configuración de `iso2-server-app`
+  (`application*.yml`), las migraciones y los tests de integración que hoy dependen de H2; y el modelo de
+  `docs/modelo/iterXX` de la iteración que lo incorpore gana el diagrama de la capa DAO/Agente (D31). El
+  despliegue en contenedor no cambia las puertas de calidad existentes.
+
+## D35. Las cotas del contrato se validan en el servicio (400), no se delegan a la base de datos (500) — ACEPTADA (08/11/2026, Ismael)
+
+- **Contexto:** la matriz de clases de equivalencia y valores límite de CDU16 (D33) deja ver que el contrato publicado (Javadoc de `PruebaCatalogoFacade`) habla de «400 validación», pero en la implementación solo se validan los mínimos (`duracionMinutos > 0`, `ayunoHoras ≥ 0`, textos no vacíos). Las cotas máximas viven **solo** en `@Column(length = …)` de `TipoPrueba` y en `V1.1.0__cdu16_catalogo.sql`; al pasarlas por HTTP, un `codigo` de 41 caracteres termina en un fallo de insert de H2/MySQL que el `@ExceptionHandler(Exception.class)` de `CatalogoManejadorErrores` traduce a **500 `ERROR_INTERNO`**. Lo mismo con `?pagina=abc`: `MethodArgumentTypeMismatchException` cae en el mismo capturador genérico.
+- **Decisión:** las cotas son **reglas de negocio del servicio**, no efectos secundarios del esquema. En `iso2-catalogo`:
+  1. una única fuente de cotas (`LimitesCatalogo`, que refleja `@Column` y la migración) y validación de longitudes en `CatalogoServicio.crear`/`actualizar` → `IllegalArgumentException` → **400 `DATOS_INVALIDOS`**;
+  2. `categoria` validada contra la lista que ya documenta el contrato (`RX`, `TAC`, `RM`, `ECO`, `MED-NUC`, `DENS`, `OTRO`);
+  3. capturador específico para los parámetros de consulta mal tipados en `CatalogoManejadorErrores` (**400**, no 500), manteniendo el capturador genérico como red de seguridad con su 500 y su log.
+- **Por qué no Bean Validation:** `iso2-catalogo` no usa JSR-380 y meter `spring-boot-starter-validation` ahora abriría un segundo camino de errores (`MethodArgumentNotValidException`) con cuerpo distinto del `ApiError` del contrato. Se valora para Iter5 si crece la superficie escrita.
+- **Modelo primero (D31):** las invariantes nuevas de longitud y de dominio de `categoria` se añaden a los `.puml` de `docs/modelo/iter01/` **antes** de tocar el código, y se regeneran los `.png`.
+- **Efectos:** el contrato firmado en CFG-00 **no cambia de firma** (sigue siendo MINOR), solo se ciñe su semántica de errores; los tests de `iso2-server-app` y de cliente que usan categorías y códigos válidos no se ven afectados; se corrige el stub de `ApiClienteCatalogoTest` que simula `CODIGO_EN_USO` cuando el servidor emite `CODIGO_DUPLICADO`.
