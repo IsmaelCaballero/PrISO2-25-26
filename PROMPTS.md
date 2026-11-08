@@ -443,4 +443,66 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     Verificado sobre el HTML renderizado: las cuatro páginas dan 200, los `<img>` conservan el ancho y
     los enlaces a `raw.githubusercontent.com/wiki/…` responden 200 `image/png`.
   - Iter0 va sin diagramas (CFG-00 no implementa CDU: deja el reactor de 14 módulos y las fachadas).
-  - **Siguiente bloque:** Iter4 · CDU06 solicitudes (CFG-04).
+
+### Prompt 12 — Javadoc agregado en GitHub Pages (D32) y wiki enlazada a las fichas [✔ ejecutado]
+
+> Prompt lanzado por Ismael (08/11/2026, **texto reconstruido**: no se guardó el verbatim de la sesión 14):
+> en las páginas de la wiki quieres mencionar las clases; ¿podríamos dejarlas enlazadas a su ficha del
+> Javadoc? Eso exige tener el Javadoc publicado en algún sitio estable. Y al terminar, preparamos la Iter4.
+
+- Resultado (08/11/2026; rama `ci/javadoc-pages`, commit `00f93e9`, issue **#27**, PR **#28**):
+  - Issue **#27** «Publicar el Javadoc agregado en GitHub Pages» con el prompt ejecutable en el cuerpo.
+  - Workflow nuevo `.github/workflows/javadoc.yml`: en `push` a `develop` (y `workflow_dispatch`) ejecuta
+    `mvn -B -ntp javadoc:aggregate` y publica `target/reports/apidocs` con `upload-pages-artifact` +
+    `deploy-pages` (permisos `pages: write`, `id-token: write`, JDK 21). Índice en `docs/javadoc-index.html`.
+  - **Fix encontrado de paso:** `ci.yml` subía como artefacto `**/target/site/apidocs/**`, pero el plugin
+    escribe en `target/reports/apidocs` → el artefacto de Javadoc del CI estaba vacío desde Iter0.
+  - ADR **D32** en `DECISIONS.md`: Pages publicado **desde `develop`** (no por tag), solo la última
+    compilación, sin instantáneas históricas; las páginas de la wiki enlazan la ficha de cada clase a
+    `https://ismaelcaballero.github.io/PrISO2-25-26/apidocs/…`.
+  - **PR #28 → `develop` fusionado por Ismael** (merge `c8fe2d7`, tip actual de `develop`); deploy de Pages
+    verificado en la URL anterior. Issue **#27 cerrada a mano** a las 19:48 (D29).
+  - **Wiki ampliada** (repo `PrISO2-25-26.wiki.git`, rama `master`, merge `90d5b26`): en las cuatro páginas
+    por CFG cada componente pasa a **enlace a su ficha Javadoc** (rutas reales comprobadas contra el
+    `apidocs` publicado) y se añade una **sección Testing** con tests por módulo y puertas JaCoCo.
+  - Cerrada la sesión se creó la issue **#30** (Iter4 · CDU06, CFG-04) con el prompt de la Iter4 en el
+    cuerpo, para arrancar la Iter4 desde `develop` = `c8fe2d7`.
+
+### Prompt 13 — Iter4 · CDU06 solicitar/prescribir pruebas (`iso2-solicitudes` 1.1.0, CFG-04) [✔ ejecutado]
+
+> Prompt lanzado por Ismael (08/11/2026, **texto reconstruido** a partir del cuerpo de la issue #30 y de la
+> sesión): ejecutar la Iter4 con el prompt de la issue #30 — `iso2-solicitudes` 1.1.0 con indicación clínica,
+> prioridad y **huella SHA-256** de la solicitud; **diseño PlantUML antes de escribir código**; extensión
+> MINOR de `SolicitudFacade` sin tocar el baseline; RBAC de solicitudes; server-app 0.1.4 con Flyway
+> `V1.4.0` y semilla dev; cliente JavaFX con vista de prescripción y vista de consulta. Puertas CFG-04:
+> **cobertura de `iso2-solicitudes` ≥ 85 %**, campos RF obligatorios, **no repudio** y duplicado imposible.
+
+- Resultado (08/11/2026; rama `feature/iter04-cdu06-solicitudes` desde `c8fe2d7`, 4 commits, PR **#31**):
+  - **Diseño primero** (`cce3af2`, 19:04): `docs/modelo/iter04/` con 4 `.puml` + 4 `.png` (casos de uso,
+    clases de análisis, clases de diseño y secuencia) renderizados con `tools/plantuml.jar -tpng
+    -Playout smetana` y README con los PNG incrustados (D31). El diseño fija antes de programar: dominio
+    `Solicitud` con huella SHA-256 del canónico, `creadaEn` truncado a `ChronoUnit.MICROS`, anti-duplicado
+    en el servicio, Flyway `V1.4.0`, permisos `solicitud:leer/escribir` y puerta `jacoco.line.min=0.85`.
+  - **Servidor** (`71ce94b`, 19:34): `iso2.version` e `iso2-solicitudes` a **1.1.0-SNAPSHOT**, apps a
+    **0.1.4-SNAPSHOT**. `SolicitudFacade` ampliada en MINOR (`prescribir`/`listarPorMedico`/`detalle`/
+    `trazable`) sin tocar el baseline congelado; dominio JPA con los campos RF obligatorios, no repudio
+    (autor + timestamp + huella), duplicado imposible, `Clock` inyectable para poder fijar el instante;
+    REST `/api/solicitudes` con RBAC y Flyway `V1.4.0__cdu06_solicitudes.sql` (semilla `SEM-RX-TORAX`,
+    `SEM-RM-RODILLA`). El **autor no viaja en el cuerpo HTTP**: el cliente manda 5 campos y el servidor lo
+    fija (el `medicoId` del DTO solo sirve para validar RF06.1 en el cliente).
+  - **Fix doclint** (`7f85678`): en un `record` no vale documentar `@throws` — doclint lo rechaza y rompía
+    `javadoc:javadoc`.
+  - **Cliente** (`b4c4e27`, 19:51): `ApiClienteSolicitudes` contra `/api/solicitudes`, dos vistas al estilo
+    de Iter3 (`VistaSolicitudesMedico` de escritura, `VistaConsultaSolicitudes` de lectura) y las puertas
+    testeables `solicitudesVisiblesPara`/`solicitudesPrescribiblesPara` en `NavegacionPorRol`.
+  - **Reactor verde** `mvn -B -ntp verify javadoc:javadoc`: **229 tests** (en Iter3 había 172;
+    `iso2-solicitudes` 1→24, `iso2-server-app` 46→60, `iso2-client-app` 37→57) y **JaCoCo de
+    `iso2-solicitudes` 87,2 %** (109/125 líneas, 32/50 ramas) → puerta ≥ 85 % cumplida.
+  - **PR #31 → `develop` abierto** (19:55, sin `Closes`, D29) con la CI `construir` **en verde**
+    (run 42512406096, job 2m6s). La issue **#30** ya la había cerrado Ismael a las **19:01**, antes del
+    merge: D29 cumplida por adelantado, no se reabre.
+  - Pendiente tras el merge (solo Ismael fusiona): tag anotado `cfg-iter04`, borrar la rama feature, publicar
+    la página de wiki `Iter4-CDU06-solicitudes` y decidir la plantilla de **TC humanos de CDU06** (D28).
+  - En esta misma sesión se abre el PR de docs `docs/cierre-iter04-sesiones-14-15` (este `STATUS.md` +
+    `PROMPTS.md`) → `develop`.
+  - **Siguiente bloque:** Iter5 · CDU12 citas (CFG-05) — puertas de concurrencia de hueco y rollback.
