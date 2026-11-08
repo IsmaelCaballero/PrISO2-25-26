@@ -361,11 +361,12 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     `git push --force-with-lease=refs/heads/main:5e0ef29… origin 1245138:refs/heads/main` →
     `origin/main` = `1245138`. Descartado `git revert -m 1` (dejaría los ficheros revertidos y el futuro
     merge de `develop` no los re-aplicaría) y dejar `main` tal cual (una release parcial sin etiquetar).
-  - **Release R0 preparada:** rama `release/R0` creada sobre `cfg-iter00` (`641e72d`, árbol idéntico a
+  - **Release R0 publicada:** rama `release/R0` creada sobre `cfg-iter00` (`641e72d`, árbol idéntico a
     CFG-00: 14 módulos + apps `0.1.0`) y **PR #19 `release/R0` → `main`** abierto
-    (https://github.com/IsmaelCaballero/PrISO2-25-26/pull/19), sin `Closes` (D29). Fusión con
-    **"Create a merge commit"** (`--no-ff`, nunca squash ni rebase) y tag anotado **`v0.1.0`** sobre el
-    merge: es el hito R0 del mapa (`tag_git = v0.1.0;cfg-iter00`). **Pendiente de Ismael.**
+    (https://github.com/IsmaelCaballero/PrISO2-25-26/pull/19), sin `Closes` (D29). Ismael lo fusionó con
+    **merge commit** `e165622` (padres `1245138` + `641e72d`, no squash ni rebase) y el agente creó y subió
+    el tag anotado **`v0.1.0`** sobre ese merge: es el hito R0 del mapa
+    (`tag_git = v0.1.0;cfg-iter00`) y la primera etiqueta de release del repo. CFG-00 queda publicada.
   - **Limpieza:** rama `feature/iter03-cdu13-agendas` borrada en remoto y local; `develop` local
     actualizado a `b072b34`.
   - **Issues nuevas de seguimiento:** #20 publicar R0 con `v0.1.0`, #21 TC humanos de CDU16/CDU17/CDU13
@@ -376,4 +377,4 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     `docs/mapa-configuraciones.md` (flujo de ramas y etiquetado).
   - **Siguiente sesión:** Iter4 · CDU06 solicitudes (CFG-04) desde `develop` = `b072b34`
     (`iso2-solicitudes` 1.1.0, apps 0.1.4-SNAPSHOT, puertas: cobertura de solicitudes ≥ 85 % y huella
-    de contenido). Antes, Ismael fusiona el PR #19 y se crea `v0.1.0`.
+    de contenido). Antes solo queda cerrar #20 a mano (D29) y fusionar el PR de docs #24.

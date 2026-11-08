@@ -6,7 +6,7 @@
 
 | Fase | Estado |
 |---|---|
-| Inicio (Iter0) | ✔ **Completada y etiquetada** — PR #7 fusionado a `develop` (`641e72d`), tag `cfg-iter00`; `v0.1.0` (R0 en `main`) pendiente de fusionar el **PR #19** desde `release/R0` (nueva regla **D30**) |
+| Inicio (Iter0) | ✔ **Completada, etiquetada y publicada** — PR #7 fusionado a `develop` (`641e72d`), tag `cfg-iter00`; **R0 publicada en `main`**: PR #19 fusionado (merge `e165622`) con el tag anotado **`v0.1.0`** (regla **D30**: release desde `release/R0`) |
 | Elaboración (Iter1–6) | 🟡 En curso — Iter1 (CDU16) **cerrada en ramas** (`df09bca`, tag `cfg-iter01`); Iter2 (CDU17) **cerrada en ramas** (merge `870524e`, #13 cerrada, tag `cfg-iter02`); Iter3 (CDU13) **cerrada en ramas** (PR #18 fusionado, merge `b072b34`, #15 cerrada, tag `cfg-iter03`); quedan TC humanos (D28, issue **#21**) y exports `.staruml` (D18, issue **#22**) de Iter1–Iter3 |
 | Construcción (Iter7–20) | ⏳ Pendiente |
 | Transición (Iter21) | ⏳ Pendiente — cierre 14/12, entrega 15/12 |
@@ -27,9 +27,11 @@ exports `.staruml` (issue #22).
   (higiene CFG-00/01, merge `67ed627`), **PR #14** (Iter2/CDU17, merge `870524e`) y **PR #18**
   (Iter3/CDU13, merge `b072b34` = tip actual de `develop`; #15 cerrada a mano, D29). CI verde en el
   merge de #18. **Rama `feature/iter03-cdu13-agendas` borrada** (remoto y local) tras el merge.
-- **Open / en curso:** **PR #19 `release/R0` → `main`** (publicación de CFG-00 = hito R0, issue #20),
-  a la espera de que Ismael lo fusione con **"Create a merge commit"** (`--no-ff`, nunca squash ni
-  rebase). Al fusionarlo se crea el tag anotado **`v0.1.0`** sobre ese commit de merge.
+- **Release R0 publicada 08/11:** PR #19 (`release/R0` → `main`) fusionado por Ismael con merge commit
+  `e165622` (padres `1245138` + `641e72d`) y tag anotado **`v0.1.0`** creado sobre ese merge: CFG-00 ya
+  tiene las dos etiquetas de su fila del mapa (`v0.1.0;cfg-iter00`). Issue #20 pendiente solo de cerrarla
+  a mano (D29). `main` vuelve a contener solo contenido de release etiquetada.
+- **Open / en curso:** **PR #24** (`docs/cierre-iter03-y-r0` → `develop`), los docs de la sesión 12.
 - **Incidencia y reparación de `main` (08/11, registrada como D30):** el PR #17
   (`feature/iter03-cdu13-agendas` → `main`, merge `5e0ef29`) se abrió por error. Como antes de ese PR
   `main` estaba justo en el commit raíz `1245138` y el único commit de `main` no alcanzable desde
@@ -38,8 +40,8 @@ exports `.staruml` (issue #22).
   release desde `release/R0` (rama creada sobre `cfg-iter00` = `641e72d`, árbol idéntico a CFG-00).
   Se descartó `revert -m 1` (impediría re-aplicar esos ficheros al fusionar `develop` en el futuro).
 - **Tags de configuración creados:** `cfg-iter00` → `641e72d`, `cfg-iter01` → `df09bca`,
-  `cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34` (los cuatro anotados y subidos). `v0.1.0` (R0)
-  se creará sobre el merge del PR #19, no antes.
+  `cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34` (los cuatro anotados y subidos) y la etiqueta de
+  release **`v0.1.0` → `e165622`** (merge del PR #19 en `main`, anotada y subida).
 - **Issues cerradas a mano (D29):** #6 (Iter0/CFG-00), #9 (Iter1/CDU16), #13 (Iter2/CDU17),
   #15 (Iter3/CDU13). **Issues abiertas nuevas (08/11):** #20 (publicar R0 con `v0.1.0`), #21 (TC
   humanos CDU16/CDU17/CDU13), #22 (exports `.staruml` Iter1–3), #23 (Kanban + wiki).
@@ -60,7 +62,7 @@ exports `.staruml` (issue #22).
 | 9 | 08/11/2026 | **Iter2 · CDU17 seguridad RBAC+JWT (Prompt 10 ejecutado, issue #13):** rama `feature/iter02-cdu17-seguridad` desde `develop` (`67ed627`); `iso2.version` 1.1.0-SNAPSHOT y apps 0.1.2-SNAPSHOT (jjwt 0.12.6 en el parent). `iso2-seguridad` 1.1.0 (módulo nuevo): dominio `Usuario` JPA (BCrypt + bloqueo temporal 5 intentos/15 min), `Rol` (ADMINISTRADOR/MEDICO/TECNICO/CELADOR/RECEPCIONISTA), `Permiso` + `MatrizPermisos` autoritativa; `SeguridadServicio` implementa `AutenticacionFacade` con `@Transactional(noRollbackFor=CredencialesInvalidasException)` (sin eso el bloqueo nunca persistía — lo destapó el test de integración); `JwtUtils` HS256 con secreto solo por `ISO2_JWT_SECRET` (fail-fast); `POST /api/auth/login` + `JwtAutenticacionFiltro` stateless — 36/36 tests, JwtUtils 100 % línea. `iso2-server-app` 0.1.2: cadena stateless + matriz RBAC por endpoint (GET catálogo cualquier rol, escritura solo ADMIN, h2-console ADMIN vía JWT), 401/403 con `ApiError`, Flyway `V1.2.0__cdu17_seguridad.sql` con 6 cuentas semilla — 23/23 tests (matriz RBAC completa + ciclo de bloqueo real). `iso2-client-app` 0.1.2: `ApiClienteAutenticacion` + `VistaInicioSesion` login-first, catálogo Bearer, `NavegacionPorRol` (editable solo ADMIN) + `VistaConsultaCatalogo` — 16/16 tests. `docs/modelo/iter02/`: 4 diagramas PlantUML + README, renderizados a SVG sin errores (PlantUML 1.2025.2, `-Playout smetana`). `mvn -B -ntp verify javadoc:javadoc` BUILD SUCCESS 14/14. Commits `c8213ee`..`2f8090a` + docs sync; **PR #14 → `develop` abierto, pendiente de fusión de Ismael** (tag `cfg-iter02` y cierre manual de #13 al fusionar, D29) | ~55k |
 | 10 | 08/11/2026 | **Iter3 · CDU13 agendas — parte servidora (Prompt 11 ejecutado, issue #15):** sesión «a» de la división en dos (CONTEXT.md §7, iteración de alta). Iter2 cerrada antes por Ismael (PR #14 fusionado, merge `870524e`; **#13 cerrada; tag `cfg-iter02` aún pendiente**). Rama `feature/iter03-cdu13-agendas` desde `870524e`. `iso2-common` 1.1.0: `AgendaFacade` extendida en MINOR sin tocar el baseline congelado (`franjasLibres`+`FranjaDTO`) — `listarAgendas`/`buscarPorProfesional`/`crearAgenda`/`anadirFranja`/`eliminarFranja`/`anadirFestivo`/`eliminarFestivo` + registros `AgendaDTO`/`FranjaGestionDTO`/`FestivoDTO` + excepciones `AgendaNoEncontradoException`/`AgendaConflictoException` (SOLAPE/FESTIVO/AGENDA_DUPLICADA). `iso2-agendas` 1.1.0: dominio JPA `Agenda`/`Franja`/`Festivo` + auditoría SHA-256 encadenada con GENESIS; reglas: sin solape (bordes que se tocan NO solapan), el festivo manda (franja en festivo, festivo con franjas y festivo repetido → FESTIVO), agenda duplicada → AGENDA_DUPLICADA, `inicio < fin` → 400; REST `/api/agendas` con 404/409/400. **Fix notable:** Hibernate inserta los hijos en cascada con id `@IDENTITY` pero no reasigna el id en la instancia en memoria (probado con test de descarte) → `FranjaRepositorio`/`FestivoRepositorio` persisten los hijos directamente para que el DTO de alta devuelva id. RBAC: `Permiso` +AGENDA_LEER/AGENDA_ESCRIBIR; matriz: ADMIN todo, MEDICO/TECNICO/RECEPCIONISTA leen, RECEPCIONISTA además escribe, CELADOR sin agendas. `iso2-server-app` 0.1.3: montado `iso2-agendas` `${iso2.version}` (el resto sigue 1.0.0), cadena de seguridad de agendas, Flyway `V1.3.0__cdu13_agendas.sql` (4 tablas + semilla dev). Tests: `AgendaServicioTest` 15/15 + ArchUnit 4/4 + baseline 1/1 (JaCoCo ≥ 60 % en verde), `AgendasApiTest` 16/16 (RBAC + solape/festivo por HTTP con H2). `docs/modelo/iter03/`: 4 diagramas PlantUML + README validados a SVG. `mvn -B -ntp verify` BUILD SUCCESS 14/14 + javadoc OK. Commits `e02f425`..`0366247` subidos a remoto **sin PR** (el PR se abre en 11b). Queda para **Prompt 11b**: `iso2-client-app` 0.1.3 + tests de integración + apertura del PR de Iter3 | ~55k |
 | 11 | 08/11/2026 | **Iter3 · CDU13 agendas — parte clienta + integración + PR (Prompt 11b ejecutado, issue #15):** sesión «b» en la misma rama `feature/iter03-cdu13-agendas`. `iso2-client-app` 0.1.3-SNAPSHOT: `ApiClienteAgendas` contra `/api/agendas` (listar, detalle, alta/baja de agenda/franja/festivo, franjas libres) con el token del login real, `ApiException.mensaje()` nuevo para mostrar el texto del servidor en la UI; barra de secciones Catalogo/Agendas (escena 1100x680) con `VistaGestionAgendas` (edicion, ADMIN/RECEPCIONISTA) y `VistaConsultaAgendas` (lectura, MEDICO/TECNICO) segun `NavegacionPorRol` (`agendasVisiblePara`/`agendasEditablesPara`, CELADOR fuera); 37/37 tests, 11 de ellos con servidor HTTP local (Jackson manda la hora ISO con segundos `08:00:00`). `iso2-server-app`: dep test-scoped de `iso2-client-app` 0.1.3 (version explicita, sin ciclo) + `AgendasClienteServidorIntegracionTest` 7/7 con la app servidora en RANDOM_PORT consumida por los clientes HTTP reales: flujo recepcionista con `CONFLICTO_SOLAPE`/`CONFLICTO_FESTIVO`, festivo que manda en ambos sentidos, duplicada 409, 404 con codigo en cuerpo, CELADOR 403 y franjas libres de la semilla del 9 al 13/11 con el festivo del 10 fuera (ids `it-*`, fechas 2027). **Fix destapado por la integracion:** el detalle de agenda inexistente respondia 404 con cuerpo vacio -> lanza `AgendaNoEncontradoException` y el advice devuelve `AGENDA_NO_ENCONTRADA`. Puertas CFG-03 tecnicas en verde (solapes/festivos por HTTP en ambos sentidos, ArchUnit, JaCoCo >= 60 %, ambas apps 0.1.3); `mvn -B -ntp verify` BUILD SUCCESS (server-app 46/46, client-app 37/37). Commits `ae79d7e`..`56dac60` subidos; **PR #18 → `develop` abierto** (sin `Closes`, D29), pendiente de fusion de Ismael + cierre manual de #15 + tag `cfg-iter03` | — |
-| 12 | 08/11/2026 | **Cierre de Iter3 en GitHub + reparación de `main` y preparación de R0 (Prompt 11c):** Ismael fusiona **PR #18** a `develop` (merge `b072b34`), cierra **#15** a mano y la CI queda verde. El agente crea y sube los tags anotados **`cfg-iter02` → `870524e`** y **`cfg-iter03` → `b072b34`** con el mismo estilo que `cfg-iter00/01` (puertas técnicas + pendientes D28/D18). Detectada la desviación de `main`: el **PR #17** (`feature/iter03-cdu13-agendas` → `main`, merge `5e0ef29`) se abrió por error; verificado con `git log origin/main --not origin/develop` que el único commit descartable era el propio merge (nada de `main` estaba fuera de `develop`) y que `main` estaba justo en el raíz `1245138`. Reparación con visto bueno de Ismael: `git push --force-with-lease=refs/heads/main:5e0ef29… origin 1245138:refs/heads/main` → `origin/main` = `1245138`. Creada la rama **`release/R0`** sobre `cfg-iter00` (`641e72d`, árbol idéntico a CFG-00) y abierto el **PR #19 → `main`** para publicar R0 con `v0.1.0` sobre su merge. Borrada la rama `feature/iter03-cdu13-agendas` (remoto y local). Nuevas issues de seguimiento: **#20** publicar R0, **#21** TC humanos CDU16/17/13, **#22** exports `.staruml` Iter1–3, **#23** Kanban + wiki. Nueva **ADR D30** en `DECISIONS.md` (`main` solo recibe merges de `release/RN` + comprobación previa) y §4 de `docs/mapa-configuraciones.md` actualizado. Ficheros de esta sesión: `DECISIONS.md`, `docs/mapa-configuraciones.md`, `STATUS.md`, `PROMPTS.md` en la rama `docs/cierre-iter03-y-r0` → PR a `develop` | — |
+| 12 | 08/11/2026 | **Cierre de Iter3 en GitHub + reparación de `main` y release R0 publicada (Prompt 11c):** Ismael fusiona **PR #18** a `develop` (merge `b072b34`), cierra **#15** a mano y la CI queda verde. El agente crea y sube los tags anotados **`cfg-iter02` → `870524e`** y **`cfg-iter03` → `b072b34`** con el mismo estilo que `cfg-iter00/01` (puertas técnicas + pendientes D28/D18). Detectada la desviación de `main`: el **PR #17** (`feature/iter03-cdu13-agendas` → `main`, merge `5e0ef29`) se abrió por error; verificado con `git log origin/main --not origin/develop` que el único commit descartable era el propio merge (nada de `main` estaba fuera de `develop`) y que `main` estaba justo en el raíz `1245138`. Reparación con visto bueno de Ismael: `git push --force-with-lease=refs/heads/main:5e0ef29… origin 1245138:refs/heads/main` → `origin/main` = `1245138`. Creada la rama **`release/R0`** sobre `cfg-iter00` (`641e72d`, árbol idéntico a CFG-00) y abierto el **PR #19 → `main`** para publicar R0 con `v0.1.0` sobre su merge. Borrada la rama `feature/iter03-cdu13-agendas` (remoto y local). Nuevas issues de seguimiento: **#20** publicar R0, **#21** TC humanos CDU16/17/13, **#22** exports `.staruml` Iter1–3, **#23** Kanban + wiki. Nueva **ADR D30** en `DECISIONS.md` (`main` solo recibe merges de `release/RN` + comprobación previa) y §4 de `docs/mapa-configuraciones.md` actualizado. Ismael fusiona el **PR #19** con merge commit `e165622` (padres `1245138` + `641e72d`) y el agente crea y sube el anotado **`v0.1.0`** sobre ese merge: hito R0 completado y CFG-00 con las dos etiquetas de su fila del mapa; #20 queda pendiente de cierre manual (D29). Ficheros de esta sesión: `DECISIONS.md`, `docs/mapa-configuraciones.md`, `STATUS.md`, `PROMPTS.md` en la rama `docs/cierre-iter03-y-r0` → PR a `develop` | — |
 
 ## Deuda / pendientes inmediatos
 
@@ -69,14 +71,16 @@ exports `.staruml` (issue #22).
 3. **TC humanos de CDU16** (D28, sustituye al orden de D16): tabla de casos de prueba diseñada por Ismael sobre el código ya fusionado en `develop` (`df09bca` = tag `cfg-iter01`); son criterio de cierre de Iter1/CFG-01. **Seguimiento: issue #21.**
 4. Exportar `docs/modelo/iter01/staruml/iso2-iter01.staruml` en StarUML (manual, D18) y subirlo como artefacto de CFG-01. **Seguimiento: issue #22.**
 5. Crear GitHub Project (Kanban) y la wiki de GitHub enlazando README/CONTEXT/PLAN/STATUS/DECISIONS/PROMPTS. **Seguimiento: issue #23.**
-6. ~~Tags `cfg-iter00`/`cfg-iter01` y cierre manual de #6/#9~~ → **Hecho 08/11** (ver Estado del repositorio). Queda `v0.1.0` sobre el merge del **PR #19** (`release/R0` → `main`), issue #20.
+6. ~~Tags `cfg-iter00`/`cfg-iter01` y cierre manual de #6/#9~~ → **Hecho 08/11** (ver Estado del repositorio). `v0.1.0` ya publicado sobre el merge `e165622` del PR #19; solo queda cerrar #20 a mano.
 7. **TC humanos de CDU17** (D28): tabla de casos de prueba diseñada por Ismael sobre el código del PR #14 ya fusionado (`870524e` = tag `cfg-iter02`); son criterio de cierre de Iter2/CFG-02. **Seguimiento: issue #21.**
 8. Exportar `docs/modelo/iter02/staruml/iso2-iter02.staruml` en StarUML (manual, D18) y subirlo como artefacto de CFG-02. Pasos en `docs/modelo/iter02/README.md`. **Seguimiento: issue #22.**
 9. ~~Tag anotado `cfg-iter02`~~ → **Hecho 08/11**: anotado y subido sobre `870524e`.
 10. **TC humanos de CDU13** (D28): tabla de casos diseñada por Ismael sobre el código de Iter3 ya fusionado (`b072b34` = tag `cfg-iter03`); son criterio de cierre de Iter3/CFG-03 junto con la frontera ArchUnit (ya verde). **Seguimiento: issue #21.**
 11. Exportar `docs/modelo/iter03/staruml/iso2-iter03.staruml` en StarUML (manual, D18). Pasos en `docs/modelo/iter03/README.md`. **Seguimiento: issue #22.**
 12. ~~Tag anotado `cfg-iter03` + cierre manual de #15~~ → **Hecho 08/11**: tag subido sobre `b072b34` e #15 cerrada a mano (D29).
-13. **Publicar R0 en `main` (issue #20):** fusionar el PR #19 con merge commit y crear el tag anotado `v0.1.0` sobre ese merge. Regla nueva **D30**: `main` solo recibe ramas `release/RN`, nunca `feature/…`.
+13. **R0 publicada (issue #20):** PR #19 fusionado con merge commit `e165622` y tag anotado `v0.1.0`
+    subido sobre ese merge. Solo queda **cerrar #20 a mano** (D29). Regla nueva **D30**: `main` solo
+    recibe ramas `release/RN`, nunca `feature/…`.
 
 ## Punto exacto de continuación para la próxima sesión
 
@@ -90,9 +94,8 @@ TC humanos de CDU13 (#21) y el export `.staruml` (#22).
 **Hecho también en la sesión 12:** tags `cfg-iter02`/`cfg-iter03` subidos, `main` reparado tras el PR #17
 (D30) y preparado el hito R0 con la rama `release/R0` + **PR #19 → `main`**.
 
-**Lo único que queda en GitHub antes de programar:** fusionar el **PR #19** con "Create a merge commit"
-(solo Ismael, D29/D30) → crear el tag anotado **`v0.1.0`** sobre ese merge (issue #20) y cerrarla a mano.
-Sin ese merge, CFG-00 no tiene su release en `main`.
+**Pendiente mínimo en GitHub antes de programar:** cerrar **#20** a mano (D29; la release R0 ya está
+publicada con `v0.1.0` → `e165622`) y fusionar el **PR #24** (docs de la sesión 12, `--no-ff`).
 
 **Siguiente sesión — Iter4 · CDU06 solicitudes (CFG-04)**, arrancando desde `develop` = `b072b34`:
 rama `feature/iter04-cdu06-solicitudes`, issue nueva con `Ref:` en los commits, `iso2.version` y
@@ -102,12 +105,12 @@ diagramas PlantUML en `docs/modelo/iter04/`. Puertas de CFG-04: **cobertura de `
 20/11/2026). Antes de nada: leer CONTEXT.md → DECISIONS.md (D28/D29/D30) → STATUS.md → PLAN.md §4 →
 matriz CFG-04 del mapa de configuraciones.
 
-**Pasos de Ismael pendientes (D29/D28/D18):** fusionar PR #19 + cerrar #20 + tag `v0.1.0`; y, en CFG-01
-a CFG-03, diseñar los **TC humanos de CDU16, CDU17 y CDU13** (#21), exportar
+**Pasos de Ismael pendientes (D29/D28/D18):** cerrar **#20** a mano y fusionar el PR #24 (docs); y, en
+CFG-01 a CFG-03, diseñar los **TC humanos de CDU16, CDU17 y CDU13** (#21), exportar
 `iso2-iter01/02/03.staruml` (#22) y montar el Kanban + wiki (#23). El agente no fusiona PRs ni toca
 `main` sin visto bueno explícito (D30).
 
 **Cierre de jornada 08/11/2026 (fin sesión 12):** repo estable y todo subido. Iter1, Iter2 e Iter3
-fusionadas y etiquetadas (`cfg-iter01`, `cfg-iter02`, `cfg-iter03`); `develop` en `b072b34`; `main`
-reparado y a la espera del PR #19 para publicar R0 con `v0.1.0`. Pendientes documentados en las issues
-#20–#23 y en la ADR D30.
+fusionadas y etiquetadas (`cfg-iter01`, `cfg-iter02`, `cfg-iter03`); `develop` en `b072b34`; **R0
+publicada en `main`** con el merge `e165622` del PR #19 y su etiqueta `v0.1.0`. Pendientes documentados
+en las issues #20–#23 y en la ADR D30.
