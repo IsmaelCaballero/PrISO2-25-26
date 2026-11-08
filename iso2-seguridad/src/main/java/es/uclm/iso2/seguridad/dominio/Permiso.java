@@ -9,9 +9,10 @@ import java.util.Optional;
  * y lo que comprueba {@code AutenticacionFacade.tienePermiso(rol, codigoPermiso)}:
  * cambiar un codigo es un cambio de contrato (SemVer).
  *
- * <p>En CDU17 solo se materializan los permisos del catalogo (CDU16 ya existente) y
- * la autogestion de seguridad; los permisos clinicos (solicitudes, citas, informes)
- * se iran anadiendo con su CDU correspondiente sin tocar la matriz de roles.</p>
+ * <p>En CDU17 (CFG-02) se materializaron los permisos del catalogo (CDU16 ya existente) y
+ * la autogestion de seguridad; con CDU13 (CFG-03) se anaden los de agenda. Los permisos
+ * de los demas dominios (solicitudes, citas, informes) se iran anadiendo con su CDU
+ * correspondiente.</p>
  *
  * @since 1.1.0 (CFG-02)
  */
@@ -22,6 +23,12 @@ public enum Permiso {
 
     /** Alta, edicion y baja logica del catalogo. */
     CATALOGO_ESCRIBIR("catalogo:escribir"),
+
+    /** Consultar las agendas de medicos y tecnicos (llega con CDU13). */
+    AGENDA_LEER("agenda:leer"),
+
+    /** Alta y gestion de franjas y festivos de las agendas (actor Administrativo del CDU13). */
+    AGENDA_ESCRIBIR("agenda:escribir"),
 
     /** Gestionar usuarios y roles (llega completo con CDU18). */
     USUARIO_GESTIONAR("usuario:gestionar");
