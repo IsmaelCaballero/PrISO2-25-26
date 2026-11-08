@@ -1,0 +1,46 @@
+@startuml cdu17-casos-uso
+' CDU17 (Iter2/CFG-02) - Casos de uso de "Gestion de seguridad y permisos"
+' Autor: agente (prompt 10) - exportacion a StarUML: Ismael (D18)
+title CDU17 - Gestion de seguridad y permisos (RBAC + sesion JWT)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Usuario SESCAM\n(ROL: MEDICO, TECNICO,\nCELADOR, RECEPCIONISTA)" as USUARIO
+actor "Administrador\n(ROL: ADMINISTRADOR)" as ADMIN
+actor "Sistema\n(filtro JWT)" as SYS #D9D9D9
+
+rectangle "ISO2 Radiodiagnostico - CDU17" {
+  usecase "UC17.1\nIniciar sesion\n(usuario + contrasena)" as UC1
+  usecase "UC17.2\nVerificar contrasena\nBCrypt" as UC2
+  usecase "UC17.3\nBloquear cuenta por\nintentos fallidos" as UC3
+  usecase "UC17.4\nEmitir sesion JWT\n(token + rol + caducidad)" as UC4
+  usecase "UC17.5\nAutenticar peticion\nmediante token" as UC5
+  usecase "UC17.6\nAutorizar operacion\nsegun la matriz de permisos" as UC6
+  usecase "UC16.x\nOperaciones del\ncatalogo (CDU16)" as UC16 #FFFFFF
+}
+
+USUARIO --> UC1
+ADMIN --> UC1
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC3 : <<extend>>\n(contrasena erronea repetida)
+UC1 ..> UC4 : <<include>>\n(credenciales validas)
+
+SYS --> UC5
+UC5 ..> UC6 : <<include>>
+UC6 ..> UC16 : <<include>>\n(toda operacion autorizada)
+
+note right of UC6
+  Matriz RBAC (CFG-02):
+  - lectura catalogo: cualquier rol autenticado
+  - escribir catalogo: solo ADMINISTRADOR
+  - la autorizacion la aplica SIEMPRE el
+    servidor; el cliente solo adapta el menu
+end note
+
+note bottom of UC3
+  5 intentos fallidos = bloqueo temporal.
+  El contador se persiste aunque el login
+  falle (noRollbackFor).
+end note
+@enduml
