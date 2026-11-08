@@ -225,3 +225,76 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
   a `**/target/reports/apidocs/**` (hasta ahora ese `path` no cogía nada y el artefacto salía con aviso).
 - **Efectos:** las tablas de clases de las páginas de la wiki enlazan la ficha Javadoc de cada clase;
   el sitio refleja siempre `develop`, así que los enlaces no se reescriben al cerrar iteraciones.
+
+## D33. Diseño de pruebas: clases de equivalencia + valores límite + conjetura de errores, compuestas con *pairwise*, y los mismos casos en JUnit y en los TC — ACEPTADA (08/11/2026, Ismael)
+
+- **Contexto:** hasta Iter4 las pruebas las iba escribiendo el agente de forma ad hoc (un test por caso que
+  parecía razonable) y las plantillas de TC humanos de D28 se escribían **a mano, por separado**, de forma que
+  JUnit y TC podían divergir y de hecho divergían (p. ej. en CDU16 el test de cliente esperaba `CODIGO_EN_USO`
+  y el servidor emite `CODIGO_DUPLICADO`). Ismael pide el 08/11 cambiar el método: las pruebas se desarrollan
+  **sobre la base de clases de equivalencia, el teorema de los valores límite y la conjetura de errores**, y
+  encima se pasa un filtro **pairwise** para reducir la combinatoria de parámetros.
+- **Decisión (método obligatorio a partir de ahora, hacia atrás y hacia delante):**
+  1. **Clases de equivalencia**: para cada entrada y cada estado relevante del dominio se listan sus clases
+     válidas y no válidas (una fila por clase), justificadas con la regla de negocio o la restricción de la
+     RF/`iso2-common` que las origina.
+  2. **Teorema del valor límite**: de cada clase ordenada se prueban los cuatro puntos del borde
+     (`min-1`, `min`, `max`, `max+1`) en la cota donde exista; los límites salen de una única fuente (los
+     `record` de `iso2-common`, las anotaciones JPA y la migración Flyway), nunca se inventan.
+  3. **Conjetura de errores**: se añaden casos escogidos por defecto plausible (valores nulos/vacíos,
+     unicode, campos largos, estados imposibles, reenvío de peticiones, concurrencia sobre el mismo recurso)
+     porque la experiencia dice que ahí están los fallos.
+  4. **Composición pairwise**: cuando un caso depende de varios factores, no se prueban todas las
+     combinaciones (comb exploding); se construye la tabla de factores × niveles y se cubre **todo par de
+     niveles**, que es lo que detecta casi todos los fallos por interacción. Se documenta la tabla y los pares
+     cubiertos.
+  5. **Un solo conjunto de casos, dos proyecciones**: **esos mismos casos** son los que se ejecutan con
+     **JUnit en Maven** y los que van en las **plantillas de TC humanos**. Cada caso tiene un id
+     (`TC16-01`, `TC17-03`, `TC13-05`, `TC06-02`…) y ese id aparece en el `@DisplayName` del test y en la
+     columna «Caso de prueba» de la plantilla de TC. **Una plantilla de TC pasa a ser la proyección legible de
+     la matriz**, ya no se escribe a mano.
+  6. **JavaDoc en los ficheros de test**: cada clase de test se documenta con JavaDoc indicando **la clase que
+     se prueba**, sus colaboradores (qué está simulado y qué es real) y la propiedad que se comprueba; los
+     métodos se documentan con el caso que implementan. El JavaDoc entra en el agregado de Pages (D32).
+  7. **Evidencia versionada**: la matriz (factores, niveles, clases de equivalencia, puntos límite, pares
+     pairwise) se versiona en **`docs/test/iterXX/`** junto al `.puml` de la iteración, de forma que el diseño
+     de las pruebas sea un ítem de configuración más, igual que el modelo (D31).
+  8. **Wiki**: la sección *Testing* de cada página de iteración identifica **claramente la clase probada** en
+     cada fila (no solo el número de tests por módulo).
+- **Orden de aplicación:** se empieza **revisando con más rigurosidad las pruebas de la Iteración 1**
+  (`iso2-catalogo`, CDU16: dominio `TipoPrueba`/`Protocolo`/`Politica` + `AuditoriaCatalogo`, servicio, REST y
+  ArchUnit), se regenera su plantilla `docs/tc/cdu16-tc-humanos.md` con los casos resultantes y se actualiza su
+  página de wiki. Después se extiende a Iter2 (CDU17) e Iter3 (CDU13), y **Iter5 (CDU12) nace ya con el
+  método**.
+- **Efectos:** los huecos que el método destapa en CDU16 se convierten en casos nuevos o en decisiones de
+  diseño: un `codigo` de catálogo de más de 40 caracteres hoy revienta contra la BD (500) en vez de devolver
+  400; `pagina` no numérico en `GET /api/catalogo/pruebas` da 500 en vez de 400; y la discrepancia
+  `CODIGO_EN_USO` (test de cliente) vs `CODIGO_DUPLICADO` (servidor). Si alguno obliga a cambiar una invariante
+  o una firma, **primero se edita el `.puml` de `docs/modelo/iter01/`** (D31) y luego el código. D28 **no**
+  cambia: los TC humanos los rellena y ejecuta Ismael; el agente genera los casos y las plantillas, pero no las
+  ejecuta. Las puertas de cobertura de JaCoCo y de ArchUnit se mantienen como están.
+## D34. Persistencia: MySQL en Docker, acceso con patrón DAO y conexión con patrón Agente (`AgenteMySQL`) — ACEPTADA (08/11/2026, Ismael) · implementación pendiente
+
+- **Contexto:** desde Iter1 la persistencia es **H2 en fichero** con Spring Data JPA y Flyway
+  (`V1.0.0`…`V1.4.0`), sin infraestructura de despliegue. Ismael decide el 08/11 que el trabajo siga sobre
+  **MySQL** y que se monte la infraestructura en contenedor.
+- **Decisión:**
+  - **Docker Compose** con cuatro servicios: **MySQL 8** (base de datos `iso2`), **phpMyAdmin** para
+    inspeccionar la base, y el **servidor** y el **cliente** de la aplicación.
+  - Cuentas de la instancia: `root` con password **`Iso2Curso25-26`** y el usuario de aplicación
+    **`gestoroperaciones` / `Iso2Curso25-26`**, que es el que maneja las **operaciones de entrada y salida**
+    (DML) de la aplicación.
+  - **Patrón DAO** para el acceso a los datos: el dominio deja de depender de `Repository` de Spring Data y se
+    introduce una interfaz `DAO` por agregado con su implementación sobre la base de datos.
+  - **Patrón Agente** para la conexión: una abstracción `Agente` que encapsula el conector del SGBD y se
+    particulariza en **`AgenteMySQL`**, de forma que se pueda **conectar a varios SGBD** añadiendo otro Agente
+    sin tocar el dominio ni el DAO.
+- **Pendiente de concretar con Ismael antes de implementar:** (a) si **H2** sigue siendo el perfil de test o se
+  sustituye por **MySQL en contenedor (Testcontainers)**; (b) si Flyway mantiene **migraciones duales**
+  H2/MySQL o pasa a solo MySQL; (c) si `gestoroperaciones` queda con **solo DML** y hace falta un usuario DDL
+  aparte para las migraciones; (d) driver y versión exacta de MySQL y volumen persistente del contenedor;
+  (e) si va en **rama propia** (`feature/persistencia-mysql-dao-agente`) o dentro de Iter5/CDU12.
+- **Efectos previstas:** hay que tocar los `pom.xml` (driver MySQL), la configuración de `iso2-server-app`
+  (`application*.yml`), las migraciones y los tests de integración que hoy dependen de H2; y el modelo de
+  `docs/modelo/iterXX` de la iteración que lo incorpore gana el diagrama de la capa DAO/Agente (D31). El
+  despliegue en contenedor no cambia las puertas de calidad existentes.

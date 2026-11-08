@@ -506,3 +506,56 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
   - En esta misma sesión se abre el PR de docs `docs/cierre-iter04-sesiones-14-15` (este `STATUS.md` +
     `PROMPTS.md`) → `develop`.
   - **Siguiente bloque:** Iter5 · CDU12 citas (CFG-05) — puertas de concurrencia de hueco y rollback.
+
+### Prompt 14 — Cierre de Iter4 en GitHub + nueva estrategia de pruebas (D33) y persistencia MySQL [✔ ejecutado — cierre y wiki; rediseño de pruebas y MySQL pendientes]
+
+> Prompt lanzado por Ismael (08/11/2026, sesión 16, **texto reconstruido** de la conversación): cerrar la
+> Iter4 y preparar la Iter5 **cambiando el enfoque de dos cosas**. (1) **Las pruebas**: a partir de ahora hay
+> que desarrollarlas **sobre la base de clases de equivalencia, el teorema de los valores límite y la
+> conjetura de errores**, y además pasar esos casos por **pairwise** para reducir la combinatoria; esos mismos
+> casos se ejecutan **con JUnit en Maven** y son **exactamente los que van en las plantillas de casos de prueba
+> de los TC**, tanto las que ya tenemos como las que aparezcan; los **ficheros de test se documentan con
+> JavaDoc**; el resultado se lleva a la **wiki** y hay que **identificar claramente la clase que se está
+> probando**; hay que **revisar con más rigurosidad los casos que ya tenemos** y **empezar por las pruebas de la
+> Iteración 1**; el agente **genera las plantillas y todos los casos**. (2) **La persistencia**: vamos a
+> trabajar sobre **MySQL**; desplegar **Docker con una imagen de MySQL y phpMyAdmin**, y también el cliente y el
+> servidor; **password de `root` `Iso2Curso25-26`** y un usuario **`gestoroperaciones` / `Iso2Curso25-26`** para
+> manejar las operaciones de entrada y salida; el acceso a los datos se hace con el **patrón DAO** y la conexión
+> con el **patrón Agente** particularizado en **`AgenteMySQL`** (el Agente es una abstracción que permite
+> conectar a varios SGBD). «De momento vamos a hacer esto. Dime si necesitas algo más.»
+
+- Resultado de la parte de **cierre** (08/11/2026; rama `docs/cierre-iter04-material` desde `origin/develop`,
+  PR a `develop`):
+  - Ismael fusiona **PR #31** (código Iter4/CDU06, merge **`a3fe109`**) y **PR #32** (docs sesiones 14-15, merge
+    **`3b02718`**); CI `construir` en verde. Tip de `develop` = `3b02718`.
+  - **Tag anotado `cfg-iter04` creado sobre `a3fe109`** y subido. Criterio aplicado: el tag va sobre el **merge
+    del código** (la configuración que superó la puerta de cobertura ≥ 85 %), **no** sobre el merge documental
+    posterior.
+  - Rama `feature/iter04-cdu06-solicitudes` **borrada** (remoto y local) tras el merge.
+  - **Wiki** (repo `PrISO2-25-26.wiki.git`, rama `master`, merge `5207bae`): página nueva
+    **`Iter4-CDU06-solicitudes.md`** con los 4 diagramas de `docs/modelo/iter04/` subidos como
+    `images/iter04-cdu06-*.png`, la tabla de componentes enlazando su ficha Javadoc (D32) y la sección
+    **Testing** con la **clase probada** identificada en cada fila; fila nueva en `Home.md`.
+  - Plantilla de TC que faltaba, creada: **`docs/tc/cdu06-tc-humanos.md`** con 14 casos (TC06-01…TC06-14)
+    derivados de la **superficie real** de la API, comprobada leyendo `SolicitudControlador`:
+    `POST /api/solicitudes` (4 campos; `medicoId` **no** viaja en el cuerpo, lo fija el servidor desde el claim
+    `sub` del JWT), `GET /api/solicitudes/mias`, `GET /{id}` (propietario o admin), `GET /{id}/integridad`
+    (huella + hash canónico), anti-duplicado RF06.3, RBAC y la semilla de `V1.4.0__cdu06_solicitudes.sql`
+    (`SEM-RX-TORAX`, `SEM-RM-RODILLA`). **No hay solicitud sembrada**, así que TC06-03 empieza **creando** la
+    primera y `pacienteId` se rellena con `medico` porque la semilla no tiene pacientes.
+  - **Desviación nueva detectada contra D30:** el **PR #29** fusionó `develop` → `main` (merge **`d12388b`**,
+    19:01) **sin rama `release/RN` y sin etiqueta de release**, dejando `main` por delante de `v0.1.0`.
+    Planteado a Ismael: etiquetar `d12388b`, volver a D30 con `release/R1` sobre `cfg-iter04`, o revertir
+    `main` a `e165622`. **El agente no toca `main`** y espera indicación.
+- Lo que **aún no** se ha hecho de este prompt (bloque siguiente, sigue abierto): la matriz de **clases de
+  equivalencia + valores límite + conjetura de errores** de la Iter1 (`iso2-catalogo`) y su composición
+  **pairwise**, los JUnit con **JavaDoc** y `@DisplayName` por id de caso, la evidencia versionada en
+  `docs/test/iter01/`, regenerar `docs/tc/cdu16-tc-humanos.md` con esos mismos casos y actualizar la wiki de la
+  Iter1 **por clase probada**; y el **Docker + MySQL + phpMyAdmin + DAO + `Agente`/`AgenteMySQL`** (ADR **D34**
+  al implementarse).
+- **Decisiones pedidas a Ismael** antes de montar la persistencia: si **H2** sigue como perfil de test o se
+  sustituye por **MySQL en contenedor (Testcontainers)**; si Flyway mantiene **migraciones duales** H2/MySQL o
+  solo MySQL; si `gestoroperaciones` tiene **solo DML** y hace falta un usuario DDL aparte para Flyway; driver y
+  versión de MySQL y volumen persistente; y si el trabajo va en **rama propia** o dentro de Iter5/CDU12.
+- **Siguiente bloque:** aplicar D33 a la Iter1 y luego Iter5 · CDU12 citas (CFG-05) con la capa de persistencia
+  MySQL (D34).
