@@ -157,3 +157,12 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
   obligatorios por RF (1 feliz + ≥2 error + 1 permisos, D24) y son criterio de cierre de iteración.
 - Se mantiene todo lo demás de D16: JUnit 5, informes Surefire + JaCoCo en `mvn verify`, umbrales por
   release. Cada iteración deja una tarea explícita "TC humanos del CDU" en STATUS.md.
+
+## D29. Cierre de issues: manual al fusionar a `develop` (lección del 07/11/2026)
+
+- Los `Closes #N` de la descripción de un PR solo cierran el issue cuando el PR se fusiona a la
+  rama por defecto del repo (`main`). Como nuestro flujo fusiona las feature a `develop`, los
+  issues de tarea (#6, #9) NO se cerraron solos pese al `Closes #N` en los PRs #7 y #10.
+- A partir de ahora: al fusionar un PR a `develop`, Ismael cierra a mano el issue de la tarea
+  (o se cierra al publicar el release correspondiente en `main`). El agente lo recuerda en cada
+  PR nuevo con una línea "Cerrar #N a mano al fusionar" en el cuerpo.
