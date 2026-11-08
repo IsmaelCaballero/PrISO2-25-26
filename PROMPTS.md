@@ -421,3 +421,26 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
   - **Siguiente sesión:** Iter4 · CDU06 solicitudes (CFG-04) desde `develop` = `c1219a8`, con modelo en
     `docs/modelo/iter04/` ya en formato D31 (`.puml` + `.png` incrustados). Pendiente de Ismael: rellenar
     y ejecutar los TC de `docs/tc/` y revisar el Kanban visualmente.
+
+### Prompt 11e — Wiki con el trabajo de cada iteración por componente
+
+> Prompt lanzado por Ismael (08/11/2026): «Me parece bien. Tareas hechas. Te quería hacer una pregunta:
+> ¿podemos crear en la Wiki del Proyecto alguna descripción del trabajo que se va haciendo en cada
+> iteración por cada componente, añadiendo los diagramas correspondientes? Si no, vamos a por la Iter4».
+
+- Resultado (08/11/2026, mismo día; wiki = repo `PrISO2-25-26.wiki.git`, merge `50fd48b`):
+  - **Sí se puede**, editando el repo wiki por git (`git clone …/PrISO2-25-26.wiki.git`, rama `master`);
+    la API REST de wiki da 404, así que no hay otra vía programática.
+  - **`Home.md` reindexado:** ficheros vivos del repositorio + tabla «Trabajo por iteración» con los
+    diagramas, y una página por iteración ya cerrada.
+  - **Cuatro páginas nuevas**, una por CFG cerrada: `Iter0-CFG-00-esqueleto`, `Iter1-CDU16-catalogo`,
+    `Iter2-CDU17-seguridad`, `Iter3-CDU13-agendas`. Cada una cabecera con CDU/CFG/rama/PR/tag/issue/fecha,
+    una **tabla de componentes con su versión** (`iso2-common`, el módulo de negocio, `iso2-seguridad`,
+    `iso2-server-app`, `iso2-client-app`) y el trabajo hecho en cada uno, los **cuatro diagramas** de la
+    iteración, y las **puertas** de esa configuración (técnicas verdes + TC humanos pendientes de Ismael).
+  - **Imágenes:** los 12 PNG se copian a `images/` del repo wiki y se incrustan con `<img … width>`
+    reducidos (620-900 px) + enlace «Ver a tamaño completo» al raw del wiki (mismo criterio D31).
+    Verificado sobre el HTML renderizado: las cuatro páginas dan 200, los `<img>` conservan el ancho y
+    los enlaces a `raw.githubusercontent.com/wiki/…` responden 200 `image/png`.
+  - Iter0 va sin diagramas (CFG-00 no implementa CDU: deja el reactor de 14 módulos y las fachadas).
+  - **Siguiente bloque:** Iter4 · CDU06 solicitudes (CFG-04).
