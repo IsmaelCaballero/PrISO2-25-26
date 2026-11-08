@@ -125,6 +125,17 @@
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Tests de integracion cliente-servidor (CDU13, CFG-03): la prueba del server
+         levanta la API real en RANDOM_PORT y la consume con los clientes HTTP reales
+         de iso2-client-app (solo en test: en produccion el cliente es un proceso
+         aparte, por eso el servidor no depende de el nunca). Version explicita del
+         release train, no ${iso2.version} (eso es para los modulos de dominio). -->
+    <dependency>
+      <groupId>es.uclm.iso2</groupId>
+      <artifactId>iso2-client-app</artifactId>
+      <version>0.1.3-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
