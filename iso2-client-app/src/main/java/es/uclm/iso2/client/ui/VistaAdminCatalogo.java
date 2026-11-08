@@ -54,9 +54,9 @@ public final class VistaAdminCatalogo {
     private final Spinner<Integer> spinnerMaxCancel = new Spinner<>();
 
     /**
-     * Construye la vista conectada a la API del servidor.
+     * Construye la vista conectada a la API del catalogo.
      *
-     * @param api cliente del catalogo ya autenticado con rol ADMIN
+     * @param api cliente del catalogo autenticado con token de rol ADMINISTRADOR
      */
     public VistaAdminCatalogo(ApiClienteCatalogo api) {
         this.api = api;
