@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  iso2-agendas — CFG-03 — v1.1.0 (CDU13)
+  Agendas de medicos y tecnicos: dominio (agenda + franjas + festivos + auditoria de
+  hash encadenado), servicio que implementa AgendaFacade con las reglas de solape y
+  festivo, y endpoints REST /api/agendas.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -9,25 +15,54 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-agendas</artifactId>
-  <!-- Baseline contractual 1.0.0 (D22). Subira MINOR con el CDU que le corresponda (D23). -->
-  <version>1.0.0</version>
+  <!-- CFG-03 (D22/D23): sube MINOR de 1.0.0 a 1.1.0 al implementar CDU13. En la rama
+       feature queda 1.1.0-SNAPSHOT; al fusionar a develop perdera el sufijo. -->
+  <version>1.1.0-SNAPSHOT</version>
   <name>iso2-agendas</name>
+
   <properties>
-    <!-- Baseline sin clases publicas: el Javadoc no rompe el CI. Cambiar a true
-         (o quitar la propiedad) al anadir la primera clase del CDU. -->
-    <javadoc.failOnError>false</javadoc.failOnError>
+    <!-- Puerta de calidad CFG-03 (D24/D27): cobertura de linea >= 60 % en el modulo. -->
+    <jacoco.line.min>0.60</jacoco.line.min>
   </properties>
 
-  <description>Agendas de medicos y tecnicos (baseline Iter0).</description>
+  <description>Agendas de medicos y tecnicos con franjas y festivos (CDU13, CFG-03).</description>
+
   <dependencies>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-common</artifactId>
       <version>${iso2.version}</version>
     </dependency>
+
+    <!-- Persistencia JPA/Hibernate y web MVC: el modulo se ensambla en iso2-server-app. -->
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <!-- Usuario de auditoria desde SecurityContextHolder (JWT desde CDU17). -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-core</artifactId>
+    </dependency>
+
+    <!-- Tests tecnicos de humo/integracion (los TC humanos de CDU13 llegan segun D28). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
