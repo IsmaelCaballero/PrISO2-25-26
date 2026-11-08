@@ -1,0 +1,162 @@
+@startuml cdu17-clases-diseno
+' CDU17 (Iter2/CFG-02) - Clases de diseno: iso2-seguridad 1.1.0 + servidor + cliente
+' Autor: agente (prompt 10) - exportacion a StarUML: Ismael (D18)
+title CDU17 - Clases de diseno implementadas (iso2-seguridad 1.1.0-SNAPSHOT, apps 0.1.2-SNAPSHOT)
+
+skinparam classAttributeIconSize 0
+
+package "iso2-common 1.1.0 (contrato congelado)" {
+  interface AutenticacionFacade {
+    + iniciarSesion(CredencialesDTO) : SesionDTO
+  }
+  class CredencialesDTO <<record>> {
+    + usuario : String
+    + password : String
+  }
+  class SesionDTO <<record>> {
+    + usuario : String
+    + rol : String
+    + token : String
+    + caducidad : Instant
+  }
+  class ApiError <<record>> {
+    + codigo : String
+    + mensaje : String
+  }
+}
+
+package "iso2-seguridad 1.1.0 (nuevo modulo)" {
+  package dominio {
+    enum Rol {
+      ADMINISTRADOR; MEDICO; TECNICO
+      CELADOR; RECEPCIONISTA
+      + desdeCodigo(String) : Optional~Rol~
+    }
+    enum Permiso {
+      CATALOGO_LEER; CATALOGO_ESCRIBIR
+      USUARIO_GESTIONAR
+      + codigo() : String
+    }
+    class MatrizPermisos <<final>> {
+      {static} + permisosDe(Rol) : Set~Permiso~
+      {static} + tienePermiso(Rol, Permiso) : boolean
+    }
+    class Usuario <<JPA, seguridad_usuario>> {
+      - id : Long
+      - usuario : String (unico)
+      - passwordHash : String (BCrypt)
+      - rol : String
+      - activo : boolean
+      - intentosFallidos : int
+      - bloqueadoHasta : Instant
+      + registrarIntentoFallido(max, duracion)
+      + reiniciarIntentos()
+      + estaBloqueado() : boolean
+    }
+    class CredencialesInvalidasException <<RuntimeException>>
+    class CuentaBloqueadaException <<RuntimeException>>
+  }
+  package repositorio {
+    interface UsuarioRepositorio extends JpaRepository {
+      + findByUsuario(String) : Optional~Usuario~
+    }
+  }
+  package servicio {
+    class SeguridadServicio <<@Service>> {
+      + iniciarSesion(CredencialesDTO) : SesionDTO
+      ..
+      @Transactional(noRollbackFor =
+      CredencialesInvalidasException)
+    }
+    class JwtUtils <<@Component>> {
+      {static} CLAIM_ROL = "rol"
+      + generar(usuario, Rol) : SesionDTO
+      + leerSesion(token) : Optional~SesionDTO~
+      ..
+      secreto via ISO2_JWT_SECRET
+      HMAC-SHA, caducidad corta
+    }
+  }
+  package web {
+    class ControladorAutenticacion <<@RestController>> {
+      + login(CredencialesDTO) : SesionDTO
+      + advice local: 401/401/400 + ApiError
+    }
+    class JwtAutenticacionFiltro <<OncePerRequestFilter>> {
+      # doFilterInternal(req, res, chain)
+      ..
+      Bearer -> SecurityContext ROLE_<ROL>
+    }
+  }
+}
+
+package "iso2-server-app 0.1.2" {
+  class ConfigSeguridad <<@Configuration>> {
+    + filtroHttp(HttpSecurity, JwtUtils)
+    + passwordEncoder() : BCrypt
+    ..
+    stateless, /api/auth/login publica
+    GET catalogo: autenticado
+    POST/PUT/DELETE: hasRole ADMINISTRADOR
+    401/403 -> ApiError JSON manual
+  }
+}
+
+package "iso2-client-app 0.1.2" {
+  class ApiClienteAutenticacion {
+    + iniciarSesion(usuario, pass) : SesionDTO
+  }
+  class ApiClienteCatalogo {
+    + ApiClienteCatalogo(baseUrl, tokenJwt)
+    ..
+    Authorization: Bearer <token>
+  }
+  class NavegacionPorRol <<final>> {
+    {static} + catalogoEditablePara(rol) : boolean
+  }
+  class VistaInicioSesion <<JavaFX>>
+  class VistaConsultaCatalogo <<JavaFX, solo lectura>>
+  class VistaAdminCatalogo <<JavaFX, Iter1>>
+  class Iso2ClientApplication <<JavaFX>> {
+    {static} VERSION = "0.1.2-SNAPSHOT"
+    + start(Stage) : login primero, vista por rol
+  }
+}
+
+SeguridadServicio ..|> AutenticacionFacade : implementa
+SeguridadServicio ..> UsuarioRepositorio
+SeguridadServicio ..> JwtUtils : emitir sesion
+SeguridadServicio ..> Rol : validar rol
+SeguridadServicio ..> MatrizPermisos : tienePermiso?
+SeguridadServicio ..> Permiso
+SeguridadServicio ..> CredencialesInvalidasException : lanza
+SeguridadServicio ..> CuentaBloqueadaException : lanza
+UsuarioRepositorio o-- Usuario
+Usuario ..> Rol
+MatrizPermisos o-- Rol : matriz estatica
+MatrizPermisos ..> Permiso
+ControladorAutenticacion --> SeguridadServicio
+JwtAutenticacionFiltro --> JwtUtils
+ConfigSeguridad ..> JwtAutenticacionFiltro : anade al chain
+ConfigSeguridad ..> JwtUtils
+ConfigSeguridad ..> ApiError : 401/403 JSON
+
+ControladorAutenticacion ..> CredencialesDTO : entrada
+ControladorAutenticacion ..> SesionDTO : salida
+SeguridadServicio ..> SesionDTO
+
+ApiClienteAutenticacion ..> SesionDTO
+ApiClienteAutenticacion ..> CredencialesDTO
+Iso2ClientApplication --> VistaInicioSesion
+Iso2ClientApplication --> NavegacionPorRol : decide vista
+VistaInicioSesion --> ApiClienteAutenticacion
+VistaConsultaCatalogo --> ApiClienteCatalogo
+VistaAdminCatalogo --> ApiClienteCatalogo
+
+note right of SeguridadServicio
+  El bloqueo solo es real gracias a
+  noRollbackFor: el contador+1 se
+  persiste aunque el login termine en 401
+  (demostrado por SeguridadApiTest).
+end note
+@enduml

@@ -1,0 +1,65 @@
+@startuml cdu17-secuencia
+' CDU17 (Iter2/CFG-02) - Secuencia de login + peticion autorizada con JWT
+' Autor: agente (prompt 10) - exportacion a StarUML: Ismael (D18)
+title CDU17 - Inicio de sesion y uso del token (flujo principal + bloqueo + 401/403)
+
+skinparam sequence {
+  LifeLineParticipant true
+}
+
+actor "Celador\n(rol CELADOR)" as USUARIO
+participant "VistaInicioSesion\n(cliente JavaFX)" as VISTA
+participant "ApiClienteAutenticacion\n(cliente)" as AUTH
+boundary "ControladorAutenticacion\nPOST /api/auth/login" as CTRL
+control "SeguridadServicio" as SVC
+entity "Usuario\n(JPA, hash BCrypt)" as ENT
+database "JwtUtils\n(HMAC-SHA, claim rol)" as JWT
+participant "JwtAutenticacionFiltro\n(peticiones siguientes)" as FILTRO
+boundary "CatalogoControlador\n/api/catalogo/**" as CATALOGO
+
+USUARIO -> VISTA : usuario + contrasena, pulsa Acceder
+VISTA -> AUTH : iniciarSesion(usuario, password)
+AUTH -> CTRL : POST /api/auth/login (JSON CredencialesDTO)
+CTRL -> SVC : iniciarSesion(dto)
+SVC -> ENT : findByUsuario(usuario)
+
+alt usuario existe, contrasena valida, sin bloqueo
+  SVC -> ENT : verificar BCrypt + reiniciarIntentos()
+  SVC -> JWT : generar(usuario, rol)
+  JWT --> SVC : SesionDTO(token, rol, caducidad)
+  SVC --> CTRL : sesion (transaccion OK)
+  CTRL --> AUTH : 200 + SesionDTO(JSON)
+  AUTH --> VISTA : sesion
+  VISTA --> USUARIO : abre la vista segun el rol\n(NavegacionPorRol)
+else contrasena erronea (1-4 intentos)
+  SVC -> ENT : registrarIntentoFallido()\n(contador+1, persistido con\nnoRollbackFor)
+  SVC --> CTRL : CredencialesInvalidasException
+  CTRL --> AUTH : 401 + ApiError(CREDENCIALES_INVALIDAS)
+  AUTH --> VISTA : ApiException(401, CREDENCIALES_INVALIDAS)
+  VISTA --> USUARIO : alerta con el codigo del contrato
+else 5. intento fallido
+  SVC -> ENT : registrarIntentoFallido()\nbloqueadoHasta = ahora + 15 min
+  SVC --> CTRL : CredencialesInvalidasException
+  CTRL --> AUTH : 401 + ApiError(CREDENCIALES_INVALIDAS)
+  note right of SVC : el siguiente intento devolvera\n401 + ApiError(CUENTA_BLOQUEADA)\nmientras no expire el bloqueo
+end
+
+== Peticion autorizada con el token ==
+USUARIO -> VISTA : consultar catalogo
+VISTA -> CATALOGO : GET /api/catalogo/pruebas\n(Authorization: Bearer <token>)
+CATALOGO <- FILTRO : lee el token: si es valido,\nautenticacion con ROLE_CELADOR
+alt token valido y permiso concedido
+  FILTRO -> CATALOGO : continuar cadena de filtros
+  CATALOGO --> USUARIO : 200 + lista JSON
+else token ausente, firmado mal o caducado
+  FILTRO --> USUARIO : 401 + ApiError(AUTENTICACION_REQUERIDA)
+else rol sin permiso (p. ej. CELADOR con POST alta)
+  FILTRO --> USUARIO : 403 + ApiError(FORBIDDEN)
+end
+
+note over JWT
+  El token es autocontenido: el servidor no guarda
+  sesion (stateless). El claim "rol" es la fuente de
+  autoridad; caducidad corta + relogin para renovarla.
+end note
+@enduml

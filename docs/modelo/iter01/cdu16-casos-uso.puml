@@ -1,0 +1,63 @@
+@startuml cdu16-casos-uso
+' CDU16 (Iter1/CFG-01) - Diagrama de casos de uso (vision)
+' Autor: agente (prompt 09) - revision y exportacion a StarUML: Ismael (D18)
+title CDU16 - Configurar parametros: tipos de prueba, protocolos, politicas (Iter1/CFG-01)
+
+actor "Administrador" as ADMIN
+actor "Medico" as MED #lightgray
+actor "Tecnico facultativo" as TEC #lightgray
+actor "Celador" as CEL #lightgray
+actor "Recepcionista" as REC #lightgray
+actor "Sistema externo\n(pendiente CDU19/Iter5)" as EXT #lightgray
+
+rectangle "iso2-catalogo (1.1.0)" {
+  usecase "UC16.1\nDar de alta\nprueba de imagen" as UC1
+  usecase "UC16.2\nModificar prueba\ndel catalogo" as UC2
+  usecase "UC16.3\nDar de baja logica\nuna prueba" as UC3
+  usecase "UC16.4\nReactivar una\nprueba desactivada" as UC4
+  usecase "UC16.5\nConsultar y buscar\npruebas del catalogo" as UC5
+  usecase "UC16.6\nVerificar trazabilidad\nde la auditoria" as UC6
+}
+
+usecase "Registrar cambio en la\nauditoria encadenada\n(autor, accion, firma)" as UC7
+
+ADMIN --> UC1
+ADMIN --> UC2
+ADMIN --> UC3
+ADMIN --> UC4
+ADMIN --> UC5
+ADMIN --> UC6
+EXT ..d..> UC5 : lectura programada\n(fuera de alcance Iter1)
+
+MED  --> UC5
+TEC  --> UC5
+CEL  --> UC5
+REC  --> UC5
+
+UC1 .r..> UC7 : <<include>>
+UC2 .d..> UC7 : <<include>>
+UC3 .d..> UC7 : <<include>>
+UC4 .l..> UC7 : <<include>>
+
+note right of UC3
+  No existe borrado fisico:
+  una prueba en uso solo
+  puede desactivarse (baja
+  logica idempotente).
+end note
+
+note bottom of UC1
+  El codigo de prueba no se
+  reutiliza nunca: tras la baja
+  sigue ocupado (409 si se
+  reintenta como alta).
+end note
+
+note bottom of UC5
+  Los demas roles (medico, tecnico,
+  celador, recepcion) SOLO consultan:
+  el alta/modificacion/baja es exclusiva
+  del Administrador (RBAC, endurecido
+  con JWT en CDU17).
+end note
+@enduml

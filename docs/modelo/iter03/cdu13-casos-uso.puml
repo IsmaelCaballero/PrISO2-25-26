@@ -1,0 +1,75 @@
+@startuml cdu13-casos-uso
+' CDU13 (Iter3/CFG-03) - Casos de uso de "Gestion de agendas de medicos y tecnicos"
+' Autor: agente (prompt 11) - exportacion a StarUML: Ismael (D18)
+title CDU13 - Gestion de agendas (franjas de disponibilidad + festivos)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Profesional\n(ROL: MEDICO, TECNICO)" as PROF
+actor "Administrativo\n(ROL: RECEPCIONISTA)" as ADMIN
+actor "Administrador\n(ROL: ADMINISTRADOR)" as SYSADMIN
+actor "Sistema\n(filtro JWT + reglas de dominio)" as SYS #D9D9D9
+
+rectangle "ISO2 Radiodiagnostico - CDU13" {
+  usecase "UC13.1\nConsultar la agenda\nde un profesional" as UC1
+  usecase "UC13.2\nConsultar huecos libres\nen un rango de fechas" as UC2
+  usecase "UC13.3\nCrear la agenda\nde un profesional" as UC3
+  usecase "UC13.4\nAnadir franja\nde disponibilidad" as UC4
+  usecase "UC13.5\nEliminar franja" as UC5
+  usecase "UC13.6\nAnadir festivo\n(dia no disponible)" as UC6
+  usecase "UC13.7\nEliminar festivo" as UC7
+  usecase "UC13.8\nComprobar solape\ncon otras franjas" as UC8
+  usecase "UC13.9\nComprobar colision\ncon festivos" as UC9
+  usecase "UC13.10\nAuditar la operacion\n(cadena de hash)" as UC10
+  usecase "UC17.5-6\nAutenticar y autorizar\n(CDU17)" as UC17 #FFFFFF
+}
+
+PROF --> UC1
+PROF --> UC2
+ADMIN --> UC1
+ADMIN --> UC2
+ADMIN --> UC3
+ADMIN --> UC4
+ADMIN --> UC5
+ADMIN --> UC6
+ADMIN --> UC7
+SYSADMIN --> UC3
+SYSADMIN --> UC4
+SYSADMIN --> UC6
+
+UC1 ..> UC17 : <<include>>
+UC3 ..> UC17 : <<include>>
+UC4 ..> UC17 : <<include>>
+
+UC4 ..> UC8 : <<include>>
+UC4 ..> UC9 : <<include>>
+UC6 ..> UC9 : <<include>>\n(festivo con franjas ya puestas)
+UC3 ..> UC10 : <<include>>
+UC4 ..> UC10 : <<include>>
+UC6 ..> UC10 : <<include>>
+
+SYS --> UC10
+
+note right of UC9
+  Regla "el festivo manda" (CFG-03):
+  - franja en dia festivo -> CONFLICTO_FESTIVO
+  - festivo en dia con franjas -> CONFLICTO_FESTIVO
+  - el mismo festivo repetido -> CONFLICTO_FESTIVO
+end note
+
+note bottom of UC8
+  Solape = inicio < fin y fin > inicio del
+  otro tramo, mismo dia. Los bordes que se
+  tocan (12:00-14:00 tras 10:00-12:00) NO
+  solapan: se aceptan.
+  Todo conflicto se responde 409 con codigo
+  estable del contrato.
+end note
+
+note left of UC10
+  Cada alta/baja deja un registro con
+  SHA-256 encadenado (como en CDU16/17):
+  la auditoria es verificable.
+end note
+@enduml

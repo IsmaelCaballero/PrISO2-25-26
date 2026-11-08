@@ -1,0 +1,199 @@
+@startuml cdu13-clases-diseno
+' CDU13 (Iter3/CFG-03) - Clases de diseno: iso2-agendas 1.1.0 + contrato + servidor
+' Autor: agente (prompt 11) - exportacion a StarUML: Ismael (D18)
+title CDU13 - Clases de diseno implementadas (iso2-agendas 1.1.0-SNAPSHOT, apps 0.1.3-SNAPSHOT)
+
+skinparam classAttributeIconSize 0
+
+package "iso2-common 1.1.0 (contrato: baseline + extension MINOR CDU13)" {
+  interface AgendaFacade {
+    + franjasLibres(profesionalId, desde, hasta) : List~FranjaDTO~
+    ..
+    + listarAgendas() : List~AgendaDTO~
+    + buscarPorProfesional(String) : Optional~AgendaDTO~
+    + crearAgenda(String) : AgendaDTO
+    + anadirFranja(String, FranjaGestionDTO) : FranjaGestionDTO
+    + eliminarFranja(String, Long)
+    + anadirFestivo(String, FestivoDTO) : FestivoDTO
+    + eliminarFestivo(String, Long)
+  }
+  class FranjaDTO <<record, congelado>> {
+    + profesionalId : String
+    + dia : LocalDate
+    + inicio : LocalTime
+    + fin : LocalTime
+  }
+  class AgendaDTO <<record, nuevo>> {
+    + profesionalId : String
+    + franjas : List~FranjaGestionDTO~
+    + festivos : List~FestivoDTO~
+  }
+  class FranjaGestionDTO <<record, nuevo>> {
+    + id : Long
+    + dia : LocalDate
+    + inicio : LocalTime
+    + fin : LocalTime
+  }
+  class FestivoDTO <<record, nuevo>> {
+    + id : Long
+    + dia : LocalDate
+    + motivo : String
+  }
+  class AgendaNoEncontradoException <<RuntimeException>>
+  class AgendaConflictoException <<RuntimeException>> {
+    + tipo() : Conflicto
+  }
+  enum Conflicto {
+    SOLAPE; FESTIVO; AGENDA_DUPLICADA
+  }
+  class ApiError <<record>> {
+    + codigo : String
+    + mensaje : String
+  }
+}
+
+package "iso2-agendas 1.1.0 (modulo elevado a CFG-03)" {
+  package dominio {
+    class Agenda <<JPA, agenda_profesional>> {
+      - id : Long
+      - profesionalId : String (unico)
+      - franjas : List~Franja~
+      - festivos : List~Festivo~
+      + anadirFranja(dia, inicio, fin) : Franja
+      + anadirFestivo(dia, motivo) : Festivo
+      + buscarFranja(Long) / buscarFestivo(Long)
+      + esFestivo(dia) : boolean
+      + haySolape(dia, inicio, fin) : boolean
+      + hayFranjaElDia(dia) : boolean
+    }
+    class Franja <<JPA, agenda_franja>> {
+      - id : Long
+      - dia : LocalDate
+      - inicio / fin : LocalTime
+      + solapaCon(dia, inicio, fin) : boolean
+    }
+    class Festivo <<JPA, agenda_festivo>> {
+      - id : Long
+      - dia : LocalDate (unico por agenda)
+      - motivo : String
+    }
+    class AuditoriaAgendas <<JPA, agenda_auditoria>> {
+      - accion : AccionAuditoria
+      - profesionalId, usuario : String
+      - instante : Instant
+      - hash : String (SHA-256)
+      - hashAnterior : String
+    }
+    enum AccionAuditoria {
+      ALTA_AGENDA; ALTA_FRANJA; BAJA_FRANJA
+      ALTA_FESTIVO; BAJA_FESTIVO
+    }
+  }
+  package repositorio {
+    interface AgendaRepositorio extends JpaRepository {
+      + findByProfesionalId(String) : Optional~Agenda~
+      + existsByProfesionalId(String) : boolean
+    }
+    interface AuditoriaAgendasRepositorio extends JpaRepository
+  }
+  package servicio {
+    class AgendaServicio <<@Service>> {
+      + franjasLibres(...) : List~FranjaDTO~
+      + crearAgenda / anadirFranja / eliminarFranja
+      + anadirFestivo / eliminarFestivo
+      + auditoriaVerificable() : boolean
+      ..
+      Reglas: sin solape, festivo manda,
+      inicio < fin, agenda unica
+      Auditoria: hash = SHA256(accion|profesional|
+      usuario|instante|hashAnterior), GENESIS
+    }
+  }
+  package web {
+    class AgendaControlador <<@RestController>> {
+      + GET /api/agendas : listar
+      + POST /api/agendas : crear (201)
+      + GET /api/agendas/{pid} : detalle
+      + GET /api/agendas/{pid}/libres : franjasLibres
+      + POST / DELETE /api/agendas/{pid}/franjas(/{id})
+      + POST / DELETE /api/agendas/{pid}/festivos(/{id})
+    }
+    class AgendaManejadorErrores <<@RestControllerAdvice>> {
+      AgendaNoEncontrado -> 404 AGENDA_NO_ENCONTRADA
+      Conflicto -> 409 CONFLICTO_SOLAPE /
+      CONFLICTO_FESTIVO / CONFLICTO_AGENDA_EXISTENTE
+      IllegalArgument -> 400 DATOS_INVALIDOS
+    }
+  }
+}
+
+package "iso2-server-app 0.1.3" {
+  class ConfigSeguridad <<@Configuration>> {
+    + filtroHttp(HttpSecurity, JwtUtils)
+    ..
+    GET /api/agendas/**: hasAnyRole(ADMINISTRADOR,
+    MEDICO, TECNICO, RECEPCIONISTA)
+    resto /api/agendas/**: hasAnyRole(ADMINISTRADOR,
+    RECEPCIONISTA)
+    (CELADOR sin agenda:leer queda fuera)
+  }
+  class "Flyway V1.3.0 (migracion SQL)" as FLY {
+    tablas agenda profesional, franja,
+    festivo, auditoria + secuencias
+    semilla medico/tecnico
+  }
+}
+
+package "iso2-seguridad 1.1.0 (RBAC ampliado en CDU13)" {
+  enum Permiso {
+    CATALOGO_LEER; CATALOGO_ESCRIBIR
+    AGENDA_LEER; AGENDA_ESCRIBIR
+    USUARIO_GESTIONAR
+    + codigo() : String
+  }
+  class MatrizPermisos <<final>> {
+    {static} + tienePermiso(Rol, Permiso) : boolean
+    ..
+    MEDICO/TECNICO: agenda:leer
+    RECEPCIONISTA: agenda:leer + agenda:escribir
+    CELADOR: sin permisos de agenda
+  }
+}
+
+package "iso2-client-app 0.1.3 (parte b: Prompt 11b)" #DDDDDD {
+  class ApiClienteAgendas <<pendiente>> {
+    + GET/POST/DELETE /api/agendas (Bearer)
+  }
+  class VistaGestionAgendas <<JavaFX, pendiente>>
+}
+
+AgendaServicio ..|> AgendaFacade : implementa
+AgendaServicio ..> AgendaRepositorio
+AgendaServicio ..> AuditoriaAgendasRepositorio : auditoriaVerificable()
+AgendaServicio ..> Agenda : reglas en el dominio
+AgendaServicio ..> AgendaNoEncontradoException : lanza
+AgendaServicio ..> AgendaConflictoException : lanza
+AgendaConflictoException --> Conflicto
+Agenda "1" *-- "0..*" Franja : cascade + orphanRemoval
+Agenda "1" *-- "0..*" Festivo : cascade + orphanRemoval
+AgendaRepositorio o-- Agenda
+AuditoriaAgendasRepositorio o-- AuditoriaAgendas
+AuditoriaAgendas --> AccionAuditoria
+AgendaControlador --> AgendaFacade
+AgendaManejadorErrores ..> ApiError : 404/409/400 JSON
+ConfigSeguridad ..> MatrizPermisos : reglas derivadas
+ConfigSeguridad ..> Permiso : agenda:leer / agenda:escribir
+Agenda ..> FLY : tabla agenda_profesional
+
+ApiClienteAgendas ..> ApiError : rethrows codes
+ApiClienteAgendas ..> AgendaDTO
+VistaGestionAgendas --> ApiClienteAgendas
+
+note right of AgendaServicio
+  El dominio (Agenda/Franja) decide si hay
+  solape o festivo; el servicio orquesta,
+  valida inicio < fin y escribe la auditoria
+  en la misma transaccion (ArchUnit: web no
+  accede a repositorios, dominio sin Spring).
+end note
+@enduml

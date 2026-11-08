@@ -67,6 +67,12 @@ como release mientras no cumpla los criterios de la sección 3.
 Máquinas legibles: `docs/componentes-versiones+Calidad.csv` (matriz componente × iteración con
 CFG y etiqueta) y `docs/mapa-configuraciones.csv` (CFG → tag, clasificación y puerta de calidad).
 
+**Estado del mapa a 08/11/2026:** CFG-00 **cerrada y publicada** (R0 en `main`, `v0.1.0` + `cfg-iter00`).
+CFG-01, CFG-02 y CFG-03 tienen su tag interno subido (`cfg-iter01/02/03`) y las puertas técnicas cumplidas,
+pero **siguen abiertas** mientras no estén los TC humanos de CDU16/CDU17/CDU13 (D28, issue #21) y los
+exports `.staruml` de Iter1-3 (D18, issue #22). La siguiente configuración a abrir es **CFG-04**
+(Iter4 · CDU06, `iso2-solicitudes` 1.1.0, apps 0.1.4-SNAPSHOT).
+
 ---
 
 ## 3. Criterios para anticipar alfa, beta y definitiva
@@ -116,7 +122,7 @@ la agenda. Si una CFG no cumple los criterios, la etiqueta se retrasa y se regis
 
 ```
 main ──────●───────────●─────────●────────●──────  solo releases etiquetadas
-           v0.1.0   v0.2.0-alpha v0.4.0-beta v1.0.0      (merge --no-ff desde develop)
+           v0.1.0   v0.2.0-alpha v0.4.0-beta v1.0.0      (merge --no-ff desde release/Rn, D30)
 develop ─●───●───●───●───●───●───●───●───●───●──  merges de iteración, tag cfg-iterNN
         c00  c01  c02  c03 ...              c21
 feature/CDUxx-<nombre> ──●──●──PR──▶ develop        (1 rama por CDU, Git Flow + PR obligatorio)
@@ -129,6 +135,9 @@ release/Rn ───────────────────────
 - Merge de iteración → tag **anotado** `cfg-iterNN` (identifica la configuración completa).
 - CFG hito → rama temporal `release/Rn`, ajuste de versiones de app en el POM agregador, tag
   `v<versión>` y merge `--no-ff` a `main`; luego backport de los fixes a `develop`.
+- **`main` no acepta PRs de rama `feature/…`** (D30, incidencia del PR #17 el 08/11/2026): todo lo que
+  llega a `main` sale de una `release/Rn` sobre el tag de la CFG hito. Antes de tocar `main`, comprobar
+  que no aporta ficheros que no estén ya en `develop`.
 - **Rollback:** `git checkout cfg-iterNN` + `mvn clean verify` + desplegar ese par de artefactos;
   los datos se recuperan con la copia H2 asociada a la CFG (cada release guarda `backup/`).
 - Ningún `SNAPSHOT` en una CFG etiquetada: antes de un tag de release las dependencias del

@@ -48,8 +48,14 @@
     <archunit.version>1.3.0</archunit.version>
     <junit.version>5.11.3</junit.version>
 
-    <iso2.version>1.0.0</iso2.version>
-    <iso2-app.version>0.1.0</iso2-app.version>
+    <!-- CFG-02 (Iter2/CDU17): iso2-seguridad sube a 1.1.0-SNAPSHOT en la rama feature
+         (misma propiedad que common/catalogo, ya en 1.1.0); al fusionar a develop
+         quedara 1.1.0 (D22/D23). Apps: release train 0.1.2-SNAPSHOT. -->
+    <iso2.version>1.1.0-SNAPSHOT</iso2.version>
+    <iso2-app.version>0.1.2-SNAPSHOT</iso2-app.version>
+
+    <!-- CDU17 (CFG-02): libreria JWT estandar (RFC 7519) HS256 con validacion estricta. -->
+    <jjwt.version>0.12.6</jjwt.version>
 
     <!-- Puerta JaCoCo por caracteristica (D24/D27): en Iter0 no hay codigo de
          producto todavia; el umbral se activa en CFG-01 con el primer modulo real. -->
@@ -77,6 +83,21 @@
         <version>${archunit.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
         <version>${junit.version}</version>
@@ -91,6 +112,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.13.0</version>
+          <configuration>
+            <!-- Convencion Spring Boot: conserva los nombres de parametros en el .class
+                 para que @RequestParam/@PathVariable deduzcan su nombre. -->
+            <parameters>true</parameters>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

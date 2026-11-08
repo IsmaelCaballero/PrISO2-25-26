@@ -50,7 +50,7 @@
   `release/Rn`; **ninguna etiqueta de release contiene `SNAPSHOT`**. Tras cada merge, el guardián de
   calidad verifica que las versiones de los POM coinciden con `docs/componentes-versiones+Calidad.csv`.
 
-## 4. Modelado por iteración (StarUML)
+## 4. Modelado por iteración (PlantUML — D18, parte StarUML sustituida por D31)
 
 Por cada iteración se generan y guardan en `docs/modelo/iterXX/`:
 1. Diagrama de **casos de uso** (del CDU de la iteración, actualizado al global).
@@ -58,8 +58,10 @@ Por cada iteración se generan y guardan en `docs/modelo/iterXX/`:
 3. Diagrama de **clases de análisis** (entidades del dominio).
 4. Diagramas de **clases de diseño** más relevantes (interfaces + clases nuevas del módulo).
 
-Formato de trabajo: fuente **PlantUML** en el repo (económico en tokens y diferenciable en Git)
-+ integración/exportación a **StarUML** (.staruml) por el equipo humano. *(Confirmar con Ismael: D18.)*
+Formato de trabajo (D31): fuente **PlantUML** `.puml` versionada (económica en tokens y diferenciable en Git)
++ **`.png` renderizados y también versionados** en la misma carpeta, incrustados en el `README.md` del
+directorio con enlace al tamaño completo. Render con `tools/plantuml.jar` (jar no versionado, `*.jar` en
+`.gitignore`): `java -jar tools/plantuml.jar -tpng docs/modelo/iterXX/*.puml`. StarUML queda descartado.
 
 ## 5. Ficheros vivos (obligatorio actualizarlos al final de cada iteración/sesión)
 

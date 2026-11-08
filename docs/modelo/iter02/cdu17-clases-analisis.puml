@@ -1,0 +1,68 @@
+@startuml cdu17-clases-analisis
+' CDU17 (Iter2/CFG-02) - Clases de analisis (conceptos del dominio de seguridad)
+' Autor: agente (prompt 10) - exportacion a StarUML: Ismael (D18)
+title CDU17 - Clases de analisis: cuentas, roles y permisos (RBAC)
+
+class "Cuenta de usuario" as CUENTA {
+  - nombre de acceso
+  - clave (solo verificacion, nunca en claro)
+  - esta activa
+  - intentos fallidos
+  - bloqueada hasta (fecha)
+  --
+  se autentica(clave) : exito / fracaso
+  registrar intento fallido()
+  reiniciar intentos()
+  esta bloqueada? : si/no
+}
+
+class "Rol" as ROL {
+  - nombre (ADMINISTRADOR, MEDICO,
+    TECNICO, CELADOR, RECEPCIONISTA)
+  --
+  permisos : conjunto estable de permisos
+}
+
+class "Permiso" as PERMISO {
+  - codigo (catalogo:leer,
+    catalogo:escribir, usuario:gestionar)
+}
+
+class "Matriz de permisos" as MATRIZ {
+  --
+  permisos de(rol) : conjunto
+  rol tiene permiso?(permiso) : si/no
+}
+
+class "Sesion" as SESION {
+  - usuario
+  - rol
+  - token (autenticable, caducado)
+  - caducidad
+}
+
+class "Operacion protegida" as OP {
+  - recurso (catalogo, usuarios...)
+  - accion (leer / escribir / gestionar)
+}
+
+CUENTA "1" -- "1" ROL : posee
+ROL "1" -- "0..*" PERMISO : concede
+MATRIZ ..> ROL : define
+MATRIZ ..> PERMISO : define
+SESION ..> CUENTA : se abre para
+SESION ..> ROL : arrastra el rol (claim)
+OP "1" -- "1" PERMISO : exige
+
+note bottom of MATRIZ
+  Fuente autoritativa unica de la politica RBAC
+  (CFG-02): servidor y cliente la consultan,
+  el servidor es quien la aplica de verdad.
+end note
+
+note right of SESION
+  Concepto nuevo de CDU17: al autenticarse nace
+  una sesion con fecha de caducidad; toda
+  operacion posterior se presenta con ella.
+end note
+@enduml

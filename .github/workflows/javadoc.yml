@@ -1,0 +1,48 @@
+name: Javadoc a Pages
+
+# D32: el Javadoc agregado de develop se publica en GitHub Pages (solo la ultima compilacion).
+# Es el destino de los enlaces por clase de la wiki: https://ismaelcaballero.github.io/PrISO2-25-26/apidocs/...
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: paginas-javadoc
+  cancel-in-progress: false
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Generar el Javadoc agregado de todos los modulos
+        run: mvn -B -ntp javadoc:aggregate
+      - name: Montar el sitio (indice + apidocs)
+        run: |
+          mkdir -p public/apidocs
+          cp -r target/reports/apidocs/. public/apidocs/
+          cp docs/javadoc-index.html public/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  desplegar:
+    needs: generar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4
