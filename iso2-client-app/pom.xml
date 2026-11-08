@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  iso2-client-app · CFG-02 · v0.1.2-SNAPSHOT (Iter2/CDU17)
-  Cliente JavaFX: inicio de sesion por rol (JWT bearer) y vista que varia segun el
-  rol autenticado (ADMIN gestiona el catalogo; el resto solo consulta).
+  iso2-client-app · CFG-03 · v0.1.3-SNAPSHOT (Iter3/CDU13)
+  Cliente JavaFX: inicio de sesion por rol (JWT bearer) y vistas segun el rol:
+  catalogo (CDU16) y gestion/consulta de agendas (CDU13; ADMIN y RECEPCIONISTA
+  gestionan, MEDICO y TECNICO consultan, CELADOR no ve agendas).
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -15,8 +16,8 @@
   </parent>
   <artifactId>iso2-client-app</artifactId>
   <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00; 0.1.1 en Iter1/CFG-01;
-       0.1.2-SNAPSHOT en la rama de Iter2/CFG-02; 1.5.0 en CFG-21/R5. -->
-  <version>0.1.2-SNAPSHOT</version>
+       0.1.2 en Iter2/CFG-02; 0.1.3-SNAPSHOT en la rama de Iter3/CFG-03; 1.5.0 en CFG-21/R5. -->
+  <version>0.1.3-SNAPSHOT</version>
   <name>iso2-client-app</name>
   <description>Aplicacion cliente JavaFX con interfaz por rol. Consume los contratos de iso2-common.</description>
 
