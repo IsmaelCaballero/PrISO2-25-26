@@ -1,14 +1,15 @@
 package es.uclm.iso2.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -16,11 +17,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Prueba de humo extremo a extremo de CFG-01 (Iter1/CDU16): arranca la aplicacion
- * servidora completa (seguridad + MVC + servicio + JPA + esquema Flyway sobre H2 en
- * memoria) y comprueba la puerta RBAC del catalogo y el alta REST real.
+ * Prueba de humo extremo a extremo de CDU16 + CDU17 (Iter2): arranca la aplicacion
+ * servidora completa (seguridad JWT + MVC + servicio + JPA + esquema Flyway sobre H2 en
+ * memoria) y comprueba la puerta RBAC del catalogo y el alta REST real con la
+ * autenticacion definitiva del producto: login por API y token Bearer.
  *
- * <p>No sustituye a los TC de CDU16 (decision D28: se disenan sobre el codigo ya
+ * <p>No sustituye a los TC de CDU16/CDU17 (decision D28: se disenan sobre el codigo ya
  * funcional); es la verificacion tecnica minima del ensamblado.</p>
  */
 @SpringBootTest
@@ -38,61 +40,51 @@ class CatalogoApiSmokeTest {
     @Autowired
     private MockMvc mvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     /**
-     * Sin credenciales el catalogo responde 401 (regla RBAC de CFG-01).
-     *
-     * @throws Exception si falla la peticion simulada
+     * Sin token el catalogo responde 401 con el codigo estable del contrato
+     * (regla RBAC de CDU17: la cadena es stateless JWT).
      */
     @Test
     void accesoAnonimoDevuelve401() throws Exception {
         mvc.perform(get("/api/catalogo/pruebas"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.codigo").value("AUTENTICACION_REQUERIDA"));
     }
 
     /**
-     * Un usuario autenticado sin rol ADMIN recibe 403 (RBAC por rol, no solo login).
-     *
-     * @throws Exception si falla la peticion simulada
-     */
-    @Test
-    void rolSesSinPermisoDevuelve403() throws Exception {
-        mvc.perform(get("/api/catalogo/pruebas").with(httpBasic("celador", "iso2-ses")))
-                .andExpect(status().isForbidden());
-    }
-
-    /**
-     * ADMIN puede listar el catalogo (200) usando las credenciales reales de
-     * {@link ConfigSeguridad}, lo que ademas valida el encoder BCrypt en memoria.
-     *
-     * @throws Exception si falla la peticion simulada
+     * ADMINISTRADOR puede listar el catalogo (200) usando su cuenta real de la
+     * migracion V1.2.0, lo que valida de paso login BCrypt, emision JWT y filtro.
      */
     @Test
     void adminPuedeListarCon200() throws Exception {
         mvc.perform(get("/api/catalogo/pruebas").param("pagina", "0").param("tamano", "10")
-                        .with(httpBasic("admin", "iso2-admin")))
+                        .header(AUTHORIZATION, "Bearer " + tokenDeAdmin()))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isArray());
     }
 
     /**
-     * Alta REST real extremo a extremo: POST validado por el DTO, persistido por JPA
-     * sobre el esquema de Flyway y devuelto por GET. Si algo del ensamblado (scan de
-     * componentes, -parameters, migraciones) se rompe, este test lo pilla.
-     *
-     * @throws Exception si falla la peticion simulada
+     * Alta REST real extremo a extremo con JWT: POST validado por el DTO, persistido
+     * por JPA sobre el esquema de Flyway y devuelto por GET. Si algo del ensamblado
+     * (scan de componentes, -parameters, migraciones, filtro JWT) se rompe, aqui se ve.
      */
     @Test
     void altaRestYConsultaDevuelvenElAltaReal() throws Exception {
+        String token = tokenDeAdmin();
         mvc.perform(post("/api/catalogo/pruebas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(ALTA_SMOKE)
-                        .with(httpBasic("admin", "iso2-admin")))
+                        .header(AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.codigo").value("SMOKE-RX-99"))
                 .andExpect(jsonPath("$.activa").value(true));
 
         mvc.perform(get("/api/catalogo/pruebas/SMOKE-RX-99")
-                        .with(httpBasic("admin", "iso2-admin")))
+                        .header(AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Radiografia de prueba smoke"));
     }
@@ -100,8 +92,6 @@ class CatalogoApiSmokeTest {
     /**
      * Un alta con datos invalidos revienta contra la validacion del DTO y el consejo
      * de errores la traduce a 400 con cuerpo {@code ApiError}.
-     *
-     * @throws Exception si falla la peticion simulada
      */
     @Test
     void altaInvalidaDevuelve400ConApiError() throws Exception {
@@ -113,8 +103,47 @@ class CatalogoApiSmokeTest {
                                  "protocolo":{"preparacion":"x","ayunoHoras":0,"contraindicaciones":"y"},
                                  "politica":{"plazoCancelacionHoras":24,"maxCancelaciones":3}}
                                 """)
-                        .with(httpBasic("admin", "iso2-admin")))
+                        .header(AUTHORIZATION, "Bearer " + tokenDeAdmin()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"));
+    }
+
+    /**
+     * Cambio de comportamiento aprobado en Iter2 (matriz RBAC de CDU17): un rol no
+     * administrador (CELADOR) SI puede leer el catalogo (200) pero NO puede escribir:
+     * el alta responde 403 con ApiError {@code FORBIDDEN}.
+     */
+    @Test
+    void celadorLeePeroNoEscribe() throws Exception {
+        MvcResult login = mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"usuario\":\"celador\",\"password\":\"iso2-ses\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String token = objectMapper.readTree(login.getResponse().getContentAsString()).get("token").asText();
+
+        mvc.perform(get("/api/catalogo/pruebas").header(AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/catalogo/pruebas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ALTA_SMOKE)
+                        .header(AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.codigo").value("FORBIDDEN"));
+    }
+
+    /**
+     * Login de la cuenta semilla ADMINISTRADOR y extraction del token Bearer.
+     *
+     * @return token JWT valido emitido por la aplicacion
+     */
+    private String tokenDeAdmin() throws Exception {
+        MvcResult login = mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"usuario\":\"admin\",\"password\":\"iso2-admin\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readTree(login.getResponse().getContentAsString()).get("token").asText();
     }
 }

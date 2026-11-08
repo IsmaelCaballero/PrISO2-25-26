@@ -3,3 +3,12 @@
 spring:
   datasource:
     url: jdbc:h2:mem:iso2-test;DB_CLOSE_DELAY=-1
+
+# Secreto FIJO de pruebas (no es un secreto real: solo firma tokens de test y esta
+# aqui porque los tests necesitan verificar tokens caducados/manipulados construidos
+# a mano). En produccion el secreto viene solo de ISO2_JWT_SECRET.
+iso2:
+  seguridad:
+    jwt:
+      secret: iso2-pruebas-supersecreto-superlargo-de-mas-de-32-bytes
+      duracion-minutos: 30
