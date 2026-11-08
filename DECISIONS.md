@@ -70,6 +70,7 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 ## D18. Modelado: diagramas por iteración en StarUML — ACEPTADA (07/11/2026, Ismael)
 - Por iteración: casos de uso, secuencia/interacción, clases de análisis y clases de diseño relevantes.
 - **Decisión:** fuente **PlantUML** en `docs/modelo/iterXX/` (versionable en Git, barata en tokens, diferenciable entre iteraciones) + **exportación manual a StarUML** por el equipo para entregar los `.staruml`. Los `.puml` son el ítem de configuración (D25); el `.staruml` es artefacto de entrega de cada release.
+- **Revisada el 08/11/2026 por D31:** la parte de StarUML queda descartada; los artefactos de entrega de modelado pasan a ser los `.puml` + sus `.png` renderizados con `plantuml.jar`.
 
 ## D19. Presupuesto de tokens por iteración y partida en 2 si Alta
 - Baja 50–70k · Media 90–130k · Alta 150–220k tokens (6 CUs Altos se dividen en 2 sesiones: servidor | cliente+tests). Si el contexto amenaza con agotarse: avisar, cerrar lo en curso, guardar STATUS.md/PLAN.md y abrir sesión nueva (regla en CONTEXT.md §7).
@@ -189,3 +190,19 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 - **Comprobación previa obligatoria antes de tocar `main`:** `git log --oneline origin/main --not origin/develop`
   (el PR no debe aportar nada que no esté ya en `develop`) y revisar la protección de rama. Si hace falta
   reescribir `main`, solo lo hace Ismael o con su visto bueno explícito.
+
+## D31. Artefactos de modelado: PlantUML (`.puml` + `.png` versionados) — StarUML descartado — ACEPTADA (08/11/2026, Ismael)
+- **Qué ha pasado:** la exportación a StarUML de D18 nunca llegó a ejecutarse: no existe ningún proyecto
+  `.staruml` guardado (comprobado en las 13 ramas, en toda la historia de git, en la wiki y en el disco).
+  El modelado real de Iter1-3 se ha hecho íntegramente con **PlantUML**: los 12 ficheros `.puml` de
+  `docs/modelo/iter01-03/` y sus `.png` generados con `plantuml.jar` (descargado a `tools/` el 08/11).
+- **Decisión:** por iteración se versionan DOS artefactos: la fuente `.puml` y el `.png` renderizado desde
+  ella, incrustados en el `README.md` del directorio (vista reducida con enlace al PNG a tamaño completo).
+  La herramienta es `tools/plantuml.jar`, que **no se versiona** (`*.jar` ya está en `.gitignore`; se
+  descarga de plantuml.com). Comando estándar desde la raíz:
+  `java -jar tools/plantuml.jar -tpng docs/modelo/iterXX/*.puml` (añadir `-Playout smetana` sin Graphviz).
+- **Efectos:** la issue #22 (exports `.staruml`) queda cerrada como "no procede"; D18 sigue vigente en su
+  parte PlantUML y en que los `.puml` son el ítem de configuración (D25); CONTEXT §4 se renombra a
+  "Modelado por iteración (PlantUML)". Los `.png` se regeneran de forma reproducible (verificado byte a byte
+  sobre dos diagramas de iter01). Si el PUD exigiera modelo UML nativo, plan B: reimportar los `.puml` en
+  StarUML con el plugin PlantUML y guardar; no ejecutado por ahora.
