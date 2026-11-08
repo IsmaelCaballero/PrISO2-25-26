@@ -108,9 +108,9 @@ public interface SolicitudFacade {
     /**
      * Prescripcion completa de una prueba (CDU06). El constructor compacto valida los
      * campos obligatorios de la RF06.1 como parte del contrato: cualquier JSON con un
-     * campo en blanco se rechaza con 400 antes de tocar el servicio. Ojo: el
-     * {@code medicoId} NO debe venir del cuerpo JSON, lo fija el controlador con el
-     * usuario autenticado (RF06.2, no repudio).
+     * campo en blanco se rechaza con un {@link IllegalArgumentException} (400) antes de
+     * tocar el servicio. Ojo: el {@code medicoId} NO debe venir del cuerpo JSON, lo fija
+     * el controlador con el usuario autenticado (RF06.2, no repudio).
      *
      * @param pacienteId        historia clinica del paciente (no vacia)
      * @param codigoPrueba      codigo de prueba del catalogo (no vacio)
@@ -118,7 +118,6 @@ public interface SolicitudFacade {
      * @param prioridad         prioridad clinica (no nula, RF06.1)
      * @param origen            origen de la solicitud: AP, hospital, urgencias (no vacio)
      * @param medicoId          autor medico de la prescripcion (no vacio, RF06.2)
-     * @throws IllegalArgumentException si algun campo obligatorio esta ausente
      * @since 1.1.0 (CDU06, CFG-04)
      */
     record SolicitudPrescripcionDTO(String pacienteId, String codigoPrueba, String indicacionClinica,
