@@ -1,59 +1,87 @@
 package es.uclm.iso2.server;
 
+import es.uclm.iso2.common.shared.ApiError;
+import es.uclm.iso2.seguridad.servicio.JwtUtils;
+import es.uclm.iso2.seguridad.web.JwtAutenticacionFiltro;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 /**
- * RBAC transitorio de la aplicacion servidora (CFG-01). El RBAC definitivo con JWT y
- * usuarios persistidos llega con CDU17 (Iter2, decision de plan): mientras tanto se
- * protegen los endpoints con HTTP Basic y dos usuarios en memoria.
+ * Cadena de seguridad definitiva de CDU17 (CFG-02): sustituye el Basic/in-memory
+ * transitorio de CFG-01 por JWT stateless sobre usuarios persistidos.
  *
- * <p>Roles demostrables (puerta CFG-01: 401 sin credenciales, 403 con rol incorrecto):</p>
+ * <p>Reglas derivadas de la matriz RBAC de {@code iso2-seguridad} (5 roles):</p>
  * <ul>
- *   <li>{@code admin/ADMIN}: puede gestionar el catalogo (CDU16).</li>
- *   <li>{@code celador/SES}: autenticado pero sin permiso de catalogo (forraje del RBAC).</li>
+ *   <li>{@code POST /api/auth/login} y {@code /actuator/health}: publicos.</li>
+ *   <li>GET de catalogo: cualquier rol autenticado (los cuatro roles de trabajo consultan).</li>
+ *   <li>Escritura de catalogo (POST/PUT/DELETE): solo {@code ADMINISTRADOR}.</li>
+ *   <li>{@code /h2-console/**}: solo {@code ADMINISTRADOR}. Como el navegador no puede
+ *       enviar la cabecera {@code Authorization} en la navegación HTML, la consola se
+ *       usa en desarrollo con herramientas que sí pueden (curl/scripts) adjuntando el
+ *       token del login: se acepta perder la comoda ventana de navegador a cambio de
+ *       una unica via de autenticacion (JWT) y cadena sin estado.</li>
+ *   <li>Resto: autenticado.</li>
  * </ul>
  *
- * <p>La consola H2 queda reservada a ADMIN. El CSRF se desactiva porque la API es
- * sin estado y consumida por un cliente nativo (JavaFX), no por formularios web.</p>
+ * <p>Sin sesion HTTP ni Basic: la autorizacion se apoya en el claim {@code rol} del
+ * token, verificado por {@link JwtAutenticacionFiltro} antes que el filtro de usuario
+ * y clave. Las respuestas de autenticacion usan el cuerpo {@link ApiError} del contrato.</p>
  */
 @Configuration
 @EnableWebSecurity
 public class ConfigSeguridad {
 
     /**
-     * Cadena de filtros: Basic auth y reglas por URL. Se conserva la cabecera de la
-     * consola H2 con frameOptions sameOrigin para poder usarla en desarrollo.
+     * Cadena de filtros stateless con JWT. Se conserva frameOptions sameOrigin para la
+     * consola H2 (uso en desarrollo con token adjunto).
      *
-     * @param http configurador de la cadena de filtros
+     * @param http    configurador de la cadena de filtros
+     * @param jwtUtils emisor/verificador de tokens del dominio de seguridad
      * @return la cadena de filtros construida
      * @throws Exception si la configuracion es invalida
      */
     @Bean
-    public SecurityFilterChain filtroHttp(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filtroHttp(HttpSecurity http, JwtUtils jwtUtils) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(reglas -> reglas
-                        .requestMatchers("/h2-console/**").hasRole("ADMIN")
-                        .requestMatchers("/api/catalogo/**").hasRole("ADMIN")
+                        .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
+                        .requestMatchers("/h2-console/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers(HttpMethod.GET, "/api/catalogo/**").authenticated()
+                        .requestMatchers("/api/catalogo/**").hasRole("ADMINISTRADOR")
                         .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults())
+                .exceptionHandling(manejo -> manejo
+                        .authenticationEntryPoint((peticion, respuesta, causa) ->
+                                escribirError(respuesta, HttpStatus.UNAUTHORIZED, "AUTENTICACION_REQUERIDA",
+                                        "Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)"))
+                        .accessDeniedHandler((peticion, respuesta, causa) ->
+                                escribirError(respuesta, HttpStatus.FORBIDDEN, "FORBIDDEN",
+                                        "El rol del token no tiene permiso para este recurso")))
+                .addFilterBefore(new JwtAutenticacionFiltro(jwtUtils),
+                        UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     /**
-     * Codificador de contrasenas: BCrypt, el mismo que usara el RBAC definitivo (CDU17).
+     * Codificador de contrasenas: BCrypt, el mismo que verifican el servicio de seguridad
+     * y los hashes de la migracion Flyway V1.2.0.
      *
      * @return el codificador BCrypt
      */
@@ -62,22 +90,15 @@ public class ConfigSeguridad {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Usuarios provisionales en memoria (no hay tabla de usuarios hasta CDU17).
-     *
-     * @param passwordEncoder codificador para guardar las claves con hash
-     * @return el gestor de usuarios en memoria
-     */
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails administrador = User.withUsername("admin")
-                .password(passwordEncoder.encode("iso2-admin"))
-                .roles("ADMIN")
-                .build();
-        UserDetails ses = User.withUsername("celador")
-                .password(passwordEncoder.encode("iso2-ses"))
-                .roles("SES")
-                .build();
-        return new InMemoryUserDetailsManager(administrador, ses);
+    private static void escribirError(HttpServletResponse respuesta, HttpStatus estado,
+                                      String codigo, String mensaje) throws IOException {
+        respuesta.setStatus(estado.value());
+        respuesta.setContentType("application/json;charset=UTF-8");
+        respuesta.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        // Cuerpo ApiError del contrato, serializado a mano para no acoplar la cadena
+        // de seguridad a un ObjectMapper: los valores son constantes controladas.
+        ApiError error = new ApiError(codigo, mensaje, Instant.now());
+        respuesta.getWriter().print("{\"codigo\":\"" + error.codigo() + "\",\"mensaje\":\""
+                + error.mensaje() + "\",\"instante\":\"" + error.instante() + "\"}");
     }
 }

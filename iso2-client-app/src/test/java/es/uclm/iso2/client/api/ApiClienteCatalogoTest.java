@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,9 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Prueba de humo de la capa API del cliente (CFG-01): se levanta un servidor HTTP
- * stub del JDK (headless, sin JavaFX) y se verifica que el cliente autentica con
- * Basic, (de)serializa los DTOs del contrato y traduce los errores ApiError.
+ * Prueba de humo de la capa API del cliente (CFG-01/CFG-02): se levanta un servidor
+ * HTTP stub del JDK (headless, sin JavaFX) y se verifica que el cliente autentica con
+ * Bearer (JWT de CDU17), (de)serializa los DTOs del contrato y traduce los errores
+ * ApiError.
  */
 class ApiClienteCatalogoTest {
 
@@ -34,6 +34,8 @@ class ApiClienteCatalogoTest {
 
     private HttpServer servidor;
     private ApiClienteCatalogo api;
+
+    private static final String TOKEN_PRUEBA = "eyJhbGciOiJIUzI1NiJ0.prueba.firma";
 
     private volatile int estadoPorResponder = 200;
     private volatile String cuerpoPorResponder = "[]";
@@ -65,8 +67,7 @@ class ApiClienteCatalogoTest {
             }
         });
         servidor.start();
-        api = new ApiClienteCatalogo("http://127.0.0.1:" + servidor.getAddress().getPort(),
-                "admin", "iso2-admin");
+        api = new ApiClienteCatalogo("http://127.0.0.1:" + servidor.getAddress().getPort(), TOKEN_PRUEBA);
     }
 
     /**
@@ -78,7 +79,7 @@ class ApiClienteCatalogoTest {
     }
 
     /**
-     * GET listar: manda la paginacion por query, autentica con Basic y decodifica la
+     * GET listar: manda la paginacion por query, autentica con Bearer y decodifica la
      * lista de DTOs del contrato.
      *
      * @throws Exception si falla la llamada
@@ -94,9 +95,7 @@ class ApiClienteCatalogoTest {
         assertEquals(45, pruebas.get(0).duracionMinutos());
         assertEquals("sin metal", pruebas.get(0).protocolo().preparacion());
         assertTrue(ultimaRuta.contains("pagina=0&tamano=10"));
-        assertEquals("Basic " + Base64.getEncoder().encodeToString(
-                        "admin:iso2-admin".getBytes(StandardCharsets.UTF_8)),
-                ultimaAutorizacion);
+        assertEquals("Bearer " + TOKEN_PRUEBA, ultimaAutorizacion);
     }
 
     /**

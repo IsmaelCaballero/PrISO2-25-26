@@ -12,18 +12,20 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 
 /**
  * Cliente HTTP del catalogo de pruebas (CDU16, Iter1/CFG-01).
  *
- * <p>Habla contra {@code /api/catalogo/pruebas} con HTTP Basic (mientras el JWT
- * definitivo no llega con CDU17) y (de)serializa los DTOs del contrato comun. No
- * depende de JavaFX: es verificable en CI headless.</p>
+ * <p>Habla contra {@code /api/catalogo/pruebas} con el token Bearer emitido por
+ * {@link ApiClienteAutenticacion} (autenticacion JWT definitiva de CDU17, Iter2) y
+ * (de)serializa los DTOs del contrato comun. No depende de JavaFX: es verificable
+ * en CI headless.</p>
  *
  * <p>Los errores del servidor ({@code ApiError}) se traducen a {@link ApiException}
- * para que la interfaz pueda mostrar un mensaje legible.</p>
+ * para que la interfaz pueda mostrar un mensaje legible. Los roles no administrador
+ * reciben 403 en los endpoints de escritura (matriz RBAC de CDU17); la interfaz
+ * decide que vista mostrar segun el rol ({@code NavegacionPorRol}).</p>
  */
 public class ApiClienteCatalogo {
 
@@ -36,15 +38,14 @@ public class ApiClienteCatalogo {
      * Crea el cliente contra la raiz de la API del servidor.
      *
      * @param baseUrl  raiz de la API (ej. {@code http://localhost:8080})
-     * @param usuario  usuario de HTTP Basic (rol ADMIN para el catalogo)
-     * @param password contrasena de HTTP Basic
+     * @param tokenJwt token JWT (claim {@code rol}) obtenido de
+     *                 {@link ApiClienteAutenticacion#iniciarSesion(String, String)}
      */
-    public ApiClienteCatalogo(String baseUrl, String usuario, String password) {
+    public ApiClienteCatalogo(String baseUrl, String tokenJwt) {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         this.http = HttpClient.newHttpClient();
         this.json = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
-        this.cabeceraAutorizacion = "Basic " + Base64.getEncoder().encodeToString(
-                (usuario + ":" + password).getBytes(StandardCharsets.UTF_8));
+        this.cabeceraAutorizacion = "Bearer " + tokenJwt;
     }
 
     /**

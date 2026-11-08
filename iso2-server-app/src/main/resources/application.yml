@@ -19,5 +19,15 @@ spring:
       enabled: true
       path: /h2-console
 
+# CDU17 (CFG-02): el secreto JWT no vive en el repositorio; se inyecta SOLO por la
+# variable de entorno ISO2_JWT_SECRET (minimo 32 bytes para HS256). Sin ella, la
+# aplicacion falla al arrancar a proposito (JwtUtils hace fail-fast).
+#   PowerShell:  $env:ISO2_JWT_SECRET = "una-frase-larga-de-pista-compartida-segura"
+iso2:
+  seguridad:
+    jwt:
+      secret: ${ISO2_JWT_SECRET:}
+      duracion-minutos: 60
+
 server:
   port: 8080

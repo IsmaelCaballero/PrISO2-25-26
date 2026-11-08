@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  iso2-server-app · CFG-01 · v0.1.1-SNAPSHOT (Iter1/CDU16)
-  Ensambla el catalogo de pruebas (CDU16) sobre Spring Boot: API REST + JPA/H2 +
-  Flyway (esquema versionado) + RBAC transitorio con Basic/usuarios en memoria
-  (el JWT definitivo llega en CDU17/Iter2).
+  iso2-server-app · CFG-02 · v0.1.2-SNAPSHOT (Iter2/CDU17)
+  Ensambla el catalogo de pruebas (CDU16) y la seguridad RBAC+JWT (CDU17) sobre
+  Spring Boot: API REST + JPA/H2 + Flyway (esquema versionado) + cadena stateless
+  con filtro JWT (el Basic in-memory de CFG-01 queda sustituido).
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -15,9 +15,9 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-server-app</artifactId>
-  <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00; 0.1.1-SNAPSHOT en la rama
-       de Iter1/CFG-01; 1.0.0 en CFG-21/R5. -->
-  <version>0.1.1-SNAPSHOT</version>
+  <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00; 0.1.1 en Iter1/CFG-01;
+       0.1.2-SNAPSHOT en la rama de Iter2/CFG-02; 1.0.0 en CFG-21/R5. -->
+  <version>0.1.2-SNAPSHOT</version>
   <name>iso2-server-app</name>
   <description>Aplicacion servidora: API REST Spring Boot + JPA/H2. Ensambla los modulos de dominio.</description>
 
@@ -34,19 +34,19 @@
       <artifactId>iso2-common</artifactId>
       <version>${iso2.version}</version>
     </dependency>
-    <!-- Unicos modulos de dominio con CDU en CFG-01: catalogo (CDU16) y sus contratos. -->
+    <!-- Unicos modulos de dominio con CDU en CFG-02: catalogo (CDU16) y seguridad (CDU17). -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-catalogo</artifactId>
       <version>${iso2.version}</version>
     </dependency>
-    <!-- Resto de modulos: baseline 1.0.0 sin CDU en esta configuracion (matriz CFG-01);
-         se iran subiendo a ${iso2.version} cuando les toque su CDU. -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-seguridad</artifactId>
-      <version>1.0.0</version>
+      <version>${iso2.version}</version>
     </dependency>
+    <!-- Resto de modulos: baseline 1.0.0 sin CDU en esta configuracion (matriz CFG-02);
+         se iran subiendo a ${iso2.version} cuando les toque su CDU. -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-agendas</artifactId>

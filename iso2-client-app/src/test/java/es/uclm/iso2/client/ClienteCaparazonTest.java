@@ -12,6 +12,6 @@ class ClienteCaparazonTest {
 
     @Test
     void laVersionDelClienteEsLaDelReleaseTrain() {
-        assertEquals("0.1.1-SNAPSHOT", Iso2ClientApplication.VERSION);
+        assertEquals("0.1.2-SNAPSHOT", Iso2ClientApplication.VERSION);
     }
 }
