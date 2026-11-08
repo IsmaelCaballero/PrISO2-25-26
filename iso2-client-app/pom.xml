@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>es.uclm.iso2</groupId>
+    <artifactId>iso2-parent</artifactId>
+    <version>1.0.0</version>
+  </parent>
+  <artifactId>iso2-client-app</artifactId>
+  <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00, 1.5.0 en CFG-21/R5. -->
+  <version>0.1.0</version>
+  <name>iso2-client-app</name>
+  <description>Aplicacion cliente JavaFX con interfaz por rol. Consume los contratos de iso2-common.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>es.uclm.iso2</groupId>
+      <artifactId>iso2-common</artifactId>
+      <version>${iso2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Arranque en desarrollo: mvn javafx:run -pl iso2-client-app -->
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>es.uclm.iso2.client.Iso2ClientApplication</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

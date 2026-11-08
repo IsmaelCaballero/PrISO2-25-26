@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>es.uclm.iso2</groupId>
+    <artifactId>iso2-parent</artifactId>
+    <version>1.0.0</version>
+  </parent>
+  <artifactId>iso2-agendas</artifactId>
+  <!-- Baseline contractual 1.0.0 (D22). Subira MINOR con el CDU que le corresponda (D23). -->
+  <version>1.0.0</version>
+  <name>iso2-agendas</name>
+  <properties>
+    <!-- Baseline sin clases publicas: el Javadoc no rompe el CI. Cambiar a true
+         (o quitar la propiedad) al anadir la primera clase del CDU. -->
+    <javadoc.failOnError>false</javadoc.failOnError>
+  </properties>
+
+  <description>Agendas de medicos y tecnicos (baseline Iter0).</description>
+  <dependencies>
+    <dependency>
+      <groupId>es.uclm.iso2</groupId>
+      <artifactId>iso2-common</artifactId>
+      <version>${iso2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
