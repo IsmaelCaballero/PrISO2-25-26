@@ -1,0 +1,79 @@
+@startuml cdu13-secuencia
+' CDU13 (Iter3/CFG-03) - Secuencia de consulta de huecos y alta de franja/festivo
+' Autor: agente (prompt 11) - exportacion a StarUML: Ismael (D18)
+title CDU13 - Consultar huecos libres y dar de alta franja/festivo (flujo principal + 409/404/403)
+
+skinparam sequence {
+  LifeLineParticipant true
+}
+
+actor "Recepcionista\n(rol RECEPCIONISTA)" as USUARIO
+boundary "AgendaControlador\n/api/agendas/**" as CTRL
+control "AgendaServicio\n(iso2-agendas 1.1.0)" as SVC
+entity "Agenda\n(JPA, agenda_profesional)" as AGENDA
+entity "Franja /\nFestivo" as FRJ
+database "AuditoriaAgendas\n(agenda_auditoria,\nhash SHA-256 encadenado)" as AUD
+participant "JwtAutenticacionFiltro\n(CDU17)" as FILTRO
+
+== Consulta de huecos libres (solo lectura) ==
+USUARIO -> CTRL : GET /api/agendas/medico/libres?desde&hasta\n(Authorization: Bearer <token>)
+CTRL <- FILTRO : token valido: ROLE_RECEPCIONISTA,\nmatriz concedera agenda:leer
+CTRL -> SVC : franjasLibres("medico", desde, hasta)
+SVC -> AGENDA : buscarPorProfesional + franjas del rango
+SVC -> FRJ : descartar las que caen en festivo
+SVC --> CTRL : List~FranjaDTO~
+CTRL --> USUARIO : 200 + JSON de huecos libres
+
+== Alta de franja (actor Administrativo) ==
+USUARIO -> CTRL : POST /api/agendas/medico/franjas\n{dia, inicio, fin}
+CTRL -> SVC : anadirFranja(profesionalId, FranjaGestionDTO)
+SVC -> AGENDA : buscarPorProfesional
+alt no existe la agenda
+  SVC --> CTRL : AgendaNoEncontradoException
+  CTRL --> USUARIO : 404 + ApiError(AGENDA_NO_ENCONTRADA)
+else agenda encontrada
+  SVC -> AGENDA : haySolape(dia, inicio, fin)
+  SVC -> AGENDA : esFestivo(dia)
+  alt solapa con otra franja
+    SVC --> CTRL : AgendaConflictoException(SOLAPE)
+    CTRL --> USUARIO : 409 + ApiError(CONFLICTO_SOLAPE)
+  else el dia es festivo
+    SVC --> CTRL : AgendaConflictoException(FESTIVO)
+    CTRL --> USUARIO : 409 + ApiError(CONFLICTO_FESTIVO)
+  else inicio >= fin
+    SVC --> CTRL : IllegalArgumentException
+    CTRL --> USUARIO : 400 + ApiError(DATOS_INVALIDOS)
+  else franja valida
+    SVC -> FRJ : agenda.anadirFranja(dia, inicio, fin)
+    SVC -> AUD : nueva AuditoriaAgendas(ALTA_FRANJA,\nhash = SHA256(accion|profesional|usuario|\ninstante|hashAnterior))
+    SVC --> CTRL : FranjaGestionDTO con id
+    CTRL --> USUARIO : 201 + FranjaGestionDTO(JSON)
+  end
+end
+
+== Alta de festivo (el festivo manda) ==
+USUARIO -> CTRL : POST /api/agendas/medico/festivos\n{dia, motivo}
+CTRL -> SVC : anadirFestivo(profesionalId, FestivoDTO)
+SVC -> AGENDA : esFestivo(dia) / hayFranjaElDia(dia)
+alt festivo repetido o dia con franjas
+  SVC --> CTRL : AgendaConflictoException(FESTIVO)
+  CTRL --> USUARIO : 409 + ApiError(CONFLICTO_FESTIVO)
+else festivo aceptado
+  SVC -> FRJ : agenda.anadirFestivo(dia, motivo)
+  SVC -> AUD : ALTA_FESTIVO (continua la cadena de hash)
+  CTRL --> USUARIO : 201 + FestivoDTO(JSON)
+end
+
+== Autorizacion rechazada (matriz CFG-03) ==
+USUARIO -> CTRL : POST /api/agendas (alta de agenda)
+CTRL <- FILTRO : rol MEDICO/CELADOR: sin agenda:escribir
+CTRL --> USUARIO : 403 + ApiError(FORBIDDEN)\n(sin llegar al servicio)
+
+note over AUD
+  Las acciones registradas son ALTA_AGENDA,
+  ALTA_FRANJA, BAJA_FRANJA, ALTA_FESTIVO y
+  BAJA_FESTIVO. La cadena se verifica con
+  auditoriaVerificable(); alterarla a mano
+  en BD la rompe (AgendaServicioTest).
+end note
+@enduml

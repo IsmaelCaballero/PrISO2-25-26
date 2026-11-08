@@ -1,0 +1,86 @@
+@startuml cdu13-clases-analisis
+' CDU13 (Iter3/CFG-03) - Clases de analisis (conceptos del dominio de agendas)
+' Autor: agente (prompt 11) - exportacion a StarUML: Ismael (D18)
+title CDU13 - Clases de analisis: agendas, franjas de disponibilidad y festivos
+
+class "Agenda de profesional" as AGENDA {
+  - identificador de profesional (unico)
+  --
+  anadir franja(dia, inicio, fin)
+  anadir festivo(dia, motivo)
+  buscar franja / buscar festivo
+  es festivo?(dia) : si/no
+  hay solape?(dia, inicio, fin) : si/no
+  hay franja el dia?(dia) : si/no
+}
+
+class "Franja de disponibilidad" as FRANJA {
+  - dia
+  - hora de inicio
+  - hora de fin (debe ser posterior al inicio)
+  --
+  solapa con?(otro dia, inicio, fin) : si/no
+}
+
+class "Festivo" as FESTIVO {
+  - dia (unico por agenda)
+  - motivo
+}
+
+class "Hueco libre" as HUECO {
+  - profesional
+  - dia, inicio, fin
+  --
+  nace de la agenda menos los festivos
+}
+
+class "Conflicto de agenda" as CONF {
+  - tipo (SOLAPE, FESTIVO,
+    AGENDA_DUPLICADA)
+  - mensaje para el usuario
+}
+
+class "Registro de auditoria" as AUD {
+  - accion (alta/baja de agenda,
+    franja o festivo)
+  - profesional, usuario, instante
+  - hash y hash del registro anterior
+  --
+  verifica la cadena : si/no
+}
+
+class "Permiso de agenda" as PERMISO {
+  - codigo (agenda:leer,
+    agenda:escribir)
+}
+
+class "Profesional" as PROFESIONAL {
+  - identificador (medico, tecnico...)
+  --
+  en la v1 es el usuario de seguridad
+}
+
+AGENDA "1" *-- "0..*" FRANJA : define su disponibilidad
+AGENDA "1" *-- "0..*" FESTIVO : marca dias no disponibles
+AGENDA "1" -- "1" PROFESIONAL : pertenece a
+HUECO ..> FRANJA : se deriva
+CONF ..> FRANJA : se levanta al crearla
+CONF ..> FESTIVO : se levanta por colision
+AUD ..> AGENDA : registra los cambios
+PERMISO ..> AGENDA : protege su lectura y escritura
+
+note right of AGENDA
+  Invariantes del CDU13 (matriz CFG-03):
+  - dos franjas del mismo dia no se solapan
+    (los bordes que se tocan si conviven)
+  - un dia festivo no puede tener franjas,
+    y un dia con franjas no puede ser festivo
+  - solo un profesional puede tener una agenda
+end note
+
+note bottom of AUD
+  Mismo patron de trazabilidad que CDU16/17:
+  cadena de hashes encadenados, verificable
+  sin confiar en la base de datos.
+end note
+@enduml
