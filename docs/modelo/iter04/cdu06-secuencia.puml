@@ -1,0 +1,86 @@
+@startuml cdu06-secuencia
+' CDU06 (Iter4/CFG-04) - Secuencia de prescripcion, consulta y verificacion de huella
+' Autor: agente (diseno previo al codigo, issue #30) - fuentes PlantUML (D31)
+title CDU06 - Prescribir prueba y verificar no repudio (flujo principal + 409/404/400/403)
+
+skinparam sequence {
+  LifeLineParticipant true
+}
+
+actor "Medico\n(rol MEDICO)" as MEDICO
+actor "Recepcionista\n(rol RECEPCIONISTA)" as RECEP
+boundary "SolicitudControlador\n/api/solicitudes" as CTRL
+control "SolicitudServicio\n(iso2-solicitudes 1.1.0)" as SVC
+entity "Solicitud\n(JPA, solicitud,\nhuella SHA-256 propia)" as SOL
+participant "PruebaCatalogoFacade\n(CDU16)" as CAT
+participant "JwtAutenticacionFiltro\n(CDU17)" as FILTRO
+
+== Prescribir una prueba (actor Medico) ==
+MEDICO -> CTRL : POST /api/solicitudes\n{pacienteId, codigoPrueba, indicacionClinica,\nprioridad, origen}\n(Authorization: Bearer <token>)
+CTRL <- FILTRO : token valido: ROLE_MEDICO,\nmatriz concedera solicitud:escribir
+CTRL -> SVC : prescribir(SolicitudPrescripcionDTO\ncon medicoId = claim del token)
+SVC -> SVC : validacion de campos obligatorios\n(RF06.1: constructor compacto del DTO)
+alt campo obligatorio vacio
+  SVC --> CTRL : IllegalArgumentException
+  CTRL --> MEDICO : 400 + ApiError(DATOS_INVALIDOS)
+else campos correctos
+  SVC -> CAT : buscarPorCodigo(codigoPrueba)
+  alt prueba inexistente o inactiva
+    SVC --> CTRL : SolicitudConflictoException(PRUEBA_NO_DISPONIBLE)
+    CTRL --> MEDICO : 409 + ApiError(CONFLICTO_PRUEBA_NO_DISPONIBLE)
+  else prueba activa
+    SVC -> SOL : existsByMedicoAndPacienteAndPrueba\ny estado activo
+    alt solicitud duplicada
+      SVC --> CTRL : SolicitudConflictoException(DUPLICADA)
+      CTRL --> MEDICO : 409 + ApiError(CONFLICTO_SOLICITUD_DUPLICADA)
+    else solicitud aceptada
+      SVC -> SOL : nueva Solicitud(estado CREADA,\nhuella = SHA256(paciente|codigo|indicacion|\nprioridad|origen|medico|instante))
+      SVC --> CTRL : SolicitudDTO(solicitudId, estado "creada")
+      CTRL --> MEDICO : 201 + SolicitudDTO(JSON)
+    end
+  end
+end
+
+== Mis solicitudes y detalle ==
+MEDICO -> CTRL : GET /api/solicitudes/mias
+CTRL <- FILTRO : solicitud:leer concedida a MEDICO
+CTRL -> SVC : listarPorMedico(claim del token)
+SVC -> SOL : findByMedicoIdOrderByCreadaEnDesc
+SVC --> CTRL : List~SolicitudDTO~
+CTRL --> MEDICO : 200 + lista JSON
+MEDICO -> CTRL : GET /api/solicitudes/{id}
+alt id inexistente
+  SVC --> CTRL : SolicitudNoEncontradaException
+  CTRL --> MEDICO : 404 + ApiError(SOLICITUD_NO_ENCONTRADA)
+else id existente
+  CTRL --> MEDICO : 200 + SolicitudDTO(JSON)
+end
+
+== Verificar el no repudio (RF06.2) ==
+RECEP -> CTRL : GET /api/solicitudes/{id}/integridad
+CTRL <- FILTRO : solicitud:leer concedida a RECEPCIONISTA
+CTRL -> SVC : trazable(id)
+SVC -> SOL : trazaIntegra(): recalcula el SHA-256\ndel canonico y compara con la huella guardada
+SVC --> CTRL : TrazabilidadSolicitudDTO\n(autor, creadaEn, huella, integridadOk)
+CTRL --> RECEP : 200 + JSON de trazabilidad
+
+== Autorizacion rechazada (matriz CFG-04) ==
+RECEP -> CTRL : POST /api/solicitudes (prescribir)
+CTRL <- FILTRO : rol RECEPCIONISTA: sin solicitud:escribir
+CTRL --> RECEP : 403 + ApiError(FORBIDDEN)\n(sin llegar al servicio)
+TECNICO -> CTRL : POST /api/solicitudes (prescribir)
+CTRL <- FILTRO : rol TECNICO: solo solicitud:leer
+CTRL --> TECNICO : 403 + ApiError(FORBIDDEN)\n(sin llegar al servicio)
+
+note over SOL
+  La huella se calcula una sola vez con el
+  Clock inyectado (testable) y ya no cambia:
+  creadaEn se trunca a microsegundos, la precision
+  de la BD, para que el recalculo sobre la fila
+  leida coincida. No existen endpoints PUT/PATCH
+  de solicitudes.
+  Si alguien manipula la fila en BD, trazaIntegra()
+  devuelve false y el JSON de integridad lo revela
+  (SolicitudesApiTest + SolicitudServicioTest).
+end note
+@enduml

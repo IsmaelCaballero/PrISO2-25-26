@@ -2,7 +2,7 @@ package es.uclm.iso2.client;
 
 /**
  * Reglas de navegacion por rol del cliente (CDU17, Iter2/CFG-02; ampliadas a las
- * agendas en CDU13, Iter3/CFG-03).
+ * agendas en CDU13, Iter3/CFG-03 y a las solicitudes en CDU06, Iter4/CFG-04).
  *
  * <p>Separadas de JavaFX a proposito: es la unica logica de menus por rol del cliente
  * y queda cubierta por JaCoCo y por tests unitarios (las vistas {@code ui/**} estan
@@ -10,7 +10,8 @@ package es.uclm.iso2.client;
  * aplica siempre el servidor; esto solo decide que interfaz se muestra para no
  * someter al usuario a 403 seguros.</p>
  *
- * @since 0.1.2 (CFG-02); secciones de agenda desde 0.1.3 (CFG-03)
+ * @since 0.1.2 (CFG-02); secciones de agenda desde 0.1.3 (CFG-03); seccion de
+ * solicitudes desde 0.1.4 (CFG-04)
  */
 public final class NavegacionPorRol {
 
@@ -56,5 +57,34 @@ public final class NavegacionPorRol {
      */
     public static boolean agendasEditablesPara(String rol) {
         return "ADMINISTRADOR".equals(rol) || "RECEPCIONISTA".equals(rol);
+    }
+
+    /**
+     * Si el rol puede ver la seccion de solicitudes. TECNICO y CELADOR no tienen el
+     * permiso {@code solicitud:leer} en la matriz RBAC, asi que la seccion no se les
+     * muestra (el servidor les responderia 403 igualmente).
+     *
+     * @param rol nombre del rol del claim JWT (ver {@code AutenticacionFacade.SesionDTO})
+     * @return true para ADMINISTRADOR, MEDICO y RECEPCIONISTA
+     * @since 0.1.4 (CDU06, CFG-04)
+     */
+    public static boolean solicitudesVisiblesPara(String rol) {
+        return switch (rol == null ? "" : rol) {
+            case "ADMINISTRADOR", "MEDICO", "RECEPCIONISTA" -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * Si el rol puede prescribir pruebas (alta de solicitud). Solo ADMINISTRADOR y
+     * MEDICO tienen {@code solicitud:escribir} (actor Medico del CDU06); la recepcion
+     * solo consulta el detalle y su trazabilidad de no repudio.
+     *
+     * @param rol nombre del rol del claim JWT (ver {@code AutenticacionFacade.SesionDTO})
+     * @return true solo para ADMINISTRADOR y MEDICO
+     * @since 0.1.4 (CDU06, CFG-04)
+     */
+    public static boolean solicitudesPrescribiblesPara(String rol) {
+        return "ADMINISTRADOR".equals(rol) || "MEDICO".equals(rol);
     }
 }

@@ -9,9 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test unitario de las reglas de navegacion por rol (CDU17, CFG-02; secciones de
- * agenda en CDU13, CFG-03): solo ADMINISTRADOR ve la vista editable del catalogo;
- * en agendas, CELADOR no ve la seccion, MEDICO/TECNICO solo lectura y
- * ADMINISTRADOR/RECEPCIONISTA gestion. Refleja la matriz autoritativa de
+ * agenda en CDU13, CFG-03 y de solicitudes en CDU06, CFG-04): solo ADMINISTRADOR ve la
+ * vista editable del catalogo; en agendas, CELADOR no ve la seccion, MEDICO/TECNICO solo
+ * lectura y ADMINISTRADOR/RECEPCIONISTA gestion; en solicitudes, TECNICO/CELADOR no ven
+ * la seccion y solo ADMINISTRADOR/MEDICO prescriben. Refleja la matriz autoritativa de
  * {@code iso2-seguridad} (MatrizPermisos).
  */
 class NavegacionPorRolTest {
@@ -65,8 +66,41 @@ class NavegacionPorRolTest {
     }
 
     /**
-     * Defectos de entrada (nulo, vacio, rol desconocido): sin seccion de agenda y
-     * sin edicion, nunca permiso por defecto.
+     * Tabla rol -&gt; ve la seccion de solicitudes (matriz RBAC: TECNICO y CELADOR sin
+     * {@code solicitud:leer}).
+     */
+    @ParameterizedTest
+    @CsvSource({
+            "ADMINISTRADOR,   true",
+            "MEDICO,          true",
+            "RECEPCIONISTA,   true",
+            "TECNICO,         false",
+            "CELADOR,         false",
+    })
+    void soloTecnicoYCeladorNoVenLaSeccionDeSolicitudes(String rol, boolean esperado) {
+        assertTrue(NavegacionPorRol.solicitudesVisiblesPara(rol) == esperado, rol);
+    }
+
+    /**
+     * Tabla rol -&gt; prescribe pruebas (matriz RBAC: {@code solicitud:escribir} solo
+     * para el actor Medico del CDU06 y el administrador del sistema; la recepcion solo
+     * consulta el detalle y su trazabilidad).
+     */
+    @ParameterizedTest
+    @CsvSource({
+            "ADMINISTRADOR,   true",
+            "MEDICO,          true",
+            "RECEPCIONISTA,   false",
+            "TECNICO,         false",
+            "CELADOR,         false",
+    })
+    void soloAdministradorYMedicoPrescriben(String rol, boolean esperado) {
+        assertTrue(NavegacionPorRol.solicitudesPrescribiblesPara(rol) == esperado, rol);
+    }
+
+    /**
+     * Defectos de entrada (nulo, vacio, rol desconocido): sin seccion de agenda ni de
+     * solicitudes y sin edicion, nunca permiso por defecto.
      */
     @Test
     void rolesDesconocidosONulosNoDanPermisoDeEdicion() {
@@ -78,5 +112,9 @@ class NavegacionPorRolTest {
         assertFalse(NavegacionPorRol.agendasVisiblePara("PIRATA"));
         assertFalse(NavegacionPorRol.agendasEditablesPara(null));
         assertFalse(NavegacionPorRol.agendasEditablesPara("recepcionista"), "el claim usa el nombre del enum en mayusculas");
+        assertFalse(NavegacionPorRol.solicitudesVisiblesPara(null));
+        assertFalse(NavegacionPorRol.solicitudesVisiblesPara("PIRATA"));
+        assertFalse(NavegacionPorRol.solicitudesPrescribiblesPara(null));
+        assertFalse(NavegacionPorRol.solicitudesPrescribiblesPara("medico"), "el claim usa el nombre del enum en mayusculas");
     }
 }

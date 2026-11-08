@@ -30,6 +30,12 @@ public enum Permiso {
     /** Alta y gestion de franjas y festivos de las agendas (actor Administrativo del CDU13). */
     AGENDA_ESCRIBIR("agenda:escribir"),
 
+    /** Consultar solicitudes de prueba (llega con CDU06). */
+    SOLICITUD_LEER("solicitud:leer"),
+
+    /** Prescribir pruebas desde Atencion Primaria (actor Medico del CDU06). */
+    SOLICITUD_ESCRIBIR("solicitud:escribir"),
+
     /** Gestionar usuarios y roles (llega completo con CDU18). */
     USUARIO_GESTIONAR("usuario:gestionar");
 
