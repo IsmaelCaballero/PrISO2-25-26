@@ -1,0 +1,73 @@
+@startuml cdu06-casos-uso
+' CDU06 (Iter4/CFG-04) - Casos de uso de "Solicitudes de prueba desde Atencion Primaria"
+' Autor: agente (diseno previo al codigo, issue #30) - fuentes PlantUML (D31)
+title CDU06 - Solicitudes de prueba (prescripcion con no repudio)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Medico\n(ROL: MEDICO)" as MEDICO
+actor "Recepcionista\n(ROL: RECEPCIONISTA)" as RECEP
+actor "Administrador\n(ROL: ADMINISTRADOR)" as SYSADMIN
+actor "Sistema\n(filtro JWT + reglas de dominio)" as SYS #D9D9D9
+
+rectangle "ISO2 Radiodiagnostico - CDU06" {
+  usecase "UC06.1\nPrescribir una prueba\nde imagen" as UC1
+  usecase "UC06.2\nListar mis solicitudes\n(por medico autor)" as UC2
+  usecase "UC06.3\nConsultar el detalle\nde una solicitud" as UC3
+  usecase "UC06.4\nVerificar la trazabilidad\n(no repudio) de una solicitud" as UC4
+  usecase "UC06.5\nValidar campos\nobligatorios (RF06.1)" as UC5
+  usecase "UC06.6\nComprobar que la prueba\nexiste y esta activa (CDU16)" as UC6
+  usecase "UC06.7\nDetectar solicitud\nduplicada (RF06.3)" as UC7
+  usecase "UC06.8\nSellar el no repudio\n(autor + instante + huella)" as UC8
+  usecase "UC17.5-6\nAutenticar y autorizar\n(CDU17)" as UC17 #FFFFFF
+}
+
+MEDICO --> UC1
+MEDICO --> UC2
+MEDICO --> UC3
+MEDICO --> UC4
+RECEP --> UC3
+RECEP --> UC4
+SYSADMIN --> UC1
+SYSADMIN --> UC2
+SYSADMIN --> UC3
+SYSADMIN --> UC4
+
+UC1 ..> UC17 : <<include>>
+UC2 ..> UC17 : <<include>>
+UC3 ..> UC17 : <<include>>
+UC4 ..> UC17 : <<include>>
+
+UC1 ..> UC5 : <<include>>
+UC1 ..> UC6 : <<include>>
+UC1 ..> UC7 : <<include>>
+UC1 ..> UC8 : <<include>>
+UC4 ..> UC8 : <<include>>
+
+SYS --> UC8
+
+note right of UC7
+  Regla "no duplicado" (CFG-04):
+  - mismo medico + mismo paciente + misma
+    prueba con estado CREADA/CITADA/REALIZADA/
+    INFORMADA -> CONFLICTO_SOLICITUD_DUPLICADA
+  - si la anterior esta CANCELADA, se puede
+    re-prescribir (queda el historial)
+end note
+
+note bottom of UC6
+  El autor de la solicitud es SIEMPRE el
+  usuario autenticado (claim del JWT): el
+  cuerpo de la peticion no puede fingir un
+  medicoId distinto -> no repudio (RF06.2).
+end note
+
+note left of UC8
+  La huella SHA-256 del canonico
+  paciente|prueba|indicacion|prioridad|origen|
+  medico|instante se calcula una sola vez al
+  crear y se guarda en la propia solicitud.
+  No hay endpoint de modificacion.
+end note
+@enduml

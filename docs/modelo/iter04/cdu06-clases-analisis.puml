@@ -1,0 +1,89 @@
+@startuml cdu06-clases-analisis
+' CDU06 (Iter4/CFG-04) - Clases de analisis (conceptos del dominio de solicitudes)
+' Autor: agente (diseno previo al codigo, issue #30) - fuentes PlantUML (D31)
+title CDU06 - Clases de analisis: solicitudes de prueba, prioridad y no repudio
+
+class "Solicitud de prueba" as SOLICITUD {
+  - identificador de solicitud
+  - paciente (historia clinica)
+  - prueba (codigo del catalogo)
+  - indicacion clinica (obligatoria)
+  - prioridad (ORDINARIA, PREFERENTE, URGENTE)
+  - origen de la peticion (AP, hospital, urgencias)
+  - medico autor (no repudio)
+  - fecha y hora de creacion
+  - estado (creada..cancelada)
+  - huella de no repudio (SHA-256)
+  --
+  es duplicada de?(otra del mismo medico,
+  paciente y prueba) : si/no
+  traza integra? : si/no
+}
+
+class "Prueba de imagen\n(CDU16)" as PRUEBA {
+  - codigo (unico)
+  - nombre
+  - activa (solo las activas se pueden solicitar)
+}
+
+class "Paciente" as PACIENTE {
+  - historia clinica
+  --
+  en la v1 es un identificador, sin alta explicita
+}
+
+class "Medico solicitante" as MEDICO {
+  - identificacion
+  --
+  en la v1 es el usuario de seguridad (rol MEDICO)
+}
+
+class "Conflicto de solicitud" as CONF {
+  - tipo (DUPLICADA,
+    PRUEBA_NO_DISPONIBLE)
+  - mensaje para el usuario
+}
+
+class "Trazabilidad (no repudio)" as TRAZA {
+  - autor de la solicitud
+  - instante de creacion
+  - huella SHA-256 del contenido
+  --
+  verificar recalculando la huella : si/no
+}
+
+class "Permiso de solicitud" as PERMISO {
+  - codigo (solicitud:leer,
+    solicitud:escribir)
+}
+
+SOLICITUD "1" -- "1" PACIENTE : se refiere a
+SOLICITUD "1" -- "1" PRUEBA : pide una
+SOLICITUD "1" -- "1" MEDICO : la firma su autor
+SOLICITUD "1" -- "1" TRAZA : queda sellada en su huella
+CONF ..> SOLICITUD : se levanta al prescribir
+TRAZA ..> PRUEBA : valida que exista y este activa
+PERMISO ..> SOLICITUD : protege su lectura y escritura
+
+note right of SOLICITUD
+  Invariantes del CDU06 (matriz CFG-04):
+  - campos obligatorios: paciente, prueba,
+    indicacion clinica, prioridad, origen y
+    autor (RF06.1)
+  - la prueba debe existir y estar activa
+  - no hay dos solicitudes activas del mismo
+    medico para el mismo paciente y prueba
+    (RF06.3); con la anterior cancelada, si
+  - la huella no se puede modificar: no existe
+    edicion de solicitudes en esta CDU
+end note
+
+note bottom of TRAZA
+  No repudio (RF06.2): autor + instante + huella
+  viajan en la propia solicitud. A diferencia de
+  la auditoria encadenada de CDU13, aqui el
+  documento es su propia prueba: basta con
+  recalcular el SHA-256 para detectar
+  manipulaciones en la base de datos.
+end note
+@enduml

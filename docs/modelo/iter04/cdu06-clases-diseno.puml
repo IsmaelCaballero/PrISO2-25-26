@@ -1,0 +1,209 @@
+@startuml cdu06-clases-diseno
+' CDU06 (Iter4/CFG-04) - Clases de diseno: iso2-solicitudes 1.1.0 + contrato + servidor
+' Autor: agente (diseno previo al codigo, issue #30) - fuentes PlantUML (D31)
+title CDU06 - Clases de diseno previstas (iso2-solicitudes 1.1.0-SNAPSHOT, apps 0.1.4-SNAPSHOT)
+
+skinparam classAttributeIconSize 0
+
+package "iso2-common 1.1.0 (contrato: baseline + extension MINOR CDU06)" {
+  interface SolicitudFacade {
+    + crear(SolicitudNuevaDTO) : SolicitudDTO
+    + buscar(String) : Optional~SolicitudDTO~
+    ..
+    + prescribir(SolicitudPrescripcionDTO) : SolicitudDTO
+    + listarPorMedico(String) : List~SolicitudDTO~
+    + detalle(String) : SolicitudDTO
+    + trazable(String) : TrazabilidadSolicitudDTO
+  }
+  class SolicitudNuevaDTO <<record, congelado>> {
+    + pacienteId : String
+    + codigoPrueba : String
+    + origen : String
+  }
+  class SolicitudDTO <<record, congelado>> {
+    + solicitudId : String
+    + pacienteId : String
+    + codigoPrueba : String
+    + fechaSolicitada : LocalDate
+    + estado : String
+  }
+  class SolicitudPrescripcionDTO <<record, nuevo>> {
+    + pacienteId : String
+    + codigoPrueba : String
+    + indicacionClinica : String
+    + prioridad : Prioridad
+    + origen : String
+    + medicoId : String
+    ..
+    constructor compacto: campos no vacios
+    (RF06.1); medicoId lo fija el controlador
+    con el claim, no con el cuerpo JSON
+  }
+  class TrazabilidadSolicitudDTO <<record, nuevo>> {
+    + solicitudId : String
+    + autor : String
+    + creadaEn : Instant
+    + huella : String (SHA-256 hex)
+    + integridadOk : boolean
+  }
+  enum Prioridad {
+    ORDINARIA; PREFERENTE; URGENTE
+  }
+  class SolicitudNoEncontradaException <<RuntimeException>>
+  class SolicitudConflictoException <<RuntimeException>> {
+    + tipo() : Conflicto
+  }
+  enum Conflicto {
+    DUPLICADA; PRUEBA_NO_DISPONIBLE
+  }
+  class ApiError <<record>> {
+    + codigo : String
+    + mensaje : String
+  }
+  interface PruebaCatalogoFacade <<CDU16>> {
+    + buscarPorCodigo(String) : Optional~PruebaImagenDTO~
+  }
+}
+
+package "iso2-solicitudes 1.1.0 (modulo elevado a CFG-04)" {
+  package dominio {
+    class Solicitud <<JPA, solicitud>> {
+      - id : Long
+      - solicitudId : String (UUID, unico)
+      - pacienteId : String
+      - codigoPrueba : String
+      - indicacionClinica : String
+      - prioridad : Prioridad
+      - origen : String
+      - medicoId : String (autor)
+      - creadaEn : Instant
+      - estado : Estado
+      - huella : String (SHA-256 hex, no editable)
+      + huellaCalculada() : String (recalcula el canonico)
+      + trazaIntegra() : boolean
+      + esActiva() : boolean
+      + cancelar() : void
+    }
+    enum Estado {
+      CREADA; CITADA; REALIZADA
+      INFORMADA; CANCELADA
+    }
+  }
+  package repositorio {
+    interface SolicitudRepositorio extends JpaRepository {
+      + findBySolicitudId(String) : Optional~Solicitud~
+      + findByMedicoIdOrderByCreadaEnDesc(String) : List~Solicitud~
+      + existsByMedicoIdAndPacienteIdAndCodigoPruebaAndEstadoIn(...) : boolean
+    }
+  }
+  package servicio {
+    class SolicitudServicio <<@Service>> {
+      + crear(...) / prescribir(...) : SolicitudDTO
+      + buscar / listarPorMedico / detalle
+      + trazable(String) : TrazabilidadSolicitudDTO
+      ..
+      Reglas: prueba activa (CDU16), no duplicada
+      en estados activos (RF06.3), campos RF06.1
+      Huella: SHA256(paciente|codigo|indicacion|
+      prioridad|origen|medico|creadaEn) con
+      Instant.now(reloj) y Clock inyectable
+    }
+  }
+  package web {
+    class SolicitudControlador <<@RestController>> {
+      + POST /api/solicitudes : prescribir (201)
+      + GET /api/solicitudes/mias : listarPorMedico
+      + GET /api/solicitudes/{id} : detalle
+      + GET /api/solicitudes/{id}/integridad : trazable
+    }
+    class SolicitudManejadorErrores <<@RestControllerAdvice>> {
+      NoEncontrada -> 404 SOLICITUD_NO_ENCONTRADA
+      Conflicto -> 409 CONFLICTO_SOLICITUD_DUPLICADA /
+      CONFLICTO_PRUEBA_NO_DISPONIBLE
+      IllegalArgument / JsonInvalido -> 400 DATOS_INVALIDOS
+    }
+  }
+}
+
+package "iso2-server-app 0.1.4" {
+  class ConfigSeguridad <<@Configuration>> {
+    + filtroHttp(HttpSecurity, JwtUtils)
+    ..
+    GET /api/solicitudes/**: hasAnyRole(ADMINISTRADOR,
+    MEDICO, RECEPCIONISTA)
+    resto /api/solicitudes/**: hasAnyRole(ADMINISTRADOR,
+    MEDICO)
+    (CELADOR y TECNICO quedan fuera de la escritura)
+  }
+  class "Flyway V1.4.0 (migracion SQL)" as FLY {
+    tabla solicitud + indice (medico, paciente, prueba)
+    sin constraint unico: re-prescribir tras
+    cancelacion es valido
+    semilla de pruebas de catalogo activas para TC
+  }
+}
+
+package "iso2-seguridad 1.1.0 (RBAC ampliado en CDU06)" {
+  enum Permiso {
+    ...catalogo/agenda/usuario...
+    SOLICITUD_LEER; SOLICITUD_ESCRIBIR
+    + codigo() : String
+  }
+  class MatrizPermisos <<final>> {
+    {static} + tienePermiso(Rol, Permiso) : boolean
+    ..
+    MEDICO: solicitud:leer + solicitud:escribir
+    RECEPCIONISTA: solicitud:leer
+    CELADOR: sin permisos de solicitud
+    ADMINISTRADOR: todo (allOf)
+  }
+}
+
+package "iso2-client-app 0.1.4 (parte b: cliente medico)" #DDDDDD {
+  class ApiClienteSolicitudes <<pendiente>> {
+    + POST /api/solicitudes, GET /mias,
+    GET /{id}, GET /{id}/integridad (Bearer)
+  }
+  class VistaSolicitudesMedico <<JavaFX, pendiente>>
+}
+
+SolicitudServicio ..|> SolicitudFacade : implementa
+SolicitudServicio ..> SolicitudRepositorio
+SolicitudServicio ..> Solicitud : reglas en el dominio
+SolicitudServicio ..> PruebaCatalogoFacade : valida prueba activa
+SolicitudServicio ..> SolicitudNoEncontradaException : lanza
+SolicitudServicio ..> SolicitudConflictoException : lanza
+SolicitudConflictoException --> Conflicto
+Solicitud --> Estado
+Solicitud --> Prioridad
+SolicitudRepositorio o-- Solicitud
+SolicitudControlador --> SolicitudFacade
+SolicitudControlador ..> SolicitudPrescripcionDTO : medicoId = claim JWT
+SolicitudManejadorErrores ..> ApiError : 404/409/400 JSON
+SolicitudServicio ..> TrazabilidadSolicitudDTO : trazable()
+ConfigSeguridad ..> MatrizPermisos : reglas derivadas
+ConfigSeguridad ..> Permiso : solicitud:leer / solicitud:escribir
+Solicitud ..> FLY : tabla solicitud
+
+ApiClienteSolicitudes ..> ApiError : rethrows codes
+ApiClienteSolicitudes ..> SolicitudDTO
+VistaSolicitudesMedico --> ApiClienteSolicitudes
+
+note right of SolicitudServicio
+  El dominio (Solicitud) calcula y verifica su
+  huella; el servicio orquesta: valida la prueba
+  contra el catalogo (CDU16), comprueba el
+  duplicado sobre estados activos y persiste.
+  ArchUnit: web no accede a repositorios, dominio
+  sin Spring. Cobertura JaCoCo exigida: 0.85.
+end note
+
+note bottom of Solicitud
+  La huella se calcula UNA vez en la construccion
+  con Instant.now(Clock inyectable). No hay
+  PUT/PATCH: el unico cambio de estado previsto
+  es cancelar(). trazaIntegra() recalcula el
+  SHA-256 del canonico y detecta manipulaciones
+  directas en BD (no repudio, RF06.2).
+end note
+@enduml
