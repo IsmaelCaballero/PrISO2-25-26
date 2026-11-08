@@ -2,8 +2,9 @@
 
 Diagramas de la CDU16 "Configurar parametros: tipos de prueba, protocolos, politicas"
 (Iteracion 1, configuracion CFG-01). Igual que en el resto de iteraciones, las fuentes
-editables del modelo son los ficheros PlantUML (`.puml`) de este directorio; los
-diagramas `.staruml` se generan a mano a partir de ellos (decision D18).
+editables del modelo son los ficheros PlantUML (`.puml`) de este directorio; los `.png`
+incrustados mas abajo se renderizan a partir de esas fuentes con `tools/plantuml.jar`
+(decision D31, que descarta la exportacion a StarUML de D18).
 
 ## Fuentes PlantUML (lo que versiona el proyecto)
 
@@ -17,34 +18,44 @@ diagramas `.staruml` se generan a mano a partir de ellos (decision D18).
 Convencion de las fuentes: ASCII en los comentarios (evitar acentos/emes en lineas
 `'`) para que no haya ambiguedad de codificacion; UTF-8 para el resto.
 
+## Diagramas (clic sobre la imagen para abrirla a tamano completo)
+
+### Casos de uso
+
+<a href="cdu16-casos-uso.png"><img src="cdu16-casos-uso.png" alt="CDU16 - diagrama de casos de uso" width="700"/></a>
+
+### Secuencia
+
+<a href="cdu16-secuencia.png"><img src="cdu16-secuencia.png" alt="CDU16 - diagrama de secuencia" width="700"/></a>
+
+### Clases de analisis
+
+<a href="cdu16-clases-analisis.png"><img src="cdu16-clases-analisis.png" alt="CDU16 - clases de analisis" width="700"/></a>
+
+### Clases de diseno
+
+<a href="cdu16-clases-diseno.png"><img src="cdu16-clases-diseno.png" alt="CDU16 - clases de diseno" width="980"/></a>
+
 ## Visualizar / exportar a imagen
 
-Con PlantUML local (o la extension de VS Code/IntelliJ):
+Los `.png` de arriba estan versionados en este directorio; para regenerarlos tras tocar
+un `.puml`, desde la raiz del repositorio:
 
 ```text
-java -jar plantuml.jar -tpng docs/modelo/iter01/*.puml
+java -jar tools/plantuml.jar -tpng docs/modelo/iter01/*.puml
 ```
 
+(`tools/plantuml.jar` se descarga de plantuml.com y no se versiona, ver D31; si no hay
+Graphviz instalado, anadir `-Playout smetana`.)
 La sintaxis es la estandar de PlantUML (`@startuml`/`@enduml`); no usa macros ni
 includes entre ficheros, asi que cada diagrama se procesa por separado.
 
-## Exportacion a StarUML (artefactos de entrega, D18)
+## Artefactos de entrega (D31)
 
-La entrega pide modelos en StarUML (`.staruml`). Procedimiento acordado:
-
-1. Abrir StarUML 6 (o 5) con el complemento **PlantUML** instalado
-   (StarUML > Extension Manager > `staruml-plantuml` / PlantUML for StarUML).
-2. Para cada `.puml` de este directorio: en StarUML, `File > PlantUML > Import`
-   (o pegar el fuente) y dejar que genere el diagrama dentro del modelo `iso2-iter01`.
-3. Revisar el diagrama importado (el plugin reposiciona elementos: ordenar y
-   renombrar si hace falta) y anadirlo al modelo de la iteracion.
-4. Guardar el resultado en `docs/modelo/iter01/staruml/iso2-iter01.staruml`
-   (un unico modelo StarUML por iteracion, con los 4 diagramas como subdiagramas).
-5. Subir ese fichero al repositorio como artefacto de entrega de CFG-01.
-
-Este paso es manual y le corresponde a Ismael (D18): el agente deja las fuentes
-`.puml` revisables en GitHub (los `.puml` se ven como texto y las imagenes se pueden
-pegar en la wiki/PR si hace falta).
+Los artefactos de modelado de CFG-01 son los `.puml` (fuente, item de configuracion D25)
+y los `.png` renderizados con `tools/plantuml.jar`, ambos en este directorio. La
+exportacion a StarUML prevista en D18 no se hizo y queda descartada (D31): no existe
+ningun proyecto `.staruml` y el trabajo se ha hecho integramente con PlantUML.
 
 ## Relacion con el codigo
 
@@ -61,4 +72,4 @@ El diagrama de diseno describe el codigo ya implementado en Iter1:
   `VistaAdminCatalogo`.
 
 Si el codigo cambia tras los TC humanos de CDU16 (D28), actualizar primero el `.puml`
-y volver a exportar el `.staruml`.
+y volver a renderizar el `.png` con `tools/plantuml.jar`.

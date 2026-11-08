@@ -385,3 +385,39 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     (`iso2-solicitudes` 1.1.0, apps 0.1.4-SNAPSHOT, puertas: cobertura de solicitudes ≥ 85 % y huella
     de contenido). En GitHub solo queda fusionar el PR de docs #24 y retomar #21 (TC humanos), #22
     (`.staruml`) y #23 (Kanban + wiki), todas reabiertas al final de la sesión.
+
+### Prompt 11d — Modelado con PlantUML (D31): PNG versionados y plantillas de TC [✔ ejecutado]
+
+> Prompt lanzado por Ismael (08/11/2026): «¿Puedes entregarme la plantilla de TC y recordarme qué se
+> espera de mí? Y ajusta toda la documentación a PlantUML, quitando las referencias a StarUML; los
+> `.puml` se ven fatal en GitHub, así que incrusta los `.png` en los README (reducidos, pero que al
+> hacer clic se abran a tamaño completo)».
+
+- Resultado (08/11/2026, sesión 13; rama `docs/plantuml-evidencia` → `develop`):
+  - **Comprobación previa:** `tools/plantuml.jar` (30.020.557 B, sin versionar) con Java 25.0.1 renderiza
+    de forma reproducible: los PNG de iter01 regenerados salen **idénticos byte a byte**. Y **no existe
+    ningún `.staruml`** en el repo, la historia (`git log --all`), la wiki ni el disco: el trabajo de
+    modelado se ha hecho íntegramente con PlantUML.
+  - **Nueva ADR D31** en `DECISIONS.md` (D18 anotada como revisada): los artefactos de modelado de cada
+    CFG son los `.puml` (fuente editable, ítem de configuración D25) **más los `.png` renderizados con
+    `tools/plantuml.jar`, ambos versionados** en `docs/modelo/iterXX/`; la herramienta no se versiona
+    (`*.jar` en `.gitignore`). La exportación a StarUML queda descartada. `CONTEXT.md` §4 reescrito como
+    «Modelado por iteración (PlantUML)».
+  - **README de `docs/modelo/iter01|02|03` adaptados:** intro citando D31, sección «Diagramas» con cada
+    PNG incrustado `<a href="X.png"><img … width="700|900|980"/></a>` (clic = tamaño completo), comando
+    de regeneración `java -jar tools/plantuml.jar -tpng docs/modelo/iterNN/*.puml` y sección «Artefactos
+    de entrega (D31)». Los 12 PNG (4 por iteración, ~1,6 MB) quedan versionados. Issue #22: **no procede**
+    el export; Ismael la re-cierra y el seguimiento pasa a `STATUS.md`.
+  - **Plantillas de TC humanos (D28) creadas en `docs/tc/`:** `README.md` (regla D24, columnas de quién
+    rellena qué, arranque con `ISO2_JWT_SECRET`, tabla de usuarios semilla de `V1.2.0` con contraseñas de
+    desarrollo) + `cdu16-tc-humanos.md` (6 TC), `cdu17-tc-humanos.md` (6 TC) y `cdu13-tc-humanos.md`
+    (8 TC). Tipo y puerta de calidad **prefijados** desde la matriz §5 de `SOFTWAREQUALITY.md`, endpoints
+    y códigos de error verificados en el código fusionado (`CONFLICTO_SOLAPE`, `CUENTA_BLOQUEADA`,
+    bloqueo 5/15 min…); pasos y resultados quedan en blanco: los diseña y ejecuta **Ismael**.
+  - **Wiki:** creada como repo git del repositorio (`PrISO2-25-26.wiki.git`, commit `60e984d`) con una
+    única página `Home.md` que enlaza README/CONTEXT/PLAN/STATUS/DECISIONS/PROMPTS/mapa de configuraciones.
+  - **GitHub:** #21/#22/#23 re-cerradas por Ismael (12:56-12:57) tras reabrirlas el agente; no se
+    reabren, el seguimiento queda en `STATUS.md`. PR #24 fusionado (`c1219a8` = tip de `develop`).
+  - **Siguiente sesión:** Iter4 · CDU06 solicitudes (CFG-04) desde `develop` = `c1219a8`, con modelo en
+    `docs/modelo/iter04/` ya en formato D31 (`.puml` + `.png` incrustados). Pendiente de Ismael: rellenar
+    y ejecutar los TC de `docs/tc/` y revisar el Kanban visualmente.
