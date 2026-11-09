@@ -1,5 +1,6 @@
 package es.uclm.iso2.catalogo.web;
 
+import es.uclm.iso2.common.catalogo.CatalogoNoEncontradoException;
 import es.uclm.iso2.common.catalogo.PruebaCatalogoFacade;
 import es.uclm.iso2.common.catalogo.PruebaCatalogoFacade.PruebaImagenDTO;
 import es.uclm.iso2.common.shared.Paginacion;
@@ -59,13 +60,14 @@ public class CatalogoControlador {
      * Detalle de una prueba por codigo.
      *
      * @param codigo codigo de la prueba
-     * @return 200 con la prueba o 404 si no existe
+     * @return 200 con la prueba, o 404 con {@code ApiError(PRUEBA_NO_ENCONTRADA)} si no
+     *         existe: el cuerpo de error es el mismo que devuelven el PUT y el DELETE, de
+     *         modo que el cliente puede leer el codigo de error en cualquier operacion
      */
     @GetMapping("/{codigo}")
     public ResponseEntity<PruebaImagenDTO> detalle(@PathVariable String codigo) {
-        return catalogo.buscarPorCodigo(codigo)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(catalogo.buscarPorCodigo(codigo)
+                .orElseThrow(() -> new CatalogoNoEncontradoException(codigo)));
     }
 
     /**

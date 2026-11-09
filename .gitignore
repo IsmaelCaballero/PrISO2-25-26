@@ -27,6 +27,10 @@ data/
 *.mv.db
 *.trace.db
 
+# Python (utilidades de tools/)
+__pycache__/
+*.pyc
+
 # StarUML temporales
 *.mdtmp
 ~$*

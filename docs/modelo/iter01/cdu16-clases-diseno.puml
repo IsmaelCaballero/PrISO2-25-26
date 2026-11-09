@@ -1,6 +1,9 @@
 @startuml cdu16-clases-diseno
 ' CDU16 (Iter1/CFG-01) - Diagrama de clases de diseno (implementacion real, v1.1.0-SNAPSHOT)
 ' Autor: agente (prompt 09) - revision y exportacion a StarUML: Ismael (D18)
+' Rev. 2026-11-08 (sesion 16, D35): anadidas las cotas que vigila el servicio (LimitesCatalogo),
+'   el dominio de categoria y el manejador de errores de iso2-catalogo. Son las invariantes
+'   que designan la matriz TDOP de docs/test/iter01 (D33); se edita este .puml antes que el codigo.
 title CDU16 - Clases de diseno: iso2-common + iso2-catalogo + apps (Iter1/CFG-01)
 
 package "iso2-common (contratos 1.1.0)" {
@@ -23,6 +26,12 @@ package "iso2-common (contratos 1.1.0)" {
     -politica: PoliticaDTO
     +sinEstado(...): PruebaImagenDTO
     ..validacion en el constructor compacto..
+    codigo/nombre/categoria no en blanco
+    duracionMinutos > 0; protocolo y politica no nulos
+    preparacion y contraindicaciones no en blanco; ayunoHoras >= 0
+    plazoCancelacionHoras > 0; maxCancelaciones >= 0
+    ..no comprueba longitudes ni el dominio de categoria..
+    (eso lo hace el servicio: ver LimitesCatalogo)
   }
   class ProtocoloDTO <<record>> {
     -preparacion: String
@@ -53,13 +62,28 @@ package "iso2-catalogo (1.1.0-SNAPSHOT)" {
     -auditoria: AuditoriaCatalogoRepositorio
     +crear/actualizar/desactivar/reactivar(...)
     +auditoriaVerificable(): boolean
+    -validarCotas(PruebaImagenDTO): void
     ..unico punto que escribe el catalogo..
+    ..validarCotas rechaza los datos que no caben\nen el esquema ANTES de tocar la BD (D35)..
+  }
+  class LimitesCatalogo <<utility>> {
+    +CODIGO_MAX: int = 40
+    +NOMBRE_MAX: int = 120
+    +CATEGORIA_MAX: int = 20
+    +TEXTO_PROTOCOLO_MAX: int = 1000
+    +DURACION_MAX: int = 1440
+    +AYUNO_HORAS_MAX: int = 720
+    +PLAZO_CANCELACION_MAX: int = 8760
+    +MAX_CANCELACIONES_MAX: int = 100
+    +CATEGORIAS: Set<String>
+    +ORDENES_VALIDOS: Set<String>
+    ..espejo de las cotas del esquema V1.1.0\ny del contrato PruebaCatalogoFacade..
   }
   class TipoPrueba <<@Entity catalogo_prueba>> {
     -id: Long
-    -codigo: String {unique}
-    -nombre: String
-    -categoria: String
+    -codigo: String {unique, VARCHAR(40)}
+    -nombre: String {VARCHAR(120)}
+    -categoria: String {VARCHAR(20)}
     -requiereCita: boolean
     -duracionMinutos: int
     -activa: boolean
@@ -69,9 +93,9 @@ package "iso2-catalogo (1.1.0-SNAPSHOT)" {
     +cambiarEstado(boolean)
   }
   class Protocolo <<@Embeddable>> {
-    -preparacion: String
+    -preparacion: String {VARCHAR(1000)}
     -ayunoHoras: int
-    -contraindicaciones: String
+    -contraindicaciones: String {VARCHAR(1000)}
   }
   class Politica <<@Embeddable>> {
     -plazoCancelacionHoras: int
@@ -108,10 +132,67 @@ package "iso2-catalogo (1.1.0-SNAPSHOT)" {
     +desactivar DELETE -> 204
     +reactivar PUT /{codigo}/reactivar -> 200
   }
-  class CatalogoManejadorErrores <<@ControllerAdvice>> {
-    +a404 / a409 / a400 / a500 -> ApiError
+  class CatalogoManejadorErrores <<@RestControllerAdvice>> {
+    +manejarNoEncontrado(CatalogoNoEncontradoException) -> 404 PRUEBA_NO_ENCONTRADA
+    +manejarConflicto(CatalogoConflictoException) -> 409 CODIGO_DUPLICADO
+    +manejarDatosInvalidos(IllegalArgumentException) -> 400 DATOS_INVALIDOS
+    +manejarParametroMalTipado(...) -> 400 DATOS_INVALIDOS
+    +manejarMedioNoSoportado(HttpMediaTypeNotSupportedException) -> 415 CONTENIDO_NO_ACEPTADO
+    +manejarInesperado(Exception) -> 500 ERROR_INTERNO
   }
 }
+
+note bottom of LimitesCatalogo
+  invariantes que se sostienen desde D35 (revisión 2026-11-08) y que
+  designan la matriz TDOP de docs/test/iter01 (D33):
+   1 <= len(codigo) <= CODIGO_MAX(40)
+   1 <= len(nombre) <= NOMBRE_MAX(120)
+   categoria en CATEGORIAS {RX,TAC,RM,ECO,MED-NUC,DENS,OTRO}
+   1 <= duracionMinutos <= DURACION_MAX(1440)
+   1 <= len(preparacion) <= TEXTO_PROTOCOLO_MAX(1000)
+   0 <= ayunoHoras <= AYUNO_HORAS_MAX(720)
+   1 <= len(contraindicaciones) <= TEXTO_PROTOCOLO_MAX(1000)
+   1 <= plazoCancelacionHoras <= PLAZO_CANCELACION_MAX(8760)
+   0 <= maxCancelaciones <= MAX_CANCELACIONES_MAX(100)
+   orden de listado en ORDENES_VALIDOS
+  Incumplirlas = 400 con ApiError(DATOS_INVALIDOS); nunca 500 por
+  DataException contra la BD, y nunca 500 por un param de consulta mal tipado.
+  El diagrama de analisis del PUD habla de codigos de 2-20 caracteres:
+  se valida contra la cota de almacenamiento (40), no contra esa cifra;
+  queda anotado como desajuste del PUD pendiente de formalizar.
+end note
+
+package "iso2-catalogo test (D33)" {
+  class Cdu16MatrizTdopTest <<@SpringBootTest>> {
+    ..una fila de CSV = un caso parametrizado\n(matrices en src/test/resources/tdop)..
+    +altaMatriz(fila): cdu16-alta.csv
+    +modificacionMatriz(fila): cdu16-modificacion.csv
+    +listadoMatriz(fila): cdu16-listado.csv
+    +estados(): cdu16-estados.csv
+    +conjetura(fila): cdu16-conjetura.csv
+    -verificar(fila): status + ApiError segun mapa cdu16-esperados.csv
+    -sembrar(setup): siembra el recurso por HTTP
+    -cuerpo(nivel): cuerpo del alta/modificacion segun nivel
+    -cuerpoConjetura(cuerpo): cuerpos fijos de la tabla E
+  }
+}
+
+Cdu16MatrizTdopTest ..> CatalogoControlador : llamadas HTTP reales\n(TestRestTemplate, puerto aleatorio)
+Cdu16MatrizTdopTest ..> CatalogoAuditoriaRepositorio : borra y verifica asientos
+Cdu16MatrizTdopTest ..> PruebaCatalogoRepositorio : borra y verifica el estado final
+
+note bottom of Cdu16MatrizTdopTest
+  D33: las matrices NO se copian a mano: nacen de
+  tools/pairwise.py sobre docs/test/iter01/tdop-cdu16-espec.json
+  y se ejecutan de verdad contra la API. Esta clase estaba
+  dibujada aqui (D31) antes de escribir su codigo.
+  Dos hallazgos de contrato salieron del paso en rojo y se
+  corrigieron en la spec, no en el codigo:
+   - ilegible y fuera-de-cla se distinguen en el codigo
+     ApiError (SOLICITUD_MALFORMADA vs INVALIDOS)
+   - las cotas/validacion del DTO se aplican antes de mirar
+     el duplicado: cuerpo invalido + codigo repetido = 400, no 409
+end note
 
 package "iso2-server-app (0.1.1-SNAPSHOT)" {
   class Iso2ServerApplication <<@SpringBootApplication>> {
@@ -147,6 +228,8 @@ CatalogoServicio o--> TipoPruebaRepositorio
 CatalogoServicio o--> AuditoriaCatalogoRepositorio
 CatalogoServicio ..> CatalogoConflictoException : lanza
 CatalogoServicio ..> CatalogoNoEncontradoException : lanza
+CatalogoServicio ..> LimitesCatalogo : validarCotas() usa sus cotas
+CatalogoServicio ..> Paginacion : orden en ORDENES_VALIDOS
 
 TipoPrueba "1" *-> "1" Protocolo : @Embedded
 TipoPrueba "1" *-> "1" Politica : @Embedded

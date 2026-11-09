@@ -32,6 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
  * el del registro anterior; el usuario se toma del contexto de seguridad (HttpBasic hasta
  * CDU17, JWT a partir de entonces) y se registra como {@code sistema} si no hay autenticacion.</p>
  *
+ * <p>Antes de escribir, {@link #crear(PruebaImagenDTO)} y {@link #actualizar(String, PruebaImagenDTO)}
+ * comprueban las cotas del esquema en {@link LimitesCatalogo} (D35): un dato que no cabe en
+ * la base de datos se rechaza aqui con {@link IllegalArgumentException} (400 en la API) y
+ * nunca llega al INSERT.</p>
+ *
  * @since 1.1.0 (CFG-01)
  */
 @Service
@@ -71,6 +76,7 @@ public class CatalogoServicio implements PruebaCatalogoFacade {
     @Override
     @Transactional
     public PruebaImagenDTO crear(PruebaImagenDTO prueba) {
+        validarCotas(prueba);
         if (pruebas.existsByCodigo(prueba.codigo())) {
             throw new CatalogoConflictoException(
                     "el codigo de prueba " + prueba.codigo() + " ya existe en el catalogo");
@@ -90,6 +96,7 @@ public class CatalogoServicio implements PruebaCatalogoFacade {
             throw new IllegalArgumentException(
                     "el codigo del cuerpo (" + prueba.codigo() + ") no coincide con la ruta (" + codigo + ")");
         }
+        validarCotas(prueba);
         TipoPrueba entidad = buscarEntidad(codigo);
         entidad.actualizarDatos(prueba.nombre(), prueba.categoria(), prueba.requiereCita(),
                 prueba.duracionMinutos(), aProtocolo(prueba.protocolo()), aPolitica(prueba.politica()));
@@ -146,14 +153,61 @@ public class CatalogoServicio implements PruebaCatalogoFacade {
                 .orElseThrow(() -> new CatalogoNoEncontradoException(codigo));
     }
 
+    /**
+     * Comprueba las cotas del esquema que el contrato comun no mira: longitudes, el dominio
+     * de {@code categoria} y los maximos de los enteros (D35).
+     *
+     * <p>Se ejecuta antes de tocar la base de datos, en el alta y en la modificacion. Su
+     * mision es que un dato que no cabe devuelva 400 con {@code DATOS_INVALIDOS}: sin esta
+     * comprobacion el texto largo llegaba al INSERT y la {@code DataException} acababa en el
+     * capturador generico como un 500.</p>
+     *
+     * <p>El contrato ya descarta los nulos, los textos en blanco y los negativos, asi que
+     * aqui solo se comprueba la parte alta del rango.</p>
+     *
+     * @param prueba datos de la prueba recibidos por la API
+     * @throws IllegalArgumentException si alguna cota se pasa de su limite o la categoria no
+     *                                  esta entre las admitidas
+     */
+    private static void validarCotas(PruebaImagenDTO prueba) {
+        exigirLongitud(prueba.codigo(), LimitesCatalogo.CODIGO_MAX, "el codigo de prueba");
+        exigirLongitud(prueba.nombre(), LimitesCatalogo.NOMBRE_MAX, "el nombre de prueba");
+        exigirLongitud(prueba.categoria(), LimitesCatalogo.CATEGORIA_MAX, "la categoria de prueba");
+        if (!LimitesCatalogo.CATEGORIAS.contains(prueba.categoria())) {
+            throw new IllegalArgumentException("categoria no admitida en el catalogo: " + prueba.categoria());
+        }
+        exigirMax(prueba.duracionMinutos(), LimitesCatalogo.DURACION_MAX, "la duracion en minutos");
+        exigirLongitud(prueba.protocolo().preparacion(), LimitesCatalogo.TEXTO_PROTOCOLO_MAX,
+                "la preparacion del protocolo");
+        exigirMax(prueba.protocolo().ayunoHoras(), LimitesCatalogo.AYUNO_HORAS_MAX, "las horas de ayuno");
+        exigirLongitud(prueba.protocolo().contraindicaciones(), LimitesCatalogo.TEXTO_PROTOCOLO_MAX,
+                "las contraindicaciones del protocolo");
+        exigirMax(prueba.politica().plazoCancelacionHoras(), LimitesCatalogo.PLAZO_CANCELACION_MAX,
+                "el plazo de cancelacion en horas");
+        exigirMax(prueba.politica().maxCancelaciones(), LimitesCatalogo.MAX_CANCELACIONES_MAX,
+                "el maximo de cancelaciones");
+    }
+
+    private static void exigirLongitud(String valor, int max, String campo) {
+        if (valor.length() > max) {
+            throw new IllegalArgumentException(campo + " no puede superar los " + max + " caracteres");
+        }
+    }
+
+    private static void exigirMax(int valor, int max, String campo) {
+        if (valor > max) {
+            throw new IllegalArgumentException(campo + " no puede superar el valor " + max);
+        }
+    }
+
     private static String permitido(String orden) {
         if (orden == null || orden.isBlank()) {
             return ORDEN_POR_DEFECTO;
         }
-        return switch (orden) {
-            case "codigo", "nombre", "categoria", "duracionMinutos" -> orden;
-            default -> throw new IllegalArgumentException("campo de orden no permitido: " + orden);
-        };
+        if (LimitesCatalogo.ORDENES_VALIDOS.contains(orden)) {
+            return orden;
+        }
+        throw new IllegalArgumentException("campo de orden no permitido: " + orden);
     }
 
     private void registrar(AuditoriaCatalogo.AccionAuditoria accion, String codigo) {
