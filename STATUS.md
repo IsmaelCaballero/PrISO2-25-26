@@ -262,6 +262,32 @@ issues abiertas** en GitHub). La **Iter1 · CDU16 / CFG-01 quedó cerrada del to
 replicar en CFG-02/03/04. Todo lo demás que había en esta sección es historia ya recogida en el
 «Registro de sesiones»; aquí solo queda lo vivo.
 
+### 0) Arranque en el equipo nuevo (10/11/2026)
+
+A partir del 10/11 se trabaja en otra máquina y en otra ubicación, **partiendo de un clon nuevo**. Nada vive ya
+en esta máquina salvo lo que está en GitHub, así que el arranque es:
+
+1. Fusionar el **PR #38** (sync documental de la sesión 17) para que `develop` traiga este `STATUS.md` y
+   `PROMPTS.md` actualizados, y clonar después: `git clone https://github.com/IsmaelCaballero/PrISO2-25-26.git`
+   → `git checkout develop`. Los tags (`cfg-iter00`…`cfg-iter04`, `cfg-iter01` reanotado y `v0.1.0`) llegan solos
+   con el clon. La wiki es un repositorio aparte, rama `master` (D32):
+   `git clone https://github.com/IsmaelCaballero/PrISO2-25-26.wiki.git`
+2. Identidad de git: `user.name` = `IsmaelCaballero`, `user.email` = `IsmaelCaballero@users.noreply.github.com`
+   (los commits del repo usan esa dirección) y autenticación con GitHub (`gh auth login` o clave SSH).
+3. Herramientas: **JDK 21 o superior** (`maven.compiler.release` es 21 y la CI usa Temurin 21; en esta máquina
+   había JDK 25), **Maven 3.9.x** — no hay wrapper versionado, hay que instalarlo —, **Python 3.12** para
+   `tools/pairwise.py` y `tools/tc_plantillas.py` (solo librería estándar, nada que instalar con `pip`) y
+   **Docker Desktop**, imprescindible para la **D34** (Testcontainers con MySQL).
+4. Primera compilación: `mvn -B verify` en la raíz. El `~/.m2` del equipo nuevo está vacío, así que la primera
+   ejecución baja todas las dependencias (Maven Central, sin repositorio privado ni `settings.xml`). Antes de
+   compilar un módulo suelto con `-pl` sin `-am`, lanzar una vez `mvn -B install -DskipTests` para que existan
+   en el repositorio local los artefactos `es.uclm.iso2:*`.
+5. **La base de datos H2 no viaja** (`data/` está en `.gitignore`): en la máquina nueva se regenera vacía con
+   Flyway y las semillas al arrancar el servidor. Los datos de los TC humanos de CDU16 (filas `TC16H-*` y los
+   5 asientos de auditoría) se quedan en esta máquina; su única evidencia ya son
+   `docs/tc/cdu16-tc-humanos.md` y la wiki. Recomendado: no copiar el `.zip` de `./data/iso2-server` y empezar
+   limpio; si se quieren refrendar los TC, repetirlos contra la H2 nueva.
+
 ### 1) Antes de programar nada (acciones de Ismael, D29)
 
 1. **Reabrir la issue #34 o abrir una nueva para D34.** La cerró él mismo el 09/11 a las 00:26 **sin trabajo
@@ -273,8 +299,8 @@ replicar en CFG-02/03/04. Todo lo demás que había en esta sección es historia
    su único commit propio `19dff72` es una nota de cierre de la jornada del 07/11 ya sustituida por este
    fichero.
 4. **Refrendar los TC humanos de CDU16** que ejecutó el agente el 09/11 (excepción puntual a D28 anotada en el
-   doc) y, si quiere, repetirlos él mismo contra la H2 local `./data/iso2-server`, que se conserva con las
-   filas `TC16H-*` y los 5 asientos de auditoría encadenada.
+   doc) y, si quiere, repetirlos él mismo. A partir del 10/11 eso se hace contra la H2 nueva del otro equipo:
+   las filas `TC16H-*` y los 5 asientos de auditoría se quedan en esta máquina (apartado 0, punto 5).
 
 ### 2) Siguiente iteración: Iter5 · CDU12 citas (CFG-05)
 
