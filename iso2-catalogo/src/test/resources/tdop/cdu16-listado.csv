@@ -1,34 +1,37 @@
 id;pagina;tamano;orden;setup;esperadoStatus;esperadoCodigo;nota
 TC16-C01;0;1;VACIO;NINGUNO;OK;-;listado admitido | valores limite: pagina=0 (minimo del contrato), tamano=1 (minimo del contrato), orden=VACIO (ausencia)
-TC16-C02;-1;25;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato)
-TC16-C03;REP:12:9;200;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion
-TC16-C04;abc;1;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero
-TC16-C05;2;0;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano bajo el minimo (contrato)
-TC16-C06;200;201;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano sobre la cota (contrato)
-TC16-C07;0;REP:12:9;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: no cabe en un entero de la peticion
-TC16-C08;2;1;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | orden: campo fuera de la lista blanca
-TC16-C09;-1;1;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato)
-TC16-C10;REP:12:9;1;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion
-TC16-C11;-1;200;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato)
-TC16-C12;REP:12:9;25;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion
-TC16-C13;200;0;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano bajo el minimo (contrato)
-TC16-C14;2;201;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano sobre la cota (contrato)
-TC16-C15;0;0;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano bajo el minimo (contrato)
-TC16-C16;0;201;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano sobre la cota (contrato)
-TC16-C17;0;25;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | orden: campo fuera de la lista blanca
-TC16-C18;200;200;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | orden: campo fuera de la lista blanca
-TC16-C19;2;25;categoria;NINGUNO;OK;-;listado admitido | valores limite: pagina=2 (valor tipico), tamano=25 (valor tipico), orden=categoria (valor tipico)
-TC16-C20;2;200;duracionMinutos;NINGUNO;OK;-;listado admitido | valores limite: pagina=2 (valor tipico), tamano=200 (justo la cota), orden=duracionMinutos (valor tipico)
-TC16-C21;200;25;duracionMinutos;NINGUNO;OK;-;listado admitido | valores limite: pagina=200 (limite de paginacion), tamano=25 (valor tipico), orden=duracionMinutos (valor tipico)
-TC16-C22;200;REP:12:9;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: no cabe en un entero de la peticion
-TC16-C23;abc;200;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero
-TC16-C24;2;REP:12:9;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: no cabe en un entero de la peticion
-TC16-C25;abc;25;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero
-TC16-C26;0;200;VACIO;NINGUNO;OK;-;listado admitido | valores limite: pagina=0 (minimo del contrato), tamano=200 (justo la cota), orden=VACIO (ausencia)
-TC16-C27;200;1;VACIO;NINGUNO;OK;-;listado admitido | valores limite: pagina=200 (limite de paginacion), tamano=1 (minimo del contrato), orden=VACIO (ausencia)
-TC16-C28;REP:12:9;1;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion
-TC16-C29;0;201;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano sobre la cota (contrato)
-TC16-C30;-1;1;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato)
-TC16-C31;abc;1;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero
-TC16-C32;0;0;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano bajo el minimo (contrato)
-TC16-C33;0;REP:12:9;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: no cabe en un entero de la peticion
+TC16-C02;-1;1;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato)
+TC16-C03;2;1;categoria;NINGUNO;OK;-;listado admitido | valores limite: pagina=2 (valor tipico), tamano=1 (minimo del contrato), orden=categoria (valor tipico)
+TC16-C04;200;1;duracionMinutos;NINGUNO;OK;-;listado admitido | valores limite: pagina=200 (limite de paginacion), tamano=1 (minimo del contrato), orden=duracionMinutos (valor tipico)
+TC16-C05;REP:12:9;1;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion + orden: campo fuera de la lista blanca
+TC16-C06;-1;0;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato) + tamano: tamano bajo el minimo (contrato)
+TC16-C07;-1;25;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato)
+TC16-C08;-1;200;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato)
+TC16-C09;-1;201;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato) + tamano: tamano sobre la cota (contrato) + orden: campo fuera de la lista blanca
+TC16-C10;0;0;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano bajo el minimo (contrato)
+TC16-C11;0;25;duracionMinutos;NINGUNO;OK;-;listado admitido | valores limite: pagina=0 (minimo del contrato), tamano=25 (valor tipico), orden=duracionMinutos (valor tipico)
+TC16-C12;0;200;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | orden: campo fuera de la lista blanca
+TC16-C13;0;201;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano sobre la cota (contrato)
+TC16-C14;2;0;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano bajo el minimo (contrato)
+TC16-C15;200;0;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano bajo el minimo (contrato) + orden: campo fuera de la lista blanca
+TC16-C16;2;25;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | orden: campo fuera de la lista blanca
+TC16-C17;REP:12:9;0;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion + tamano: tamano bajo el minimo (contrato)
+TC16-C18;2;200;codigo;NINGUNO;OK;-;listado admitido | valores limite: pagina=2 (valor tipico), tamano=200 (justo la cota), orden=codigo (valor tipico)
+TC16-C19;200;25;codigo;NINGUNO;OK;-;listado admitido | valores limite: pagina=200 (limite de paginacion), tamano=25 (valor tipico), orden=codigo (valor tipico)
+TC16-C20;2;201;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano sobre la cota (contrato)
+TC16-C21;REP:12:9;25;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion
+TC16-C22;200;200;VACIO;NINGUNO;OK;-;listado admitido | valores limite: pagina=200 (limite de paginacion), tamano=200 (justo la cota), orden=VACIO (ausencia)
+TC16-C23;200;201;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: tamano sobre la cota (contrato)
+TC16-C24;REP:12:9;200;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion
+TC16-C25;REP:12:9;201;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion + tamano: tamano sobre la cota (contrato)
+TC16-C26;abc;REP:12:9;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero + tamano: no cabe en un entero de la peticion
+TC16-C27;-1;REP:12:9;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: pagina negativa (contrato) + tamano: no cabe en un entero de la peticion
+TC16-C28;0;REP:12:9;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: no cabe en un entero de la peticion
+TC16-C29;2;REP:12:9;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: no cabe en un entero de la peticion
+TC16-C30;200;REP:12:9;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | tamano: no cabe en un entero de la peticion + orden: campo fuera de la lista blanca
+TC16-C31;abc;0;codigo;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero + tamano: tamano bajo el minimo (contrato)
+TC16-C32;abc;1;categoria;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero
+TC16-C33;abc;25;duracionMinutos;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero
+TC16-C34;abc;200;INVENTADO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero + orden: campo fuera de la lista blanca
+TC16-C35;REP:12:9;REP:12:9;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no cabe en un entero de la peticion + tamano: no cabe en un entero de la peticion
+TC16-C36;abc;201;VACIO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;un parametro de consulta esta fuera de clase o mal tipado | pagina: no es un numero + tamano: tamano sobre la cota (contrato)

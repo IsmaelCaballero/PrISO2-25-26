@@ -145,9 +145,10 @@ def documento_evidencia(spec: dict, tablas: list[tuple[dict, list[dict]], str]) 
     lineas += ["| `%s` | %s |" % (token, valor)
                for token, valor in spec["leyendaTokens"].items()]
     lineas += ["", "## Estados esperados (nombre simbolico -> HTTP)", "",
-               "| Estado | HTTP |", "|---|---|"]
-    lineas += ["| `%s` | %d |" % (estado, codigo)
-               for estado, codigo in spec["estados"].items()]
+               "| Estado | HTTP | Codigo de error | Que significa |", "|---|---|---|---|"]
+    lineas += ["| `%s` | %d | `%s` | %s |" % (
+        estado, dato["http"], dato.get("codigo", "-"), celda(dato.get("descripcion", "")))
+        for estado, dato in spec["estados"].items()]
     lineas += ["", "## Reparto de casos", "",
                "| Tabla | Operacion | Modo | Filas |", "|---|---|---|---|"]
     total = 0
@@ -185,9 +186,33 @@ OPERACIONES = {
     "LISTADO": "GET /api/catalogo/pruebas",
 }
 RUTA_EXTRA = {
+    "AUDITORIA": "la ruta extra /auditoria (que la API no tiene: 404 sin cuerpo ApiError)",
+    "OTRA_COD": "otro codigo en la ruta, distinto del del cuerpo",
     "COD": "el codigo de la ruta tal cual",
     "COD-MINUS": "el codigo de la ruta en minusculas",
     "COD+ESP": "el codigo de la ruta con un espacio final",
+}
+CUERPOS = {
+    "VALIDO": "cuerpo valido y completo",
+    "ACTIVA_FALSA": "cuerpo valido anadiendo \"activa\": false",
+    "ACTIVA_VERDADERA": "cuerpo valido anadiendo \"activa\": true",
+    "CODIGO_PERTENECIENTE": "cuerpo valido cuyo codigo NO es el de la ruta",
+    "CODIGO_21_CARACTERES": "alta con codigo de 21 caracteres",
+    "DURACION_COMO_TEXTO": "alta valida con duracionMinutos escrito como texto (\"60\")",
+    "CAMPO_DESCONOCIDO": "alta valida con un campo desconocido mas",
+    "CATEGORIA_MINUSCULA": "alta con categoria en minusculas (analitica)",
+    "CODIGO_CON_ESPACIOS": "alta con codigo con espacios delante y detras",
+    "VACIO": "peticion sin cuerpo",
+    "SIN_CUERPO": "peticion sin cuerpo",
+    "JSON_MALFORMADO": "cuerpo JSON malformado",
+    "MALFORMADO": "cuerpo JSON malformado",
+    "SIN_PROTOCOLO": "cuerpo valido sin el objeto protocolo",
+    "VACIO_JSON": "cuerpo {} (todos los campos obligatorios ausentes)",
+    "TEXTO_PLANO": "cuerpo de texto plano con Content-Type text/plain",
+    "TIPO_ERRONEO": "cuerpo JSON con un numero donde va el codigo",
+    "CONTRATO_INCOMPLETO": "cuerpo JSON al que le faltan campos obligatorios",
+    "NINGUNO": "sin cuerpo",
+    "-": "sin cuerpo",
 }
 
 
@@ -195,12 +220,19 @@ def pasos_de(tabla: dict, fila: dict, factores: list[str], spec: dict) -> str:
     """Pasos reproducibles: peticion + niveles de la fila (descritos en la evidencia)."""
     previo = "" if fila["setup"] == "NINGUNO" else "Previo `%s`; " % fila["setup"]
     peticion = OPERACIONES.get(fila.get("operacion", ""), tabla.get("solicitud", ""))
-    if tabla["kind"] == "conjetura":
-        detalle = "" if fila["cuerpo"] == "-" else " con cuerpo `%s`" % fila["cuerpo"]
-        if fila["rutaExtra"] != "-":
-            detalle += ", ruta con %s" % RUTA_EXTRA[fila["rutaExtra"]]
-        if fila["estadoRecurso"] not in ("-", "NO_EXISTE"):
-            detalle += ", recurso en estado `%s`" % fila["estadoRecurso"]
+    if tabla["kind"] in ("conjetura", "filas") and "operacion" in fila:
+        detalle = ""
+        cuerpo = CUERPOS.get(fila.get("cuerpo", "-"), fila.get("cuerpo", ""))
+        if cuerpo:
+            detalle += " con %s" % cuerpo
+        extra = fila.get("rutaExtra", "-")
+        if extra not in ("-", ""):
+            detalle += ", ruta con %s" % RUTA_EXTRA.get(extra, "`%s`" % extra)
+        estado = fila.get("estadoRecurso", "-")
+        if estado not in ("-", "NO_EXISTE"):
+            detalle += " sobre recurso en estado `%s`" % estado
+        if tabla.get("solicitud") and fila.get("operacion") not in OPERACIONES:
+            peticion = tabla["solicitud"]
     else:
         niveles = [", ".join("%s=%s" % (f["nombre"], fila[f["nombre"]])
                              for f in tabla["factores"] if f["nombre"] != "operacion")]
@@ -221,9 +253,9 @@ def bloque_tc(spec: dict, tablas: list[tuple[dict, list[dict]]]) -> list[str]:
         "JUnit parametrizado correspondiente, asi que la ejecucion automatica y la "
         "manual trazan sobre el mismo caso." % (spec["iter"], spec["cdu"].lower(),
                                                 spec["iter"]),
-        "Los niveles van en token (`REP:121:N`, `EMPTY`, `VACIO`, `DISTINTO_EXISTENTE` "
-        "· `NINGUNO` · `ACTIVA`): su significado exacto esta en la tabla de niveles y "
-        "en las reglas de precedencia de `docs/test/%s/tdop-%s.md`." % (
+        "Los niveles van en token (`AUT`, `VACIO`, `JUSTO`, `EXCESIVA`, `DUPLICA_ACTIVA` "
+        "· `REP:121:N` · `NO_ADMITIDA`): su significado exacto esta en la tabla de niveles "
+        "y en las reglas de precedencia de `docs/test/%s/tdop-%s.md`." % (
             spec["iter"], spec["cdu"].lower()),
         "",
     ]
@@ -244,7 +276,8 @@ def bloque_tc(spec: dict, tablas: list[tuple[dict, list[dict]]]) -> list[str]:
 
 def esperado_estado(fila: dict, spec: dict) -> str:
     """Resultado esperado: estado simbolico, su codigo HTTP y el codigo de error."""
-    texto = "%s (%d)" % (fila["esperadoStatus"], spec["estados"][fila["esperadoStatus"]])
+    dato = spec["estados"][fila["esperadoStatus"]]
+    texto = "%s (%d)" % (fila["esperadoStatus"], dato["http"])
     if fila["esperadoCodigo"] not in ("-", ""):
         texto += " `%s`" % fila["esperadoCodigo"]
     return texto

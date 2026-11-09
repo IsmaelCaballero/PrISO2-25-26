@@ -1,10 +1,10 @@
 id;operacion;estadoRecurso;setup;esperadoStatus;esperadoCodigo;nota
-TC16-D01;DETALLE;ACTIVA;CREA_COD_ACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
-TC16-D02;DETALLE;INACTIVA;CREA_COD_INACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
-TC16-D03;DETALLE;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;la ruta no apunta a ninguna fila | estadoRecurso: codigo inexistente
-TC16-D04;BAJA;ACTIVA;CREA_COD_ACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
-TC16-D05;BAJA;INACTIVA;CREA_COD_INACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
-TC16-D06;BAJA;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;la ruta no apunta a ninguna fila | estadoRecurso: codigo inexistente
-TC16-D07;REACTIVAR;ACTIVA;CREA_COD_ACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
-TC16-D08;REACTIVAR;INACTIVA;CREA_COD_INACTIVA;OK;-;operacion de estado admitida (baja y reactivacion son idempotentes)
-TC16-D09;REACTIVAR;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;la ruta no apunta a ninguna fila | estadoRecurso: codigo inexistente
+TC16-D01;DETALLE;ACTIVA;CREA_COD_ACTIVA;OK;-;la consulta de detalle ve una prueba activa
+TC16-D02;DETALLE;INACTIVA;CREA_COD_INACTIVA;OK;-;HALLAZGO COMP: el detalle ve la prueba inactiva (baja logica) - confirmar con el jefe de estudio
+TC16-D03;DETALLE;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;codigo inexistente
+TC16-D04;BAJA;ACTIVA;CREA_COD_ACTIVA;BORRADO;-;baja logica: 204 sin cuerpo, la fila sigue existiendo con activa=false y emite asiento BAJA
+TC16-D05;BAJA;INACTIVA;CREA_COD_INACTIVA;BORRADO;-;dar de baja algo ya bajado es idempotente: repite 204 sin asiento BAJA nuevo (queda anotado en la spec)
+TC16-D06;BAJA;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;codigo inexistente
+TC16-D07;REACTIVAR;ACTIVA;CREA_COD_ACTIVA;OK;-;reactivar algo ya activo es idempotente: 200 y sigue activa, sin asiento REACTIVACION nuevo
+TC16-D08;REACTIVAR;INACTIVA;CREA_COD_INACTIVA;OK;-;reactivacion: 200 con activa=true y asiento REACTIVACION (sobre una fila que ya tenia ALTA+BAJA)
+TC16-D09;REACTIVAR;NO_EXISTE;NINGUNO;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;codigo inactivado no encontrado (el PUD lo pide explicito)

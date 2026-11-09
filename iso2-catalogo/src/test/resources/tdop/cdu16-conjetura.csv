@@ -1,19 +1,23 @@
-id;operacion;estadoRecurso;cuerpo;setup;rutaExtra;esperadoStatus;esperadoCodigo;nota
-TC16-E01;ALTA;NO_EXISTE;VALIDO;CREA_OTRA_ACTIVA;-;CREADO;-;linea de base: alta valida sobre un catalogo con otra fila
-TC16-E02;ALTA;ACTIVA;VALIDO;CREA_COD_ACTIVA;-;CONFLICTO;CODIGO_DUPLICADO;reutilizar el codigo de una prueba activa
-TC16-E03;ALTA;INACTIVA;VALIDO;CREA_COD_INACTIVA;-;CONFLICTO;CODIGO_DUPLICADO;los codigos no se reutilizan: dar de alta una fila dada de baja es conflicto, no reactivacion implicita
-TC16-E04;ALTA;ACTIVA;ACTIVA_FALSA;CREA_COD_ACTIVA;-;CONFLICTO;CODIGO_DUPLICADO;activa=false en el cuerpo no convierte el alta en reactivacion
-TC16-E05;MODIFICACION;ACTIVA;ACTIVA_FALSA;CREA_COD_ACTIVA;-;OK;-;activa=false en el cuerpo se ignora: la prueba sigue activa
-TC16-E06;MODIFICACION;INACTIVA;ACTIVA_VERDADERA;CREA_COD_INACTIVA;-;OK;-;activa=true en el cuerpo no reactiva: reactivar es su propia operacion
-TC16-E07;ALTA;NO_EXISTE;VACIO_JSON;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;cuerpo {} : faltan todos los campos del contrato
-TC16-E08;ALTA;NO_EXISTE;SIN_PROTOCOLO;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;falta el objeto protocolo: el contrato exige anidados no nulos
-TC16-E09;ALTA;NO_EXISTE;MALFORMADO;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;JSON malformado: HttpMessageNotReadableException
-TC16-E10;ALTA;NO_EXISTE;SIN_CUERPO;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;POST sin cuerpo
-TC16-E11;ALTA;NO_EXISTE;TEXTO_PLANO;NINGUNO;-;NO_ACEPTABLE;CONTENIDO_NO_ACEPTADO;Content-Type text/plain: 415 con codigo estable desde D35 (antes caia en el capturador general y devolvia 500)
-TC16-E12;ALTA;NO_EXISTE;CAMPO_DESCONOCIDO;NINGUNO;-;CREADO;-;Jackson descarta campos desconocidos: se ignora y se crea - caracterizacion
-TC16-E13;ALTA;NO_EXISTE;DURACION_COMO_TEXTO;NINGUNO;-;CREADO;-;Jackson convierte 60 a numero: se acepta - caracterizacion
-TC16-E14;ALTA;NO_EXISTE;CATEGORIA_MINUSCULA;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;la lista blanca de categorias distingue mayusculas
-TC16-E15;ALTA;NO_EXISTE;CATEGORIA_20_FUERA;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;categoria de 20 caracteres cabe en el VARCHAR pero esta fuera de la lista blanca
-TC16-E16;ALTA;NO_EXISTE;CODIGO_CON_ESPACIOS;NINGUNO;-;CREADO;-;no hay regla de recorte: el codigo se guarda con espacios - caracterizacion
-TC16-E17;DETALLE;ACTIVA;NINGUNO;CREA_COD_ACTIVA;COD-MINUS;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;H2 distingue mayusculas: el detalle en minusculas no encuentra la fila - caracterizacion, revisar con MySQL (collation ci)
-TC16-E18;DETALLE;ACTIVA;NINGUNO;CREA_COD_ACTIVA;COD+ESP;NO_ENCONTRADA;PRUEBA_NO_ENCONTRADA;codigo de ruta con espacio final: no se recorta - caracterizacion
+id;operacion;estadoRecurso;cuerpo;setup;rutaExtra;esperadoStatus;esperadoCodigo;asientos;estadoFinal;nota
+TC16-E01;ALTA;NO_EXISTE;CODIGO_21_CARACTERES;NINGUNO;-;CREADO;-;-;-;HALLAZGO: el PUD promete codigos de 2 a 20, pero el servicio valida contra CODIGO_MAX = 40 (comentado en LimitesCatalogo y en el .puml)
+TC16-E02;DETALLE;NO_EXISTE;NINGUNO;NINGUNO;AUDITORIA;RUTA_INEXISTENTE;-;-;-;GET /{codigo}/auditoria: no hay ninguna mano del controlador que lo atienda -> 404 de Spring sin cuerpo ApiError. TC16-05 auditoria: HALLAZGO de COMP para Iter2 (falta el subrecurso de auditoria)
+TC16-E03;MODIFICACION;ACTIVA;CODIGO_PERTENECIENTE;CREA_COD_ACTIVA;OTRA_COD;INVALIDOS;DATOS_INVALIDOS;-;-;PUT con codigo del cuerpo distinto del de la ruta: NO existe CODIGO_INCONSISTENTE, es IllegalArgumentException -> 400 DATOS_INVALIDOS
+TC16-E04;MODIFICACION;INACTIVA;VALIDO;CREA_COD_INACTIVA;-;OK;-;3;False;caracterizacion: modificar una prueba dada de baja se admite (ALTA+BAJA+MODIFICACION) y sigue inactiva
+TC16-E05;BAJA;ACTIVA;NINGUNO;CREA_COD_ACTIVA;-;BORRADO;-;2;-;tramos de auditoria: tras la baja queda ALTA+BAJA
+TC16-E06;BAJA;INACTIVA;NINGUNO;CREA_COD_INACTIVA;-;BORRADO;-;2;-;baja repetida idempotente: los asientos siguen siendo ALTA+BAJA, no se emite un segundo BAJA
+TC16-E07;REACTIVAR;ACTIVA;NINGUNO;CREA_COD_ACTIVA;-;OK;-;1;True;tramos de auditoria: reactivar algo ya activo no emite segundo asiento REACTIVACION y sigue activa
+TC16-E08;REACTIVAR;INACTIVA;NINGUNO;CREA_COD_INACTIVA;-;OK;-;3;True;reaccion en cadena: la secuencia ALTA->BAJA->REACTIVACION queda completa (verificable desde el servicio con auditoriaVerificable) y el estado pasa a activa
+TC16-E09;REACTIVAR;INACTIVA;NINGUNO;CREA_COD_INACTIVA;-;OK;-;3;True;reactivacion en dos tramos: al sentarse la reactivacion la cadena se ve al enumerar auditoria
+TC16-E10;ALTA;NO_EXISTE;ACTIVA_FALSA;NINGUNO;-;CREADO;-;1;True;activa=false en el cuerpo del alta se ignora: el recurso se crea ACTIVO porque el alta fuerza activa=true
+TC16-E11;ALTA;ACTIVA;ACTIVA_FALSA;CREA_COD_ACTIVA;-;CONFLICTO;CODIGO_DUPLICADO;-;-;activa=false en el cuerpo no convierte el alta en reactivacion: sigue siendo conflicto de codigo
+TC16-E12;MODIFICACION;ACTIVA;ACTIVA_FALSA;CREA_COD_ACTIVA;-;OK;-;2;True;PUT con activa=false: el servicio ignora el campo y la prueba sigue activa (invariante de estado)
+TC16-E13;MODIFICACION;INACTIVA;ACTIVA_VERDADERA;CREA_COD_INACTIVA;-;OK;-;3;False;PUT con activa=true en el cuerpo no reactiva: reactivar es su propia operacion
+TC16-E14;LISTADO;MIXTO;NINGUNO;CREA_MIXTO;-;OK;-;-;-;COMP: el listado de gestion incluye las pruebas inactivas junto con las activas
+TC16-E15;MODIFICACION;ACTIVA;VALIDO;CREA_COD_ACTIVA;-;OK;-;2;-;tramos de auditoria: modificar una prueba activa suma un asiento MODIFICACION sobre la misma fila
+TC16-E16;MODIFICACION;ACTIVA;VALIDO;CREA_COD_ACTIVA;-;OK;-;-;-;la modificacion respeta el codigo de la ruta: PUT con el codigo de la fila creada
+TC16-E17;ALTA;NO_EXISTE;VALIDO;NINGUNO;-;CREADO;-;1;True;linea de base de auditoria: el alta crea exactamente un asiento ALTA y el recurso queda activo
+TC16-E18;ALTA;NO_EXISTE;DURACION_COMO_TEXTO;NINGUNO;-;CREADO;-;-;-;Jackson convierte '60' a numero: se acepta y se crea - caracterizacion
+TC16-E19;ALTA;NO_EXISTE;CAMPO_DESCONOCIDO;NINGUNO;-;CREADO;-;-;-;Jackson descarta campos desconocidos: se ignora y se crea - caracterizacion
+TC16-E20;ALTA;NO_EXISTE;CATEGORIA_MINUSCULA;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;-;-;la lista blanca de categorias distingue mayusculas
+TC16-E21;ALTA;NO_EXISTE;CODIGO_CON_ESPACIOS;NINGUNO;-;CREADO;-;-;-;no hay regla de recorte: el codigo se guarda con espacios - caracterizacion
+TC16-E22;ALTA;DUPLICA_ACTIVA;LIMITES_CERO;CREA_COD_ACTIVA;-;INVALIDOS;DATOS_INVALIDOS;-;-;la validacion de cotas (0 no admitido, limites ausentes) se aplica antes de comprobar el duplicado: codigo repetido con cuerpo fuera de cota da 400 DATOS_INVALIDOS, no 409 (con cuerpo valido el duplicado si da 409: ver las filas CONFLICTO de la tabla A)

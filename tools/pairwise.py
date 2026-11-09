@@ -14,6 +14,9 @@ Tipos de composicion por tabla (campo ``kind``):
 * ``pairwise``  -> cobertura de todos los pares de niveles de factores distintos
                    (voraz aleatorio con reparacion, semilla fija).
 * ``full``      -> producto completo (solo cuando el producto es pequeno).
+* ``filas``     -> enumeracion completa escrita a mano en la spec (tabla D: con dos
+                   factores el producto es pequeno, pero se prefiere escribirlo a
+                   poder generarlo y podarlo).
 * ``conjetura`` -> filas escritas a mano en la propia spec (tabla E).
 
 Uso (desde la raiz del repositorio):
@@ -335,7 +338,7 @@ def pares_esperados(tabla: dict) -> set[tuple[str, str, str, str]]:
 def verificar_pares(tabla: dict, filas: list[dict]) -> str:
     """Comprueba que la composicion cubre todos los pares (para la evidencia)."""
     if tabla["kind"] not in ("pairwise", "full"):
-        return "sin combinacion (filas de conjetura)"
+        return "sin combinacion (filas escritas a mano)"
     vistos = set()
     for fila in filas:
         combinada = [(f["nombre"], fila["registro"][f["nombre"]])
@@ -366,12 +369,20 @@ def main(argv: list[str]) -> int:
     prefijo = spec["idPrefijo"]
     solo = set(args.only.split(",")) if args.only else None
 
-    for clave in sorted(k for k in spec if k.startswith("tabla_")):
+    primera = sorted(k for k in spec if k.startswith("tabla_"))
+    if not primera:
+        raise SystemExit("la spec no tiene ninguna tabla_")
+    # tdop-<cdu>-<tabla>.csv -> <cdu>
+    nombre_base = os.path.splitext(spec[primera[0]]["csv"])[0].replace("tdop-", "")
+    tallo = "-".join(nombre_base.split("-")[:-1])
+
+    for clave in primera:
         tabla = spec[clave]
         if solo and tabla["id"] not in solo:
             continue
         tabla["id_prefix"] = prefijo
-        filas = (filas_conjetura(tabla, prefijo) if tabla["kind"] == "conjetura"
+        filas = (filas_conjetura(tabla, prefijo)
+                 if tabla["kind"] in ("conjetura", "filas")
                  else filas_de(tabla, spec["semilla"]))
         destino = os.path.join(base, tabla["csv"])
         escribir_csv(destino, filas)
@@ -385,6 +396,25 @@ def main(argv: list[str]) -> int:
             ("producto %d" % producto(tabla)) if "factores" in tabla
             else "filas escritas a mano",
             verificar_pares(tabla, filas), "; ".join(copias)))
+
+    # El mapa estado -> (http, codigoError) tambien cae a resources: el test no puede
+    # inventarse los codigos HTTP, tienen que salir de la misma spec que las filas.
+    if spec.get("estados"):
+        filas_estado = [{
+            "cabecera": ["estado", "http", "codigoError", "descripcion"],
+            "registro": {"estado": nombre,
+                         "http": dato["http"],
+                         "codigoError": dato.get("codigo", "-"),
+                         "descripcion": dato.get("descripcion", "")},
+        } for nombre, dato in spec["estados"].items()]
+        destino = os.path.join(base, "tdop-%s-esperados.csv" % tallo)
+        escribir_csv(destino, filas_estado)
+        copias = [destino]
+        if args.resources:
+            copia = os.path.join(args.resources, "%s-esperados.csv" % tallo)
+            escribir_csv(copia, filas_estado)
+            copias.append(copia)
+        print("mapa de estados: %d estados -> %s" % (len(filas_estado), "; ".join(copias)))
     return 0
 
 

@@ -1,0 +1,10 @@
+estado;http;codigoError;descripcion
+CREADO;201;-;recurso creado (POST /api/catalogo/pruebas)
+OK;200;-;peticion atendida con cuerpo
+BORRADO;204;-;recurso borrado logicamente o recurso ya en el estado pedido (baja idempotente): sin cuerpo
+INVALIDOS;400;DATOS_INVALIDOS;entrada fuera de clase, parametro mal tipado que pasa la conversion o regla de negocio violada
+SOLICITUD_MALFORMADA;400;DATOS_INVALIDOS;el cuerpo o el parametro ni siquiera se pueden leer como la peticion promete: el consejo global convierte la conversion fallida en 400 con cuerpo ApiError DATOS_INVALIDOS, igual que una entrada fuera de clase (HALLAZGO: el cliente no puede distinguer ilegible de fuera-de-clase)
+NO_ENCONTRADA;404;PRUEBA_NO_ENCONTRADA;la ruta no apunta a ninguna fila de la tabla de pruebas
+RUTA_INEXISTENTE;404;-;no hay ninguna mano del controlador que atienda la ruta pedida: 404 de Spring Boot, sin cuerpo ApiError
+CONFLICTO;409;CODIGO_DUPLICADO;el codigo de prueba ya esta en uso, este activo o no
+NO_ACEPTABLE;415;CONTENIDO_NO_ACEPTADO;Content-Type que la API no admite

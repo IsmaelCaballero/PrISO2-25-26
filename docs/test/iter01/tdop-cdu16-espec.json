@@ -1,209 +1,595 @@
 {
+  "_notas": [
+    "Matrices TDOP de la CDU16 (Iter 1). D33 exige evidencia real: estos CSV se consumen desde",
+    "es.uclm.iso2.catalogo.tdop.Cdu16MatrizTdopTest (spring-mvc-test), no son solo documentacion.",
+    "Unica fuente de verdad: editar ESTE json y regenerar con",
+    "  python tools/pairwise.py docs/test/iter01/tdop-cdu16-espec.json --resources iso2-catalogo/src/test/resources/tdop",
+    "  python tools/tc_plantillas.py docs/test/iter01/tdop-cdu16-espec.json --tc docs/tc/cdu16-tc-humanos.md",
+    "Los CSV que caen en src/test/resources/tdop son los que lee JUnit: asi las tablas documentadas",
+    "y las que se ejecutan no pueden divergir.",
+    "Espejo de factores: factores -> niveles -> reglas -> estado esperado, igual que en D32. Los niveles",
+    "marcados 'valido: false' salen en las matrices de forma intencionada: se combinan con los validos",
+    "para poder comprobar que la API los rechaza con un codigo de error estable.",
+    "Un factor por linea de entrada. Las marcas que el controlador comprueba ANTES de invocar al servicio",
+    "(tipo de contenido y contrato del DTO) van como factor propio 'transporte' en la tabla A, no como",
+    "reglas sueltas.",
+    "Jerarquia de tablas: A alta, B modificacion, C listado (TDOP de verdad, generadas por pairwise),",
+    "D estados (enumeracion completa: solo 2 factores) y E conjetura de errores.",
+    "Los valores esperados salen del contrato REAL revisado en el codigo (no al reves). Hallazgos que",
+    "se documentan aqui:",
+    " - EL ALTA RESPONDE 201 (CREADO), no 200: CatalogoControlador.altaPrueba -> @ResponseStatus(CREATED),",
+    "   y la cota D35 lo exige. Por eso existe el estado CREADO: 201.",
+    " - NO EXISTE 'CODIGO_INCONSISTENTE': PUT con codigo del cuerpo distinto del de la ruta lanza",
+    "   IllegalArgumentException en CatalogoServicio.actualizar -> 400 DATOS_INVALIDOS.",
+    " - DELETE sobre una prueba ya inactiva es IDEMPOTENTE y repite 204: 'dar de baja' es un cambio de",
+    "   estado, no una accion prohibida (no hay regla de transicion). No se emite un segundo asiento de",
+    "   auditoria: el servicio sale antes, al ver activa=false (queda anotado).",
+    " - La reactivacion sobre una prueba ya activa es idempotente y repite 200, no 409 (no se emite",
+    "   un segundo asiento REACTIVACION).",
+    " - NO HAY SUBRECURSO /api/catalogo/pruebas/{codigo}/auditoria: ninguna mano del controlador lo",
+    "   atiende, asi que la peticion no casa ninguna ruta y Spring Boot responde 404 SIN cuerpo ApiError.",
+    "   Por eso nace el estado RUTA_INEXISTENTE. El TC16-05 'auditoria de cada cambio' no tiene endpoint de historial: solo",
+    "   se puede verificar la cadena de asientos dentro del servicio (auditoriaVerificable). HALLAZGO",
+    "   para Iter2: hace falta un GET de auditoria.",
+    " - El recurso expuesto es el DTO PruebaCatalogoFacade, con boolean 'activa'. El alta fuerza",
+    "   activa=true aunque el cuerpo pida false; PUT ignora 'activa' y no reactiva. Por eso el estado",
+    "   del recurso NO es nivel combinable en A: es invariante del alta y se comprueba aparte.",
+    " - La autenticacion y los roles (401/403) NO son factors de estas matrices: el modulo iso2-catalogo",
+    "   no arranca filtro de seguridad (solo tiene spring-security-core), asi que aqui siempre se ve la",
+    "   respuesta autorizada. El RBAC se prueba en D34 sobre iso2-server-app.",
+    " - Un JSON malformado, un POST sin cuerpo o un campo que no cabe en el tipo de la peticion producen",
+    "   400 PERO SIN cuerpo ApiError (no pasan por @Valid): nace el estado SOLICITUD_MALFORMADA.",
+    "   Ojo con las comas: Jackson las parte como separador y da lista [-1] -> 400 DATOS_INVALIDOS,",
+    "   no solicitud malformada.",
+    " - El alta valida COTA DE CAMPO antes de mirar duplicados, y la modificacion valida el codigo de",
+    "   la ruta ANTES de buscar la fila: la precedencia de las reglas 'reglas' de cada tabla sale de ahi.",
+    " - LimitesCatalogo fija CODIGO_MAX = 40 y el PUD dice codigos de 2..20. Las tablas usan la cota del",
+    "   codigo (40) y la discrepancia se anota como hallazgo en la tabla E (codigo de 21 caracteres se",
+    "   crea), con comentario en el .puml de diseno.",
+    "HALLAZGOS del paso rojo (ejecutada la matriz sobre develop): (1) el consejo global de errores convierte toda peticion ilegible (cuerpo vacio, JSON roto, tipo erroneo) en 400 con cuerpo ApiError DATOS_INVALIDOS; no existen los 400 sin cuerpo que prometia la spec inicial, y el cliente no puede distinguir ilegible de fuera-de-clase. (2) La validacion de cotas del DTO (limites ausentes o en cero) se aplica antes de la comprobacion de codigo duplicado: duplicado + cuerpo fuera de cota da 400, no 409. Solo BORRADO (204) y RUTA_INEXISTENTE (404 de Spring) se quedan sin cuerpo ApiError."
+  ],
   "cdu": "CDU16",
   "iter": "iter01",
   "config": "CFG-01",
   "modulo": "iso2-catalogo",
   "idPrefijo": "TC16",
-  "generado": "2026-11-08",
   "semilla": 20261108,
   "metodo": "Clases de equivalencia + teorema de valores limite + conjetura de errores, compuestas con pairwise (todo par de niveles de factores distintos queda cubierto).",
   "leyendaTokens": {
-    "EMPTY": "cadena vacia",
-    "SPACE": "un solo espacio",
-    "VACIO": "parametro ausente (null)",
+    "AUT": "valor autocoadyuvante: el que se autogenera el ensayo, siempre dentro de clase",
+    "VACIO": "cadena vacia \"\" (o, en cuerpo, ausencia de campos obligatorios)",
+    "ESPACIOS": "texto con espacios delante y detras: el contrato no recorta",
     "REP:<n>:<c>": "el caracter <c> repetido n veces",
+    "LARGO": "nombre de 121 caracteres (REP:121:N)",
+    "NO_ADMITIDA": "categoria fuera de la lista blanca (USG)",
+    "AUSENTE": "campo numerico no enviado: el servicio pone el defecto de la norma",
+    "JUSTO": "justo la cota del servicio (1440/720/8760/100/1000)",
+    "CERO": "0, minimo admitido por @PositiveOrZero",
+    "NEGATIVA": "-1, pasa la conversion JSON y la rechaza la cota del DTO",
+    "EXCESIVA": "un punto sobre la cota (101 / 1001 / valores muy altos)",
+    "COMA": "numero con coma decimal local (36,5): Jackson la parte como separador",
+    "USG": "texto fuera de la lista blanca de categorias",
     "-": "no aplica"
   },
+  "objetivos": {
+    "SEG": "que el alta, la modificacion y la baja logica del catalogo no corrompan el recurso ni su cadena de auditoria, y que los codigos de prueba no se reutilicen jamas",
+    "AF": "que la interfaz de gestion del catalogo devuelva codigos HTTP y codigos de error estables y legibles para una integracion externa, incluidos los casos invalidos y mal tipados",
+    "COMP": "que el listado devuelva todas las pruebas del catalogo (activas e inactivas) paginado y ordenado, segun lo prometido"
+  },
   "estados": {
-    "CREADO": 201,
-    "OK": 200,
-    "INVALIDOS": 400,
-    "NO_ENCONTRADA": 404,
-    "CONFLICTO": 409,
-    "NO_ACEPTABLE": 415
+    "CREADO": {
+      "http": 201,
+      "descripcion": "recurso creado (POST /api/catalogo/pruebas)"
+    },
+    "OK": {
+      "http": 200,
+      "descripcion": "peticion atendida con cuerpo"
+    },
+    "BORRADO": {
+      "http": 204,
+      "descripcion": "recurso borrado logicamente o recurso ya en el estado pedido (baja idempotente): sin cuerpo"
+    },
+    "INVALIDOS": {
+      "http": 400,
+      "codigo": "DATOS_INVALIDOS",
+      "descripcion": "entrada fuera de clase, parametro mal tipado que pasa la conversion o regla de negocio violada"
+    },
+    "SOLICITUD_MALFORMADA": {
+      "http": 400,
+      "descripcion": "el cuerpo o el parametro ni siquiera se pueden leer como la peticion promete: el consejo global convierte la conversion fallida en 400 con cuerpo ApiError DATOS_INVALIDOS, igual que una entrada fuera de clase (HALLAZGO: el cliente no puede distinguer ilegible de fuera-de-clase)",
+      "codigo": "DATOS_INVALIDOS"
+    },
+    "NO_ENCONTRADA": {
+      "http": 404,
+      "codigo": "PRUEBA_NO_ENCONTRADA",
+      "descripcion": "la ruta no apunta a ninguna fila de la tabla de pruebas"
+    },
+    "RUTA_INEXISTENTE": {
+      "http": 404,
+      "descripcion": "no hay ninguna mano del controlador que atienda la ruta pedida: 404 de Spring Boot, sin cuerpo ApiError"
+    },
+    "CONFLICTO": {
+      "http": 409,
+      "codigo": "CODIGO_DUPLICADO",
+      "descripcion": "el codigo de prueba ya esta en uso, este activo o no"
+    },
+    "NO_ACEPTABLE": {
+      "http": 415,
+      "codigo": "CONTENIDO_NO_ACEPTADO",
+      "descripcion": "Content-Type que la API no admite"
+    }
   },
   "tabla_A": {
     "id": "A",
     "nombre": "Alta de prueba (POST /api/catalogo/pruebas)",
     "kind": "pairwise",
     "csv": "tdop-cdu16-alta.csv",
-    "puerta": "AF correccion: el alta rechaza las cotas del esquema y del contrato (D35) sin llegar al INSERT",
+    "puerta": "AF completitud y correccion: toda alta valida crea la prueba y toda alta invalida se rechaza con un codigo de error estable",
     "solicitud": "POST /api/catalogo/pruebas",
     "tipoTC": "feliz + error (TDOP)",
     "noCombinaInvalidos": true,
-    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS", "CONFLICTO": "CODIGO_DUPLICADO", "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"},
-    "factores": [
+    "titulos": {
+      "CREADO": "Alta valida de una prueba ({cuerpo} sobre catalogo {estadoRecurso})",
+      "CONFLICTO": "Alta con codigo ya en uso ({estadoRecurso} previa y cuerpo {cuerpo})"
+    },
+    "reglas": [
       {
-        "nombre": "codigo",
-        "campo": "codigo",
-        "descripcion": "codigo de prueba: VARCHAR(40); el contrato solo exige no en blanco (la cota 2-20 del PUD queda pendiente de formalizar)",
-        "niveles": [
-          {"valor": "EMPTY", "valido": false, "motivo": "codigo en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
-          {"valor": "SPACE", "valido": false, "motivo": "codigo en blanco (contrato)", "criterio": "clase de equivalencia solo espacios"},
-          {"valor": "A", "valido": true, "motivo": "longitud minima usable", "criterio": "minimo observado en el contrato"},
-          {"valor": "REP:40:C", "valido": true, "motivo": "justo la cota de almacenamiento", "criterio": "justo la cota"},
-          {"valor": "REP:41:C", "valido": false, "motivo": "pasa la cota de codigo (40)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "transporte",
+          "igual": "TEXT_PLANO"
+        },
+        "estado": "NO_ACEPTABLE",
+        "codigo": "CONTENIDO_NO_ACEPTADO",
+        "porque": "el controlador solo consume application/json: HttpMediaTypeNotSupportedException (lo traduce CatalogoManejadorErrores desde D35)"
       },
       {
-        "nombre": "nombre",
-        "campo": "nombre",
-        "descripcion": "nombre legible: VARCHAR(120)",
-        "niveles": [
-          {"valor": "EMPTY", "valido": false, "motivo": "nombre en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
-          {"valor": "T", "valido": true, "motivo": "longitud minima usable", "criterio": "minimo observado en el contrato"},
-          {"valor": "NOMBRE-TIPO-41", "valido": true, "motivo": "nombre real de 41 caracteres", "criterio": "valor tipico"},
-          {"valor": "REP:120:N", "valido": true, "motivo": "justo la cota de nombre", "criterio": "justo la cota"},
-          {"valor": "REP:121:N", "valido": false, "motivo": "pasa la cota de nombre (120)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "cuerpo",
+          "igual": "VACIO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "POST sin cuerpo: HttpMessageNotReadableException, que no pasa por @Valid y no deja cuerpo ApiError | HALLAZGO: el consejo convierte la conversion fallida en DATOS_INVALIDOS, el cliente no distingue ilegible de fuera de clase"
       },
       {
-        "nombre": "categoria",
-        "campo": "categoria",
-        "descripcion": "modalidad: VARCHAR(20) + lista blanca RX/TAC/RM/ECO/MED-NUC/DENS/OTRO",
-        "niveles": [
-          {"valor": "EMPTY", "valido": false, "motivo": "categoria en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
-          {"valor": "RX", "valido": true, "motivo": "dentro de la lista blanca", "criterio": "valor tipico"},
-          {"valor": "MED-NUC", "valido": true, "motivo": "la categoria admitida mas larga", "criterio": "valor tipico alto"},
-          {"valor": "USG", "valido": false, "motivo": "categoria fuera de la lista blanca", "criterio": "fuera de dominio"},
-          {"valor": "REP:21:C", "valido": false, "motivo": "pasa la longitud de categoria (20)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "cuerpo",
+          "igual": "JSON_MALFORMADO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "JSON malformado: HttpMessageNotReadableException sin cuerpo ApiError | HALLAZGO: el consejo convierte la conversion fallida en DATOS_INVALIDOS, el cliente no distingue ilegible de fuera de clase"
       },
       {
-        "nombre": "requiereCita",
-        "campo": "requiereCita",
-        "descripcion": "booleano del contrato",
-        "niveles": [
-          {"valor": "true", "valido": true, "motivo": "con cita", "criterio": "valor tipico"},
-          {"valor": "false", "valido": true, "motivo": "sin cita", "criterio": "valor tipico"}
-        ]
+        "si": {
+          "factor": "cuerpo",
+          "igual": "TIPO_ERRONEO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "un numero donde va el codigo no se puede leer como String (o un boolean donde va un objeto): HttpMessageNotReadableException; la coma en el numero si convierte en lista y cae a DATOS_INVALIDOS | HALLAZGO: el consejo convierte la conversion fallida en DATOS_INVALIDOS, el cliente no distingue ilegible de fuera de clase"
       },
       {
-        "nombre": "duracionMinutos",
-        "campo": "duracionMinutos",
-        "descripcion": "duracion estimada: el contrato exige > 0; cota 1440",
-        "niveles": [
-          {"valor": "0", "valido": false, "motivo": "duracion no positiva (contrato)", "criterio": "bajo el minimo del contrato"},
-          {"valor": "1", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
-          {"valor": "60", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
-          {"valor": "1440", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
-          {"valor": "1441", "valido": false, "motivo": "pasa la cota de duracion (1440)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "cuerpo",
+          "igual": "CONTRATO_INCOMPLETO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "falta un campo obligatorio del contrato, o la politica viene nula: MethodArgumentNotValidException en PruebaCatalogoFacade"
       },
       {
-        "nombre": "preparacion",
-        "campo": "protocolo.preparacion",
-        "descripcion": "texto de preparacion: VARCHAR(1000)",
-        "niveles": [
-          {"valor": "EMPTY", "valido": false, "motivo": "preparacion en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
-          {"valor": "AYUNAR-4H", "valido": true, "motivo": "texto tipico", "criterio": "valor tipico"},
-          {"valor": "REP:1000:P", "valido": true, "motivo": "justo la cota de texto", "criterio": "justo la cota"},
-          {"valor": "REP:1001:P", "valido": false, "motivo": "pasa la cota de preparacion (1000)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "nombreCategoria",
+          "invalido": true
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "el nombre pasa la cota de LongitudRequerida(120) o la categoria se sale de la lista blanca"
       },
       {
-        "nombre": "ayunoHoras",
-        "campo": "protocolo.ayunoHoras",
-        "descripcion": "horas de ayuno: el contrato exige >= 0; cota 720",
-        "niveles": [
-          {"valor": "-1", "valido": false, "motivo": "ayuno negativo (contrato)", "criterio": "bajo el minimo del contrato"},
-          {"valor": "0", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
-          {"valor": "12", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
-          {"valor": "720", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
-          {"valor": "721", "valido": false, "motivo": "pasa la cota de ayuno (720)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "limites",
+          "invalido": true
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "un limite de la politica o de la preparacion pasa la cota del servicio (se mira antes de mirar duplicados)"
       },
       {
-        "nombre": "contraindicaciones",
-        "campo": "protocolo.contraindicaciones",
-        "descripcion": "texto de contraindicaciones: VARCHAR(1000)",
-        "niveles": [
-          {"valor": "EMPTY", "valido": false, "motivo": "contraindicaciones en blanco (contrato)", "criterio": "clase de equivalencia vacio"},
-          {"valor": "NINGUNA", "valido": true, "motivo": "valor pactado para sin contraindicaciones", "criterio": "valor tipico"},
-          {"valor": "REP:1000:D", "valido": true, "motivo": "justo la cota de texto", "criterio": "justo la cota"},
-          {"valor": "REP:1001:D", "valido": false, "motivo": "pasa la cota de contraindicaciones (1000)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "estadoRecurso",
+          "igual": "DUPLICA_INACTIVA"
+        },
+        "estado": "CONFLICTO",
+        "codigo": "CODIGO_DUPLICADO",
+        "porque": "los codigos de prueba no se reutilizan: hay fila aunque este inactiva"
       },
       {
-        "nombre": "plazoCancelacionHoras",
-        "campo": "politica.plazoCancelacionHoras",
-        "descripcion": "antelacion minima de cancelacion: el contrato exige > 0; cota 8760",
-        "niveles": [
-          {"valor": "0", "valido": false, "motivo": "plazo no positivo (contrato)", "criterio": "bajo el minimo del contrato"},
-          {"valor": "1", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
-          {"valor": "24", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
-          {"valor": "8760", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
-          {"valor": "8761", "valido": false, "motivo": "pasa la cota de plazo (8760)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {
+          "factor": "estadoRecurso",
+          "igual": "DUPLICA_ACTIVA"
+        },
+        "estado": "CONFLICTO",
+        "codigo": "CODIGO_DUPLICADO",
+        "porque": "el codigo ya esta en uso por una prueba activa"
       },
       {
-        "nombre": "maxCancelaciones",
-        "campo": "politica.maxCancelaciones",
-        "descripcion": "cancelaciones admitidas: el contrato exige >= 0; cota 100",
-        "niveles": [
-          {"valor": "0", "valido": true, "motivo": "minimo del contrato: cancelacion prohibida", "criterio": "minimo del contrato"},
-          {"valor": "3", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
-          {"valor": "100", "valido": true, "motivo": "justo la cota", "criterio": "justo la cota"},
-          {"valor": "101", "valido": false, "motivo": "pasa la cota de cancelaciones (100)", "criterio": "un punto sobre la cota"}
-        ]
+        "si": {},
+        "estado": "CREADO",
+        "codigo": "-",
+        "porque": "alta admitida: 201 con la prueba creada y asiento de auditoria ALTA"
       }
     ],
-    "setups": ["NINGUNO", "CREA_OTRA_ACTIVA"],
-    "reglas": [
-      {"si": {"invalido": true}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "hay al menos un nivel fuera de la clase valida"},
-      {"si": {}, "estado": "CREADO", "codigo": "-", "porque": "todos los niveles dentro de las clases validas"}
+    "factores": [
+      {
+        "nombre": "transporte",
+        "descripcion": "Content-Type de la peticion: lo decide el mapeo del controlador, antes de cualquier regla de negocio",
+        "niveles": [
+          {
+            "valor": "JSON",
+            "valido": true,
+            "motivo": "application/json: el unico tipo que la API consume"
+          },
+          {
+            "valor": "TEXT_PLANO",
+            "valido": false,
+            "motivo": "text/plain",
+            "criterio": "tipo no soportado"
+          }
+        ]
+      },
+      {
+        "nombre": "estadoRecurso",
+        "setupPor": {
+          "DUPLICA_ACTIVA": "CREA_COD_ACTIVA",
+          "DUPLICA_INACTIVA": "CREA_COD_INACTIVA"
+        },
+        "descripcion": "situacion del catalogo respecto al codigo que se va a enviar en el cuerpo; el alta no envia ruta. No hay nivel de estado del recurso creado: el alta fuerza activa=true y se comprueba aparte",
+        "niveles": [
+          {
+            "valor": "LIBRE",
+            "valido": true,
+            "motivo": "no hay ninguna fila con ese codigo",
+            "setup": "NINGUNO"
+          },
+          {
+            "valor": "MIXTO",
+            "valido": true,
+            "motivo": "el catalogo tiene otras filas, activas e inactivas, pero ninguna con el codigo enviado",
+            "setup": "CREA_MIXTO"
+          },
+          {
+            "valor": "DUPLICA_ACTIVA",
+            "valido": false,
+            "motivo": "ya existe una prueba ACTIVA con el codigo enviado",
+            "setup": "CREA_COD_ACTIVA",
+            "criterio": "equivalencia de estado de la coleccion"
+          },
+          {
+            "valor": "DUPLICA_INACTIVA",
+            "valido": false,
+            "motivo": "existe una fila con el codigo enviado pero dada de baja: seguiria ocupando el codigo",
+            "setup": "CREA_COD_INACTIVA",
+            "criterio": "equivalencia de estado de la coleccion"
+          }
+        ]
+      },
+      {
+        "nombre": "cuerpo",
+        "descripcion": "forma general del cuerpo de la peticion",
+        "niveles": [
+          {
+            "valor": "VALIDO",
+            "valido": true,
+            "motivo": "cuerpo JSON completo y dentro de todas las cotas"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "POST sin cuerpo alguno",
+            "criterio": "ausencia"
+          },
+          {
+            "valor": "JSON_MALFORMADO",
+            "valido": false,
+            "motivo": "JSON roto que no se puede parsear",
+            "criterio": "sintaxis"
+          },
+          {
+            "valor": "TIPO_ERRONEO",
+            "valido": false,
+            "motivo": "un numero donde el contrato pide texto (la coma en el numero lo convertiria en lista y daria 400 con ApiError)",
+            "criterio": "tipos del contrato"
+          },
+          {
+            "valor": "CONTRATO_INCOMPLETO",
+            "valido": false,
+            "motivo": "faltan campos obligatorios del contrato DTO (o politica nula): si pasa la conversion pero falla @Valid",
+            "criterio": "campos obligatorios"
+          }
+        ]
+      },
+      {
+        "nombre": "nombreCategoria",
+        "descripcion": "el nombre y la categoria del cuerpo (un solo factor: el contrato solo tiene un campo texto obligatorio, y la categoria se valida por lista blanca)",
+        "niveles": [
+          {
+            "valor": "AUT",
+            "valido": true,
+            "motivo": "nombre auto y categoria admitida ANALITICA",
+            "campo": "nombre",
+            "nivel": "-",
+            "setup": "NINGUNO"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "nombre cadena vacia: pasa la conversion JSON y lo rechaza @NotBlank",
+            "campo": "nombre",
+            "nivel": "VACIO",
+            "criterio": "obligatoriedad"
+          },
+          {
+            "valor": "ESPACIOS",
+            "valido": false,
+            "motivo": "nombre con espacios: el contrato no recorta, se guarda tal cual",
+            "campo": "nombre",
+            "nivel": "ESPACIOS",
+            "criterio": "caracteres raros"
+          },
+          {
+            "valor": "LARGO",
+            "valido": false,
+            "motivo": "nombre de 121 caracteres (cota maxima 120)",
+            "campo": "nombre",
+            "nivel": "REP:121:N",
+            "criterio": "un punto sobre la cota"
+          },
+          {
+            "valor": "NO_ADMITIDA",
+            "valido": false,
+            "motivo": "categoria fuera de la lista blanca",
+            "campo": "categoria",
+            "nivel": "USG",
+            "criterio": "fuera de dominio"
+          }
+        ],
+        "setupPor": {
+          "VACIO": "COD_AUTO",
+          "ESPACIOS": "COD_AUTO",
+          "LARGO": "COD_AUTO",
+          "NO_ADMITIDA": "COD_AUTO"
+        }
+      },
+      {
+        "nombre": "limites",
+        "descripcion": "limites numericos de politica y preparacion, con las cotas del servicio (una linea por factor: se agrupan los numeros de un mismo ensayo)",
+        "niveles": [
+          {
+            "valor": "AUT",
+            "valido": true,
+            "motivo": "valores auto dentro de cotas: duracion 60, ayuno 12, plazo 24, maxCancelaciones 3, protocolo 200",
+            "campo": "-",
+            "nivel": "-",
+            "setup": "NINGUNO"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "sin campos numericos: el DTO exige limites y protocolo (@NotNull), la peticion se rechaza con DATOS_INVALIDOS antes de mirar si el codigo esta duplicado",
+            "campo": "politica.*",
+            "nivel": "AUSENTE",
+            "setup": "COD_AUTO",
+            "criterio": "ausencia (validacion de cotas antes que duplicado)"
+          },
+          {
+            "valor": "JUSTO",
+            "valido": true,
+            "motivo": "justo la cota: duracion 1440, ayuno 720, plazo 8760, max 100, protocolo y preparacion de 1000",
+            "campo": "politica.* / protocolo.preparacion",
+            "nivel": "JUSTO",
+            "setup": "COD_AUTO",
+            "criterio": "justo la cota"
+          },
+          {
+            "valor": "CERO",
+            "valido": false,
+            "motivo": "0 en duracion, ayuno, plazo y maxCancelaciones: el servicio exige valores estrictamente positivos, el 0 se rechaza con DATOS_INVALIDOS antes de mirar el duplicado",
+            "campo": "politica.*",
+            "nivel": "0",
+            "setup": "COD_AUTO",
+            "criterio": "minimo (validacion de cotas antes que duplicado)"
+          },
+          {
+            "valor": "NEGATIVA",
+            "valido": false,
+            "motivo": "duracion y ayuno negativos: pasan la conversion y lo rechaza la cota @PositiveOrZero del DTO",
+            "campo": "requisitos.duracionMinutos",
+            "nivel": "-1",
+            "criterio": "bajo el minimo"
+          },
+          {
+            "valor": "EXCESIVA",
+            "valido": false,
+            "motivo": "maxCancelaciones 101 (cota 100), protocolo y preparacion de 1001 (cota 1000), duracion y ayuno pasados",
+            "campo": "politica.maxCancelaciones / protocolo.preparacion",
+            "nivel": "101",
+            "setup": "COD_AUTO",
+            "criterio": "un punto sobre la cota"
+          },
+          {
+            "valor": "COMA",
+            "valido": false,
+            "motivo": "valores con coma: Jackson los parte como separador y da lista [-1] dentro del entero, que se rechaza con ApiError",
+            "campo": "requisitos.duracionMinutos",
+            "nivel": "-1",
+            "setup": "COD_AUTO",
+            "criterio": "formato numerico local"
+          }
+        ],
+        "setupPor": {
+          "AUSENTE": "COD_AUTO",
+          "JUSTO": "COD_AUTO",
+          "CERO": "COD_AUTO",
+          "NEGATIVA": "COD_AUTO",
+          "EXCESIVA": "COD_AUTO",
+          "COMA": "COD_AUTO"
+        }
+      }
     ]
   },
   "tabla_B": {
     "id": "B",
     "nombre": "Modificacion de prueba (PUT /api/catalogo/pruebas/{codigo})",
-    "kind": "full",
+    "kind": "pairwise",
     "csv": "tdop-cdu16-modificacion.csv",
     "puerta": "AF correccion: coherencia ruta/cuerpo, estado del recurso y cotas en la modificacion",
     "solicitud": "PUT /api/catalogo/pruebas/{codigo}",
     "tipoTC": "feliz + error (TDOP)",
-    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS", "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"},
+    "codigosError": {
+      "INVALIDOS": "DATOS_INVALIDOS",
+      "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"
+    },
     "factores": [
       {
         "nombre": "estadoRecurso",
-        "setupPor": {"ACTIVA": "CREA_COD_ACTIVA", "INACTIVA": "CREA_COD_INACTIVA", "NO_EXISTE": "NINGUNO"},
+        "setupPor": {
+          "ACTIVA": "CREA_COD_ACTIVA",
+          "INACTIVA": "CREA_COD_INACTIVA"
+        },
         "descripcion": "estado de la fila a la que apunta la ruta antes de la peticion",
         "niveles": [
-          {"valor": "ACTIVA", "valido": true, "motivo": "prueba dada de alta"},
-          {"valor": "INACTIVA", "valido": true, "motivo": "prueba dada de baja logica: se puede modificar"},
-          {"valor": "NO_EXISTE", "valido": false, "motivo": "la ruta no apunta a ninguna fila"}
+          {
+            "valor": "ACTIVA",
+            "valido": true,
+            "motivo": "prueba dada de alta"
+          },
+          {
+            "valor": "INACTIVA",
+            "valido": true,
+            "motivo": "prueba dada de baja logica: se puede modificar"
+          },
+          {
+            "valor": "NO_EXISTE",
+            "valido": false,
+            "motivo": "la ruta no apunta a ninguna fila",
+            "setup": "NINGUNO"
+          }
         ]
       },
       {
         "nombre": "codigoRuta",
-        "setupPor": {"DISTINTO_EXISTENTE": "CREA_OTRA_ACTIVA"},
+        "setupPor": {
+          "DISTINTO_EXISTENTE": "CREA_OTRA_ACTIVA"
+        },
         "descripcion": "codigo de la ruta comparado con el codigo del cuerpo",
         "niveles": [
-          {"valor": "IGUAL", "valido": true, "motivo": "ruta y cuerpo coinciden"},
-          {"valor": "DISTINTO_INVENTADO", "valido": false, "motivo": "la ruta no coincide con el cuerpo"},
-          {"valor": "DISTINTO_EXISTENTE", "valido": false, "motivo": "la ruta apunta a otra prueba existente"},
-          {"valor": "LARGO41", "valido": false, "motivo": "ruta y cuerpo de 41 caracteres: pasa la cota de codigo", "criterio": "un punto sobre la cota"}
+          {
+            "valor": "IGUAL",
+            "valido": true,
+            "motivo": "ruta y cuerpo coinciden",
+            "setup": "COD_IGUAL"
+          },
+          {
+            "valor": "DISTINTO_INVENTADO",
+            "valido": false,
+            "motivo": "la ruta no coincide con el cuerpo (se mira antes de buscar la fila)",
+            "setup": "COD_DISTINTO",
+            "criterio": "coherencia ruta/cuerpo"
+          },
+          {
+            "valor": "DISTINTO_EXISTENTE",
+            "valido": false,
+            "motivo": "la ruta apunta a otra prueba existente y el cuerpo apunta a una tercera",
+            "setup": "COD_CRUZADO",
+            "criterio": "coherencia ruta/cuerpo"
+          }
         ]
       },
       {
         "nombre": "validezCuerpo",
         "descripcion": "cuerpo valido salvo la marca que se indica",
         "niveles": [
-          {"valor": "VALIDO", "valido": true, "motivo": "cuerpo dentro de todas las cotas"},
-          {"valor": "NOMBRE_LARGO121", "valido": false, "motivo": "nombre de 121 caracteres", "campo": "nombre", "nivel": "REP:121:N", "criterio": "un punto sobre la cota"},
-          {"valor": "CATEGORIA_FUERA", "valido": false, "motivo": "categoria fuera de la lista blanca", "campo": "categoria", "nivel": "USG", "criterio": "fuera de dominio"},
-          {"valor": "MAXCANCEL_101", "valido": false, "motivo": "maxCancelaciones 101", "campo": "politica.maxCancelaciones", "nivel": "101", "criterio": "un punto sobre la cota"},
-          {"valor": "PROTO_LOMAX1001", "valido": false, "motivo": "preparacion de 1001 caracteres", "campo": "protocolo.preparacion", "nivel": "REP:1001:P", "criterio": "un punto sobre la cota"}
+          {
+            "valor": "VALIDO",
+            "valido": true,
+            "motivo": "cuerpo dentro de todas las cotas"
+          },
+          {
+            "valor": "NOMBRE_LARGO121",
+            "valido": false,
+            "motivo": "nombre de 121 caracteres",
+            "campo": "nombre",
+            "nivel": "REP:121:N",
+            "criterio": "un punto sobre la cota"
+          },
+          {
+            "valor": "CATEGORIA_FUERA",
+            "valido": false,
+            "motivo": "categoria fuera de la lista blanca",
+            "campo": "categoria",
+            "nivel": "USG",
+            "criterio": "fuera de dominio"
+          },
+          {
+            "valor": "MAXCANCEL_101",
+            "valido": false,
+            "motivo": "maxCancelaciones 101",
+            "campo": "politica.maxCancelaciones",
+            "nivel": "101",
+            "criterio": "un punto sobre la cota"
+          },
+          {
+            "valor": "PROTO_LOMAX1001",
+            "valido": false,
+            "motivo": "preparacion de 1001 caracteres",
+            "campo": "protocolo.preparacion",
+            "nivel": "REP:1001:P",
+            "criterio": "un punto sobre la cota"
+          }
         ]
       }
     ],
     "reglas": [
-      {"si": {"factor": "codigoRuta", "distinto": "IGUAL"}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "el codigo de la ruta no coincide con el del cuerpo (se mira antes de buscar la fila)"},
-      {"si": {"factor": "validezCuerpo", "invalido": true}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "el cuerpo pasa una cota del servicio"},
-      {"si": {"factor": "estadoRecurso", "igual": "NO_EXISTE"}, "estado": "NO_ENCONTRADA", "codigo": "PRUEBA_NO_ENCONTRADA", "porque": "no hay fila que modificar"},
-      {"si": {}, "estado": "OK", "codigo": "-", "porque": "modificacion admitida"}
+      {
+        "si": {
+          "factor": "codigoRuta",
+          "distinto": "IGUAL"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "el codigo de la ruta no coincide con el del cuerpo: CatalogoServicio.actualizar lo mira ANTES de buscar la fila"
+      },
+      {
+        "si": {
+          "factor": "validezCuerpo",
+          "invalido": true
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "el cuerpo pasa una cota del servicio"
+      },
+      {
+        "si": {
+          "factor": "estadoRecurso",
+          "igual": "NO_EXISTE"
+        },
+        "estado": "NO_ENCONTRADA",
+        "codigo": "PRUEBA_NO_ENCONTRADA",
+        "porque": "no hay fila que modificar"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "modificacion admitida: 200 con la prueba modificada y asiento de auditoria MODIFICACION"
+      }
     ],
-    "columnasExtra": ["campoInvalido", "valorInvalido"]
+    "columnasExtra": [
+      "campoInvalido",
+      "valorInvalido"
+    ]
   },
   "tabla_C": {
     "id": "C",
@@ -213,83 +599,316 @@
     "puerta": "AF completitud: paginacion y orden del listado de gestion, incluyendo parametros mal tipados",
     "solicitud": "GET /api/catalogo/pruebas",
     "tipoTC": "feliz + error (TDOP)",
-    "noCombinaInvalidos": true,
-    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS"},
+    "codigosError": {
+      "INVALIDOS": "DATOS_INVALIDOS"
+    },
     "factores": [
       {
         "nombre": "pagina",
         "descripcion": "parametro pagina: el contrato exige >= 0 y debe caber en un entero",
         "niveles": [
-          {"valor": "-1", "valido": false, "motivo": "pagina negativa (contrato)", "criterio": "bajo el minimo del contrato"},
-          {"valor": "0", "valido": true, "motivo": "minimo del contrato y valor por defecto", "criterio": "minimo del contrato"},
-          {"valor": "2", "valido": true, "motivo": "pagina dentro del catalogo", "criterio": "valor tipico"},
-          {"valor": "200", "valido": true, "motivo": "pagina mas alla del catalogo: pagina vacia", "criterio": "limite de paginacion"},
-          {"valor": "REP:12:9", "valido": false, "motivo": "no cabe en un entero de la peticion", "criterio": "parametro mal tipado"},
-          {"valor": "abc", "valido": false, "motivo": "no es un numero", "criterio": "parametro mal tipado"}
+          {
+            "valor": "-1",
+            "valido": false,
+            "motivo": "pagina negativa (contrato)",
+            "criterio": "bajo el minimo del contrato"
+          },
+          {
+            "valor": "0",
+            "valido": true,
+            "motivo": "minimo del contrato y valor por defecto",
+            "criterio": "minimo del contrato"
+          },
+          {
+            "valor": "2",
+            "valido": true,
+            "motivo": "pagina dentro del catalogo",
+            "criterio": "valor tipico"
+          },
+          {
+            "valor": "200",
+            "valido": true,
+            "motivo": "pagina mas alla del catalogo: pagina vacia",
+            "criterio": "limite de paginacion"
+          },
+          {
+            "valor": "REP:12:9",
+            "valido": false,
+            "motivo": "no cabe en un entero de la peticion",
+            "criterio": "parametro mal tipado"
+          },
+          {
+            "valor": "abc",
+            "valido": false,
+            "motivo": "no es un numero",
+            "criterio": "parametro mal tipado"
+          }
         ]
       },
       {
         "nombre": "tamano",
         "descripcion": "parametro tamano: el contrato admite 1..200",
         "niveles": [
-          {"valor": "0", "valido": false, "motivo": "tamano bajo el minimo (contrato)", "criterio": "bajo el minimo del contrato"},
-          {"valor": "1", "valido": true, "motivo": "minimo del contrato", "criterio": "minimo del contrato"},
-          {"valor": "25", "valido": true, "motivo": "valor tipico", "criterio": "valor tipico"},
-          {"valor": "200", "valido": true, "motivo": "justo la cota del contrato", "criterio": "justo la cota"},
-          {"valor": "201", "valido": false, "motivo": "tamano sobre la cota (contrato)", "criterio": "un punto sobre la cota"},
-          {"valor": "REP:12:9", "valido": false, "motivo": "no cabe en un entero de la peticion", "criterio": "parametro mal tipado"}
+          {
+            "valor": "0",
+            "valido": false,
+            "motivo": "tamano bajo el minimo (contrato)",
+            "criterio": "bajo el minimo del contrato"
+          },
+          {
+            "valor": "1",
+            "valido": true,
+            "motivo": "minimo del contrato",
+            "criterio": "minimo del contrato"
+          },
+          {
+            "valor": "25",
+            "valido": true,
+            "motivo": "valor tipico",
+            "criterio": "valor tipico"
+          },
+          {
+            "valor": "200",
+            "valido": true,
+            "motivo": "justo la cota del contrato",
+            "criterio": "justo la cota"
+          },
+          {
+            "valor": "201",
+            "valido": false,
+            "motivo": "tamano sobre la cota (contrato)",
+            "criterio": "un punto sobre la cota"
+          },
+          {
+            "valor": "REP:12:9",
+            "valido": false,
+            "motivo": "no cabe en un entero de la peticion",
+            "criterio": "parametro mal tipado"
+          }
         ]
       },
       {
         "nombre": "orden",
         "descripcion": "parametro orden: lista blanca; sin parametro = codigo",
         "niveles": [
-          {"valor": "VACIO", "valido": true, "motivo": "sin parametro: orden por defecto", "criterio": "ausencia"},
-          {"valor": "codigo", "valido": true, "motivo": "campo admitido (es el defecto)", "criterio": "valor tipico"},
-          {"valor": "categoria", "valido": true, "motivo": "campo admitido", "criterio": "valor tipico"},
-          {"valor": "duracionMinutos", "valido": true, "motivo": "campo admitido", "criterio": "valor tipico"},
-          {"valor": "INVENTADO", "valido": false, "motivo": "campo fuera de la lista blanca", "criterio": "fuera de dominio"}
+          {
+            "valor": "VACIO",
+            "valido": true,
+            "motivo": "sin parametro: orden por defecto",
+            "criterio": "ausencia"
+          },
+          {
+            "valor": "codigo",
+            "valido": true,
+            "motivo": "campo admitido (es el defecto)",
+            "criterio": "valor tipico"
+          },
+          {
+            "valor": "categoria",
+            "valido": true,
+            "motivo": "campo admitido",
+            "criterio": "valor tipico"
+          },
+          {
+            "valor": "duracionMinutos",
+            "valido": true,
+            "motivo": "campo admitido",
+            "criterio": "valor tipico"
+          },
+          {
+            "valor": "INVENTADO",
+            "valido": false,
+            "motivo": "campo fuera de la lista blanca",
+            "criterio": "fuera de dominio"
+          }
         ]
       }
     ],
     "reglas": [
-      {"si": {"invalido": true}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "un parametro de consulta esta fuera de clase o mal tipado"},
-      {"si": {}, "estado": "OK", "codigo": "-", "porque": "listado admitido"}
+      {
+        "si": {
+          "invalido": true
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "un parametro de consulta esta fuera de clase o mal tipado"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "listado admitido"
+      }
     ]
   },
   "tabla_D": {
     "id": "D",
     "nombre": "Estados del recurso (GET/DELETE /{codigo} y PUT /{codigo}/reactivar)",
-    "kind": "full",
+    "kind": "filas",
     "csv": "tdop-cdu16-estados.csv",
     "puerta": "SEG integridad: baja logica, reactivacion idempotente y codigos que no se reutilizan",
     "solicitud": "GET/DELETE /api/catalogo/pruebas/{codigo} · PUT /{codigo}/reactivar",
     "tipoTC": "feliz + error (TDOP)",
-    "codigosError": {"NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"},
+    "codigosError": {
+      "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA"
+    },
+    "columnas": [
+      "id",
+      "operacion",
+      "estadoRecurso",
+      "setup",
+      "esperadoStatus",
+      "esperadoCodigo",
+      "nota"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "factor": "estadoRecurso",
+          "igual": "NO_EXISTE"
+        },
+        "estado": "NO_ENCONTRADA",
+        "codigo": "PRUEBA_NO_ENCONTRADA",
+        "porque": "la ruta no apunta a ninguna fila"
+      },
+      {
+        "si": {
+          "factor": "operacion",
+          "igual": "BAJA"
+        },
+        "estado": "BORRADO",
+        "codigo": "-",
+        "porque": "baja logica (o idempotente sobre prueba ya inactiva): la API responde 204 sin cuerpo"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "operacion con respuesta 200 y cuerpo: detalle o reactivacion"
+      }
+    ],
     "factores": [
       {
         "nombre": "operacion",
         "descripcion": "operacion de estado invocada",
         "niveles": [
-          {"valor": "DETALLE", "valido": true, "motivo": "GET /api/catalogo/pruebas/{codigo}"},
-          {"valor": "BAJA", "valido": true, "motivo": "DELETE /api/catalogo/pruebas/{codigo}"},
-          {"valor": "REACTIVAR", "valido": true, "motivo": "PUT /api/catalogo/pruebas/{codigo}/reactivar"}
+          {
+            "valor": "DETALLE",
+            "valido": true,
+            "motivo": "GET /api/catalogo/pruebas/{codigo}"
+          },
+          {
+            "valor": "BAJA",
+            "valido": true,
+            "motivo": "DELETE /api/catalogo/pruebas/{codigo}"
+          },
+          {
+            "valor": "REACTIVAR",
+            "valido": true,
+            "motivo": "PUT /api/catalogo/pruebas/{codigo}/reactivar"
+          }
         ]
       },
       {
         "nombre": "estadoRecurso",
-        "setupPor": {"ACTIVA": "CREA_COD_ACTIVA", "INACTIVA": "CREA_COD_INACTIVA", "NO_EXISTE": "NINGUNO"},
+        "setupPor": {
+          "ACTIVA": "CREA_COD_ACTIVA",
+          "INACTIVA": "CREA_COD_INACTIVA"
+        },
         "descripcion": "estado de la fila antes de la peticion",
         "niveles": [
-          {"valor": "ACTIVA", "valido": true, "motivo": "prueba activa"},
-          {"valor": "INACTIVA", "valido": true, "motivo": "prueba desactivada: detalle y reactivacion la ven"},
-          {"valor": "NO_EXISTE", "valido": false, "motivo": "codigo inexistente"}
+          {
+            "valor": "ACTIVA",
+            "valido": true,
+            "motivo": "prueba activa"
+          },
+          {
+            "valor": "INACTIVA",
+            "valido": true,
+            "motivo": "prueba desactivada: detalle y reactivacion la ven"
+          },
+          {
+            "valor": "NO_EXISTE",
+            "valido": false,
+            "motivo": "codigo inexistente",
+            "setup": "NINGUNO"
+          }
         ]
       }
     ],
-    "reglas": [
-      {"si": {"factor": "estadoRecurso", "igual": "NO_EXISTE"}, "estado": "NO_ENCONTRADA", "codigo": "PRUEBA_NO_ENCONTRADA", "porque": "la ruta no apunta a ninguna fila"},
-      {"si": {}, "estado": "OK", "codigo": "-", "porque": "operacion de estado admitida (baja y reactivacion son idempotentes)"}
+    "filas": [
+      {
+        "operacion": "DETALLE",
+        "estadoRecurso": "ACTIVA",
+        "setup": "CREA_COD_ACTIVA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "la consulta de detalle ve una prueba activa"
+      },
+      {
+        "operacion": "DETALLE",
+        "estadoRecurso": "INACTIVA",
+        "setup": "CREA_COD_INACTIVA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "HALLAZGO COMP: el detalle ve la prueba inactiva (baja logica) - confirmar con el jefe de estudio"
+      },
+      {
+        "operacion": "DETALLE",
+        "estadoRecurso": "NO_EXISTE",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "PRUEBA_NO_ENCONTRADA",
+        "nota": "codigo inexistente"
+      },
+      {
+        "operacion": "BAJA",
+        "estadoRecurso": "ACTIVA",
+        "setup": "CREA_COD_ACTIVA",
+        "esperadoStatus": "BORRADO",
+        "esperadoCodigo": "-",
+        "nota": "baja logica: 204 sin cuerpo, la fila sigue existiendo con activa=false y emite asiento BAJA"
+      },
+      {
+        "operacion": "BAJA",
+        "estadoRecurso": "INACTIVA",
+        "setup": "CREA_COD_INACTIVA",
+        "esperadoStatus": "BORRADO",
+        "esperadoCodigo": "-",
+        "nota": "dar de baja algo ya bajado es idempotente: repite 204 sin asiento BAJA nuevo (queda anotado en la spec)"
+      },
+      {
+        "operacion": "BAJA",
+        "estadoRecurso": "NO_EXISTE",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "PRUEBA_NO_ENCONTRADA",
+        "nota": "codigo inexistente"
+      },
+      {
+        "operacion": "REACTIVAR",
+        "estadoRecurso": "ACTIVA",
+        "setup": "CREA_COD_ACTIVA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "reactivar algo ya activo es idempotente: 200 y sigue activa, sin asiento REACTIVACION nuevo"
+      },
+      {
+        "operacion": "REACTIVAR",
+        "estadoRecurso": "INACTIVA",
+        "setup": "CREA_COD_INACTIVA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "reactivacion: 200 con activa=true y asiento REACTIVACION (sobre una fila que ya tenia ALTA+BAJA)"
+      },
+      {
+        "operacion": "REACTIVAR",
+        "estadoRecurso": "NO_EXISTE",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "PRUEBA_NO_ENCONTRADA",
+        "nota": "codigo inactivado no encontrado (el PUD lo pide explicito)"
+      }
     ]
   },
   "tabla_E": {
@@ -300,27 +919,307 @@
     "puerta": "SEG integridad y robustez: conjetura de errores sobre el alta, la modificacion y el detalle",
     "solicitud": "ALTA/MODIFICACION/DETALLE sobre /api/catalogo/pruebas/{codigo}",
     "tipoTC": "conjetura de errores",
-    "codigosError": {"INVALIDOS": "DATOS_INVALIDOS", "CONFLICTO": "CODIGO_DUPLICADO", "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA", "NO_ACEPTABLE": "CONTENIDO_NO_ACEPTADO"},
-    "columnas": ["id", "operacion", "estadoRecurso", "cuerpo", "setup", "rutaExtra", "esperadoStatus", "esperadoCodigo", "nota"],
+    "codigosError": {
+      "INVALIDOS": "DATOS_INVALIDOS",
+      "CONFLICTO": "CODIGO_DUPLICADO",
+      "NO_ENCONTRADA": "PRUEBA_NO_ENCONTRADA",
+      "NO_ACEPTABLE": "CONTENIDO_NO_ACEPTADO",
+      "RUTA_INEXISTENTE": "-"
+    },
+    "columnas": [
+      "id",
+      "operacion",
+      "estadoRecurso",
+      "cuerpo",
+      "setup",
+      "rutaExtra",
+      "esperadoStatus",
+      "esperadoCodigo",
+      "asientos",
+      "estadoFinal",
+      "nota"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "invalido": true
+        },
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "la conjetura no combina factores: cada fila lleva el esperado escrito a mano"
+      },
+      {
+        "si": {},
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "cada fila de conjetura fija su esperado"
+      }
+    ],
     "filas": [
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "VALIDO", "setup": "CREA_OTRA_ACTIVA", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "linea de base: alta valida sobre un catalogo con otra fila"},
-      {"operacion": "ALTA", "estadoRecurso": "ACTIVA", "cuerpo": "VALIDO", "setup": "CREA_COD_ACTIVA", "rutaExtra": "-", "esperadoStatus": "CONFLICTO", "esperadoCodigo": "CODIGO_DUPLICADO", "nota": "reutilizar el codigo de una prueba activa"},
-      {"operacion": "ALTA", "estadoRecurso": "INACTIVA", "cuerpo": "VALIDO", "setup": "CREA_COD_INACTIVA", "rutaExtra": "-", "esperadoStatus": "CONFLICTO", "esperadoCodigo": "CODIGO_DUPLICADO", "nota": "los codigos no se reutilizan: dar de alta una fila dada de baja es conflicto, no reactivacion implicita"},
-      {"operacion": "ALTA", "estadoRecurso": "ACTIVA", "cuerpo": "ACTIVA_FALSA", "setup": "CREA_COD_ACTIVA", "rutaExtra": "-", "esperadoStatus": "CONFLICTO", "esperadoCodigo": "CODIGO_DUPLICADO", "nota": "activa=false en el cuerpo no convierte el alta en reactivacion"},
-      {"operacion": "MODIFICACION", "estadoRecurso": "ACTIVA", "cuerpo": "ACTIVA_FALSA", "setup": "CREA_COD_ACTIVA", "rutaExtra": "-", "esperadoStatus": "OK", "esperadoCodigo": "-", "nota": "activa=false en el cuerpo se ignora: la prueba sigue activa"},
-      {"operacion": "MODIFICACION", "estadoRecurso": "INACTIVA", "cuerpo": "ACTIVA_VERDADERA", "setup": "CREA_COD_INACTIVA", "rutaExtra": "-", "esperadoStatus": "OK", "esperadoCodigo": "-", "nota": "activa=true en el cuerpo no reactiva: reactivar es su propia operacion"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "VACIO_JSON", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "cuerpo {} : faltan todos los campos del contrato"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "SIN_PROTOCOLO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "falta el objeto protocolo: el contrato exige anidados no nulos"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "MALFORMADO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "JSON malformado: HttpMessageNotReadableException"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "SIN_CUERPO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "POST sin cuerpo"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "TEXTO_PLANO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "NO_ACEPTABLE", "esperadoCodigo": "CONTENIDO_NO_ACEPTADO", "nota": "Content-Type text/plain: 415 con codigo estable desde D35 (antes caia en el capturador general y devolvia 500)"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CAMPO_DESCONOCIDO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "Jackson descarta campos desconocidos: se ignora y se crea - caracterizacion"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "DURACION_COMO_TEXTO", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "Jackson convierte 60 a numero: se acepta - caracterizacion"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CATEGORIA_MINUSCULA", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "la lista blanca de categorias distingue mayusculas"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CATEGORIA_20_FUERA", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "categoria de 20 caracteres cabe en el VARCHAR pero esta fuera de la lista blanca"},
-      {"operacion": "ALTA", "estadoRecurso": "NO_EXISTE", "cuerpo": "CODIGO_CON_ESPACIOS", "setup": "NINGUNO", "rutaExtra": "-", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "no hay regla de recorte: el codigo se guarda con espacios - caracterizacion"},
-      {"operacion": "DETALLE", "estadoRecurso": "ACTIVA", "cuerpo": "NINGUNO", "setup": "CREA_COD_ACTIVA", "rutaExtra": "COD-MINUS", "esperadoStatus": "NO_ENCONTRADA", "esperadoCodigo": "PRUEBA_NO_ENCONTRADA", "nota": "H2 distingue mayusculas: el detalle en minusculas no encuentra la fila - caracterizacion, revisar con MySQL (collation ci)"},
-      {"operacion": "DETALLE", "estadoRecurso": "ACTIVA", "cuerpo": "NINGUNO", "setup": "CREA_COD_ACTIVA", "rutaExtra": "COD+ESP", "esperadoStatus": "NO_ENCONTRADA", "esperadoCodigo": "PRUEBA_NO_ENCONTRADA", "nota": "codigo de ruta con espacio final: no se recorta - caracterizacion"}
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "CODIGO_21_CARACTERES",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "HALLAZGO: el PUD promete codigos de 2 a 20, pero el servicio valida contra CODIGO_MAX = 40 (comentado en LimitesCatalogo y en el .puml)"
+      },
+      {
+        "operacion": "DETALLE",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "NINGUNO",
+        "setup": "NINGUNO",
+        "rutaExtra": "AUDITORIA",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoCodigo": "-",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "GET /{codigo}/auditoria: no hay ninguna mano del controlador que lo atienda -> 404 de Spring sin cuerpo ApiError. TC16-05 auditoria: HALLAZGO de COMP para Iter2 (falta el subrecurso de auditoria)"
+      },
+      {
+        "operacion": "MODIFICACION",
+        "estadoRecurso": "ACTIVA",
+        "cuerpo": "CODIGO_PERTENECIENTE",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "OTRA_COD",
+        "esperadoStatus": "INVALIDOS",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "PUT con codigo del cuerpo distinto del de la ruta: NO existe CODIGO_INCONSISTENTE, es IllegalArgumentException -> 400 DATOS_INVALIDOS"
+      },
+      {
+        "operacion": "MODIFICACION",
+        "estadoRecurso": "INACTIVA",
+        "cuerpo": "VALIDO",
+        "setup": "CREA_COD_INACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "3",
+        "estadoFinal": "False",
+        "nota": "caracterizacion: modificar una prueba dada de baja se admite (ALTA+BAJA+MODIFICACION) y sigue inactiva"
+      },
+      {
+        "operacion": "BAJA",
+        "estadoRecurso": "ACTIVA",
+        "cuerpo": "NINGUNO",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "BORRADO",
+        "esperadoCodigo": "-",
+        "asientos": "2",
+        "estadoFinal": "-",
+        "nota": "tramos de auditoria: tras la baja queda ALTA+BAJA"
+      },
+      {
+        "operacion": "BAJA",
+        "estadoRecurso": "INACTIVA",
+        "cuerpo": "NINGUNO",
+        "setup": "CREA_COD_INACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "BORRADO",
+        "esperadoCodigo": "-",
+        "asientos": "2",
+        "estadoFinal": "-",
+        "nota": "baja repetida idempotente: los asientos siguen siendo ALTA+BAJA, no se emite un segundo BAJA"
+      },
+      {
+        "operacion": "REACTIVAR",
+        "estadoRecurso": "ACTIVA",
+        "cuerpo": "NINGUNO",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "1",
+        "estadoFinal": "True",
+        "nota": "tramos de auditoria: reactivar algo ya activo no emite segundo asiento REACTIVACION y sigue activa"
+      },
+      {
+        "operacion": "REACTIVAR",
+        "estadoRecurso": "INACTIVA",
+        "cuerpo": "NINGUNO",
+        "setup": "CREA_COD_INACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "3",
+        "estadoFinal": "True",
+        "nota": "reaccion en cadena: la secuencia ALTA->BAJA->REACTIVACION queda completa (verificable desde el servicio con auditoriaVerificable) y el estado pasa a activa"
+      },
+      {
+        "operacion": "REACTIVAR",
+        "estadoRecurso": "INACTIVA",
+        "cuerpo": "NINGUNO",
+        "setup": "CREA_COD_INACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "3",
+        "estadoFinal": "True",
+        "nota": "reactivacion en dos tramos: al sentarse la reactivacion la cadena se ve al enumerar auditoria"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "ACTIVA_FALSA",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "asientos": "1",
+        "estadoFinal": "True",
+        "nota": "activa=false en el cuerpo del alta se ignora: el recurso se crea ACTIVO porque el alta fuerza activa=true"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "ACTIVA",
+        "cuerpo": "ACTIVA_FALSA",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "CONFLICTO",
+        "esperadoCodigo": "CODIGO_DUPLICADO",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "activa=false en el cuerpo no convierte el alta en reactivacion: sigue siendo conflicto de codigo"
+      },
+      {
+        "operacion": "MODIFICACION",
+        "estadoRecurso": "ACTIVA",
+        "cuerpo": "ACTIVA_FALSA",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "2",
+        "estadoFinal": "True",
+        "nota": "PUT con activa=false: el servicio ignora el campo y la prueba sigue activa (invariante de estado)"
+      },
+      {
+        "operacion": "MODIFICACION",
+        "estadoRecurso": "INACTIVA",
+        "cuerpo": "ACTIVA_VERDADERA",
+        "setup": "CREA_COD_INACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "3",
+        "estadoFinal": "False",
+        "nota": "PUT con activa=true en el cuerpo no reactiva: reactivar es su propia operacion"
+      },
+      {
+        "operacion": "LISTADO",
+        "estadoRecurso": "MIXTO",
+        "cuerpo": "NINGUNO",
+        "setup": "CREA_MIXTO",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "COMP: el listado de gestion incluye las pruebas inactivas junto con las activas"
+      },
+      {
+        "operacion": "MODIFICACION",
+        "estadoRecurso": "ACTIVA",
+        "cuerpo": "VALIDO",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "2",
+        "estadoFinal": "-",
+        "nota": "tramos de auditoria: modificar una prueba activa suma un asiento MODIFICACION sobre la misma fila"
+      },
+      {
+        "operacion": "MODIFICACION",
+        "estadoRecurso": "ACTIVA",
+        "cuerpo": "VALIDO",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "la modificacion respeta el codigo de la ruta: PUT con el codigo de la fila creada"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "VALIDO",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "asientos": "1",
+        "estadoFinal": "True",
+        "nota": "linea de base de auditoria: el alta crea exactamente un asiento ALTA y el recurso queda activo"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "DURACION_COMO_TEXTO",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "Jackson convierte '60' a numero: se acepta y se crea - caracterizacion"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "CAMPO_DESCONOCIDO",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "Jackson descarta campos desconocidos: se ignora y se crea - caracterizacion"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "CATEGORIA_MINUSCULA",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "INVALIDOS",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "la lista blanca de categorias distingue mayusculas"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "NO_EXISTE",
+        "cuerpo": "CODIGO_CON_ESPACIOS",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "no hay regla de recorte: el codigo se guarda con espacios - caracterizacion"
+      },
+      {
+        "operacion": "ALTA",
+        "estadoRecurso": "DUPLICA_ACTIVA",
+        "cuerpo": "LIMITES_CERO",
+        "setup": "CREA_COD_ACTIVA",
+        "rutaExtra": "-",
+        "esperadoStatus": "INVALIDOS",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "asientos": "-",
+        "estadoFinal": "-",
+        "nota": "la validacion de cotas (0 no admitido, limites ausentes) se aplica antes de comprobar el duplicado: codigo repetido con cuerpo fuera de cota da 400 DATOS_INVALIDOS, no 409 (con cuerpo valido el duplicado si da 409: ver las filas CONFLICTO de la tabla A)"
+      }
     ]
   }
 }
