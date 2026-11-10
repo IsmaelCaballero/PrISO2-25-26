@@ -559,3 +559,87 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
   versión de MySQL y volumen persistente; y si el trabajo va en **rama propia** o dentro de Iter5/CDU12.
 - **Siguiente bloque:** aplicar D33 a la Iter1 y luego Iter5 · CDU12 citas (CFG-05) con la capa de persistencia
   MySQL (D34).
+
+### Prompt 15 — Aplicar el método D33 a las pruebas de la Iter1/CDU16 (issue #35, TDOP + pairwise + JUnit) [✔ ejecutado]
+
+> Prompt lanzado por Ismael (09/11/2026, sesión 17, **texto reconstruido** a partir del cuerpo de la issue #35
+> y de la sesión): aplicar ya el método **D33** a las pruebas de `iso2-catalogo` (CDU16) de la Iter1, empezando
+> por ellas como se pactó. Diseñar **clases de equivalencia**, **puntos del teorema del valor límite** y la
+> **conjetura de errores**, componerlas con **pairwise** para no explotar la combinatoria, y usar **ese mismo
+> conjunto** de casos tanto en los **JUnit ejecutados con Maven** como en las **plantillas de TC humanos**
+> (proyección legible de la matriz, regenerada por herramienta, no a mano). Los ficheros de test llevan
+> **JavaDoc** (clase probada, colaborador simulado, propiedad verificada) y `@DisplayName` con el id del caso.
+> Evidencia versionada en `docs/test/iter01/`, wiki de la Iter1 con la **clase probada** identificada, y los
+> huecos de cotas que aparezcan se arreglan **en el servicio** (D35) editando **antes** los `.puml` (D31).
+
+- Resultado (09/11/2026; rama `feature/iter01-pruebas-d33` desde `develop`, 4 commits, PR **#36**):
+  - **Dos herramientas nuevas en `tools/`, sin librerías:** **`pairwise.py`** (componedor pairwise sobre la spec
+    con restricciones y generadores de valores) y **`tc_plantillas.py`** (proyecta la matriz terminada a la
+    plantilla de TC humanos entre `<!-- TDOP:BEGIN -->` y `<!-- TDOP:END -->`; los TC escritos a mano quedan
+    **fuera** de ese bloque y no los toca ninguna regeneración). Las tablas TDOP **solo** salen de estas dos
+    herramientas.
+  - **Spec primero** (`355ade9`): `docs/test/iter01/tdop-cdu16-espec.json` con las clases de equivalencia, los
+    puntos límite y la conjetura de errores de CDU16. Matrices generadas: **A33 + B15 + C36 + D9 + E22 = 115
+    casos** en `docs/test/iter01/tdop-cdu16.md` y como fixtures JSON en
+    `iso2-catalogo/src/test/resources/tdop/`, que consume la clase de test.
+  - **Rojo real:** la primera ejecución dejó **16 fallos sobre los 115 casos**, que destaparon los huecos de
+    D35 y **dos discrepancias de spec** (el código de error `CODIGO_DUPLICADO` frente al `CODIGO_EN_USO` que
+    esperaba el test de cliente, y el 400 por tamaño de página). Criterio aplicado: **se arregla la spec, no el
+    test** — en D33 la matriz es la que dice cuál debe ser el contrato.
+  - **Cotas y contrato** (`b2f7356`, D35, con los **`.puml` de iter01 actualizados antes** en `3a17a9a`):
+    `LímitesCatalogo` valida en el servicio `codigo`/`nombre`/`categoria` y los textos del protocolo
+    (400 en vez de reventar contra la BD), se validan `pagina`/`tamano` (antes 500), se rechaza `categoria`
+    fuera de la lista del contrato y se documenta el `415`.
+  - **Verde** (`f73ac80`): **115/115 TDOP** y **139 tests en `iso2-catalogo`** (24 heredados + 115 nuevos).
+    JaCoCo real medido en `jacoco.csv`: **97,5 % líneas (195/200) y 82,5 % ramas (33/40)**, muy por encima de
+    la puerta `jacoco.line.min=0.60`.
+  - **PR #36 → `develop` fusionado por Ismael** (merge **`f43721c`**), CI `construir` en verde. La wiki de la
+    Iter1 se rehízo con la matriz, la **clase probada** (`Cdu16MatrizTdopTest`) y los 16 fallos del rojo
+    (push conjunto `5207bae..7b36c5c`, descrito en el Prompt 16).
+
+### Prompt 16 — TC humanos de CDU16 + cierre de CFG-01 + re-anotación del tag + limpieza de ramas [✔ ejecutado]
+
+> Prompt lanzado por Ismael (09/11/2026, sesión 17, **texto reconstruido**): cerrar por fin la Iter1/CFG-01.
+> **Excepción puntual a D28:** ejecutar y rellenar **esta vez los TC humanos de CDU16 el agente** contra el
+> servidor local, quedando la autoría y la excepción anotadas honestamente en el doc (los TC siguen siendo
+> trabajo de Ismael; él los refrenda y puede repetirlos). Después cerrar todo lo demás: **re-anotar el tag
+> `cfg-iter01`** (Ismael elige re-anotar **en el mismo commit `df09bca`**, sin repuntar a `f43721c`), dejar la
+> issue **#35 cerrada** con un comentario de registro en vez de reabrirla, **borrar las ramas sobrantes** ya
+> fusionadas y sincronizar `STATUS.md` + `PROMPTS.md` para la próxima sesión (D34 + Iter5/CDU12).
+
+- Resultado (09/11/2026):
+  - **TC humanos de CDU16 ejecutados y rellenados por el agente vía HTTP** contra `localhost:8080` (commit
+    `e70bc50`, PR **#37** → merge **`3601fd6`**, tip de `develop`): **TC16-01…TC16-06 en 16 pasos
+    TC16H-01…TC16H-16, todos correctos**, con el executor y la nota de la excepción anotados en el doc;
+    **5 asientos nuevos de auditoría encadenada** (baja lógica de `TC16-PBA-01` + 4 reactivaciones) y
+    `auditoriaVerificable() = true`. El doc se corrigió además: decía «5 TC humanos» y la plantilla tiene **6**.
+    La BD H2 local `./data/iso2-server` se **conserva** con las filas `TC16H-*` y los asientos, para que Ismael
+    pueda repetirlos él cuando quiera.
+  - **Tag `cfg-iter01` reanotado sobre el mismo commit `df09bca`**: objeto del tag `af95aff` → **`429d67f`**,
+    empujado con `--force-with-lease`. El mensaje nuevo fija las puertas técnicas de CFG-01 y añade el bloque
+    **«Reanotado el 09/11/2026 (mismo commit, mismo árbol)»**: el rediseño D33 y las cotas D35 viven en
+    `develop`, los TC de CDU16 ya están ejecutados, el `.staruml` no procede (D31) y queda el hallazgo del
+    TC16-03.
+  - **Issue #35:** la había cerrado Ismael a mano el 09/11 a las 00:26; **no se reabre** y se añadió un
+    comentario de cierre con la nota D33. **Detectado en el cierre:** la issue **#34** se cerró **a la vez y
+    sin trabajo de D34 detrás** (no hay Docker, ni MySQL, ni DAO, ni `AgenteMySQL` en el repo) → hace falta
+    reabrirla o abrir una issue nueva (es de Ismael, D29).
+  - **Higiene de ramas:** borradas **12 ramas remotas y 12 locales** ya fusionadas (`ci/javadoc-pages`,
+    `docs/cierre-iter04-material`, `docs/cierre-sesion-7`, `docs/higiene-config-cfg00-01`,
+    `feature/docs-estado-iter0`, `feature/docs-plan-inicial`, `feature/docs-prompt-log`, `feature/iter00-cfg00`,
+    `feature/iter01-pruebas-d33`, `feature/iter02-cdu17-seguridad`, `release/R0`, `releaseplan`). La convención
+    de la sesión 8 de «conservar las ramas fusionadas» queda **revocada**: los puntos de interés los fijan los
+    tags `cfg-iterXX` y `v0.1.0`. La rama local `main` se recreó en `origin/main`; **quedan** `main`, `develop`
+    y `feature/iter01-cdu16-catalogo` (no fusionada, su único commit `19dff72` es una nota de la jornada del
+    07/11 ya obsoleta: se decide si se borra en la próxima sesión).
+  - **Wiki rehecha de la Iter1** (repo `PrISO2-25-26.wiki.git`, `master`, push `5207bae..7b36c5c`): la sección
+    **Testing** queda dividida en tres bloques — baseline de `cfg-iter01`; **«Rediseño TDOP (D33) — PR #36»**
+    con las matrices A33+B15+C36+D9+E22=115, `Cdu16MatrizTdopTest` como clase probada, los 16 fallos del rojo,
+    los dos ajustes de spec y las cotas D35; y **«Testeo humano (D28) — ejecutado 09/11/2026»** caso a caso.
+    Cifras contrastadas con `jacoco.csv`: 139 tests en `iso2-catalogo`, **JaCoCo 97,5 % líneas / 82,5 % ramas**.
+  - **Docs:** sync de `STATUS.md` (cabecera, estado global, avance cuantificado 156 h/612 h ≈ 25,5 % fusionado
+    y 62 h ≈ 10,1 % cerrado del todo, higiene de ramas, deuda nº 3/15/18/19 y punto de continuación reescrito)
+    y de este fichero en la rama `docs/sync-sesion-17` → PR a `develop`, **lo fusiona Ismael** (D30).
+- **Siguiente bloque:** **D34** (MySQL + Docker + DAO + `AgenteMySQL`, con issue que hace falta reabrir o abrir)
+  y **Iter5 · CDU12 citas (CFG-05)**, ambos desde `develop` = `3601fd6`. Quedan además los TC humanos de
+  CDU17/CDU13/CDU06 y extender el método D33 a Iter2 e Iter3.
