@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  iso2-server-app · CFG-04 · v0.1.4-SNAPSHOT (Iter4/CDU06)
+  iso2-server-app · CFG-05 · v0.1.5-SNAPSHOT (Iter5: D34 MySQL + CDU12)
   Ensambla el catalogo de pruebas (CDU16), la seguridad RBAC+JWT (CDU17), las agendas
   de medicos y tecnicos (CDU13) y las solicitudes de prueba (CDU06) sobre Spring Boot:
-  API REST + JPA/H2 + Flyway (esquema versionado) + cadena stateless con filtro JWT.
+  API REST + JPA + Flyway (esquema versionado H2/MySQL) + cadena stateless con filtro JWT.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -16,11 +16,12 @@
   </parent>
   <artifactId>iso2-server-app</artifactId>
   <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00; 0.1.1 en Iter1/CFG-01;
-       0.1.2 en Iter2/CFG-02; 0.1.3 en Iter3/CDU13; 0.1.4-SNAPSHOT en la rama de
-       Iter4/CDU06; 1.0.0 en CFG-21/R5. -->
-  <version>0.1.4-SNAPSHOT</version>
+       0.1.2 en Iter2/CFG-02; 0.1.3 en Iter3/CDU13; 0.1.4 en Iter4/CDU06;
+       0.1.5-SNAPSHOT en la rama de Iter5 (D34 persistencia + CDU12 citas);
+       1.0.0 en CFG-21/R5. -->
+  <version>0.1.5-SNAPSHOT</version>
   <name>iso2-server-app</name>
-  <description>Aplicacion servidora: API REST Spring Boot + JPA/H2. Ensambla los modulos de dominio.</description>
+  <description>Aplicacion servidora: API REST Spring Boot + JPA (H2 por defecto, MySQL con el perfil mysql, D34). Ensambla los modulos de dominio.</description>
 
   <properties>
     <!-- Puerta de calidad CFG-01 (D24/D27): cobertura de linea >= 60 % en la aplicacion. -->
@@ -117,6 +118,31 @@
       <artifactId>h2</artifactId>
       <scope>runtime</scope>
     </dependency>
+    <!-- D34 (Iter5): soporte MySQL. El conector JDBC y el modulo de Flyway para
+         MySQL (Flyway 10+ separa soporte por base de datos) viajan en runtime;
+         la version la fija el BOM de Spring Boot. -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-mysql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- D34: Testcontainers levanta MySQL 8.4 efimero para validar migraciones y
+         DAO contra el SGBD real; la version la fija el BOM de Spring Boot. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>mysql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -131,11 +157,12 @@
          levanta la API real en RANDOM_PORT y la consume con los clientes HTTP reales
          de iso2-client-app (solo en test: en produccion el cliente es un proceso
          aparte, por eso el servidor no depende de el nunca). Version explicita del
-         release train, no ${iso2.version} (eso es para los modulos de dominio). -->
+         release train (0.1.5-SNAPSHOT en la rama de Iter5), no ${iso2.version}
+         (eso es para los modulos de dominio). -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-client-app</artifactId>
-      <version>0.1.4-SNAPSHOT</version>
+      <version>0.1.5-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

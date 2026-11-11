@@ -13,7 +13,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    # D34 (Iter5): migraciones dobles por SGBD, misma version V1.x en cada carpeta.
+    # La carpeta la fija el perfil (h2 por defecto, mysql en el perfil mysql): se
+    # probo classpath:db/migration/{vendor} y Flyway 11 escana las dos subcarpetas
+    # en classpath, asi que se pone la ubicacion explicita por perfil.
+    locations: classpath:db/migration/h2
   h2:
     console:
       enabled: true
@@ -31,3 +35,25 @@ iso2:
 
 server:
   port: 8080
+
+---
+# D34 (Iter5): perfil MySQL contra el contenedor de docker/docker-compose.yml.
+#   $env:ISO2_JWT_SECRET = "...";  mvn -pl iso2-server-app spring-boot:run "-Dspring-boot.run.profiles=mysql"
+# Dos usuarios (D34): la aplicacion usa gestoroperaciones (solo DML) y Flyway usa
+# iso2_flyway (DDL). Contrasenas de desarrollo documentadas en docker/init/01-usuarios.sql.
+# connectionTimeZone/forceConnectionTimeZoneToSession/preserveInstants dejan el contenedor
+# y la sesion en UTC: las columnas DATETIME(6) guardan instantes absolutos (equivalente
+# al TIMESTAMP WITH TIME ZONE de H2).
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: jdbc:mysql://${ISO2_MYSQL_HOST:localhost}:${ISO2_MYSQL_PORT:3307}/iso2?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&preserveInstants=true&characterEncoding=UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${ISO2_DB_USER:gestoroperaciones}
+    password: ${ISO2_DB_PASSWORD:Iso2Curso25-26}
+  flyway:
+    user: ${ISO2_FLYWAY_USER:iso2_flyway}
+    password: ${ISO2_FLYWAY_PASSWORD:Iso2Flyway25-26}
+    locations: classpath:db/migration/mysql

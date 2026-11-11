@@ -16,9 +16,10 @@
   </parent>
   <artifactId>iso2-client-app</artifactId>
   <!-- Version de release train (D22): 0.1.0 en Iter0/CFG-00; 0.1.1 en Iter1/CFG-01;
-       0.1.2 en Iter2/CFG-02; 0.1.3 en Iter3/CFG-03; 0.1.4-SNAPSHOT en la rama de
-       Iter4/CDU06; 1.5.0 en CFG-21/R5. -->
-  <version>0.1.4-SNAPSHOT</version>
+       0.1.2 en Iter2/CFG-02; 0.1.3 en Iter3/CFG-03; 0.1.4 en Iter4/CDU06;
+       0.1.5-SNAPSHOT en la rama de Iter5 (D34 persistencia + CDU12 citas);
+       1.5.0 en CFG-21/R5. -->
+  <version>0.1.5-SNAPSHOT</version>
   <name>iso2-client-app</name>
   <description>Aplicacion cliente JavaFX con interfaz por rol. Consume los contratos de iso2-common.</description>
 
