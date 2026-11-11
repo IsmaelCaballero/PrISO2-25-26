@@ -1,0 +1,341 @@
+@startuml cdu12-clases-diseno
+' CDU12 (Iter5/CFG-05) - Clases de diseno: iso2-citas 1.1.0 + contrato + ripple solicitudes 1.2.0
+' Autor: agente (diseno previo al codigo, issue #40) - fuentes PlantUML (D31)
+title CDU12 - Clases de diseno previstas (iso2-citas 1.1.0-SNAPSHOT, apps 0.1.5-SNAPSHOT)
+
+skinparam classAttributeIconSize 0
+
+package "iso2-common 1.1.0 (contrato: baseline congelado + extension MINOR CDU12)" {
+  interface CitaFacade {
+    + agendar(CitaNuevaDTO) : CitaDTO
+    + cancelar(String citaId, String motivo) : CitaDTO
+    ..
+    + confirmar(String citaId) : CitaDTO
+    + realizar(String citaId) : CitaDTO
+    + reprogramar(String citaId, LocalDateTime inicio) : CitaDTO
+    + listar(LocalDateTime desde, LocalDateTime hasta,
+    String profesionalId, String estado) : List~CitaDTO~
+    + detalle(String citaId) : DetalleCitaDTO
+    + huecosLibres(String profesionalId, LocalDate desde,
+    LocalDate hasta, Integer duracionMinutos) : List~HuecoDTO~
+    + expirarVencidas(LocalDateTime corte) : List~CitaDTO~
+  }
+  class CitaNuevaDTO <<record, congelado>> {
+    + solicitudId : String (nullable: cita directa)
+    + profesionalId : String
+    + inicio : LocalDateTime
+    + duracionMinutos : int
+  }
+  class CitaDTO <<record, congelado>> {
+    + citaId : String
+    + solicitudId : String
+    + inicio : LocalDateTime
+    + fin : LocalDateTime
+    + estado : String (minusculas)
+  }
+  class DetalleCitaDTO <<record, nuevo>> {
+    + citaId : String
+    + solicitudId : String (nullable)
+    + profesionalId : String
+    + inicio : LocalDateTime
+    + fin : LocalDateTime
+    + estado : String
+    + motivoCancelacion : String (nullable)
+    ..
+    constructor compacto: citaId y profesionalId
+    no vacios, fin despues de inicio
+  }
+  class HuecoDTO <<record, nuevo>> {
+    + profesionalId : String
+    + inicio : LocalDateTime
+    + fin : LocalDateTime
+    ..
+    salida del motor de asignacion: hueco que cabe
+    entero en una franja laborable y no solapa
+  }
+  class CitaNoEncontradaException <<RuntimeException>>
+  class CitaConflictoException <<RuntimeException>> {
+    + tipo() : Conflicto
+  }
+  enum Conflicto {
+    HUECO_OCUPADO; FUERA_DE_FRANJA
+    TRANSICION_INVALIDA; SOLICITUD_NO_APTA
+    PLAZO_CANCELACION
+  }
+  interface SolicitudFacade <<CDU06, sube a 1.2.0>> {
+    + buscar(String) : Optional~SolicitudDTO~
+    ..
+    + marcarCitada(String) : SolicitudDTO
+    + devolverACreada(String) : SolicitudDTO
+  }
+  enum SolicitudConflicto <<CDU06, +valor>> {
+    DUPLICADA; PRUEBA_NO_DISPONIBLE
+    NO_APTA_PARA_CITA (nuevo, aditivo)
+  }
+  interface AgendaFacade <<CDU13>> {
+    + franjasLibres(String, LocalDate, LocalDate) : List~FranjaDTO~
+  }
+  interface PruebaCatalogoFacade <<CDU16>> {
+    + buscarPorCodigo(String) : Optional~PruebaImagenDTO~
+  }
+  class PruebaImagenDTO <<record>> {
+    + codigo : String
+    + requiereCita : boolean
+    + duracionMinutos : int
+    + politica : PoliticaDTO (plazoCancelacionHoras)
+  }
+  class ApiError <<record>> {
+    + codigo : String
+    + mensaje : String
+  }
+}
+
+package "iso2-citas 1.1.0 (modulo elevado a CFG-05)" {
+  package dominio {
+    class Cita <<JPA, cita>> {
+      - id : Long
+      - citaId : String (UUID, unico)
+      - solicitudId : String (nullable)
+      - profesionalId : String
+      - inicio : LocalDateTime
+      - fin : LocalDateTime
+      - estado : Estado
+      - motivoCancelacion : String (nullable)
+      + nueva(...) : Cita (estado PROGRAMADA)
+      + confirmar() : void
+      + realizar() : void
+      + cancelar(String motivo) : void
+      + expirar() : void
+      + moverA(LocalDateTime inicio, int duracionMinutos) : void
+      + esActiva() : boolean (programada o confirmada)
+      + duracionMinutos() : int
+    }
+    enum Estado {
+      PROGRAMADA; CONFIRMADA; REALIZADA
+      CANCELADA; EXPIRADA
+      + esTerminal() : boolean
+    }
+    class CitaHueco <<JPA, cita_hueco>> {
+      - id : Long
+      - citaId : String (unico: una fila por cita)
+      - profesionalId : String
+      - inicio : LocalDateTime
+      - fin : LocalDateTime
+      - version : int (@Version)
+      + solapaCon(LocalDateTime inicio, LocalDateTime fin) : boolean
+      ..
+      UNIQUE (profesional_id, inicio): la puerta
+      dura anti-concurrencia; solo existen aqui las
+      citas activas, asi que cancelar libera el hueco
+    }
+    class AuditoriaCitas <<JPA, cita_auditoria>> {
+      - id : Long
+      - accion : AccionAuditoria
+      - citaId : String
+      - profesionalId : String
+      - usuario : String (claim JWT o "sistema")
+      - instantanea : String (instante ISO)
+      - hashAnterior : String (GENESIS en el 1o)
+      - hash : String (SHA-256 hex encadenado)
+      + AccionAuditoria { AGENDAMIENTO; CONFIRMACION;
+      REPROGRAMACION; CANCELACION; REALIZACION; EXPIRACION }
+      + hashDe(...) : String ({static})
+      + cadenaIntegra() : boolean ({static})
+    }
+  }
+  package repositorio {
+    interface CitaRepositorio extends JpaRepository {
+      + findByCitaId(String) : Optional~Cita~
+      + busca(desde, hasta, profesionalId, estado) : List~Cita~
+      (@Query con filtros nullables, orden por inicio)
+      + findByEstadoInAndFinBefore(Collection~Estado~, LocalDateTime) : List~Cita~
+    }
+    interface CitaHuecoRepositorio extends JpaRepository {
+      + findByCitaId(String) : Optional~CitaHueco~
+      + findByProfesionalIdAndInicio(String, LocalDateTime) : Optional~CitaHueco~
+      + findByProfesionalIdAndInicioBetween(String, LocalDateTime, LocalDateTime) : List~CitaHueco~
+      + deleteByCitaId(String) : void
+    }
+    interface AuditoriaCitasRepositorio extends JpaRepository {
+      + findTopByOrderByIdDesc() : Optional~AuditoriaCitas~
+      + findAllByOrderByIdAsc() : List~AuditoriaCitas~
+    }
+  }
+  package servicio {
+    class CitaServicio <<@Service, implements CitaFacade>> {
+      + agendar(...) / confirmar / realizar
+      + reprogramar / cancelar / expirarVencidas
+      + listar / detalle / huecosLibres
+      ..
+      Reglas: franja CDU13 (contencion total y no
+      festivo), duracion y requiereCita del catalogo
+      CDU16, solicitud apta (creada/citada) y su
+      plazoCancelacionHoras, solape contra cita_hueco,
+      saveAndFlush + DataIntegrityViolationException
+      -> CitaConflictoException(HUECO_OCUPADO)
+      Todo el cambio de estado va en UNA transaccion
+      (cita + cita_hueco + cita_auditoria)
+      Reloj inyectable para corte de expiracion
+    }
+  }
+  package web {
+    class CitaControlador <<@RestController>> {
+      + POST /api/citas : agendar (201)
+      + GET /api/citas?desde&hasta&profesionalId&estado : listar
+      + GET /api/citas/{id} : detalle
+      + GET /api/citas/huecos?profesionalId&desde&hasta&duracionMinutos
+      + POST /api/citas/{id}/confirmar : confirmar
+      + POST /api/citas/{id}/realizar : realizar
+      + POST /api/citas/{id}/reprogramar : reprogramar
+      + POST /api/citas/{id}/cancelar : cancelar (motivo)
+      + POST /api/citas/expirar-vencidas : expirarVencidas
+    }
+    class CitaManejadorErrores <<@RestControllerAdvice>> {
+      NoEncontrada -> 404 CITA_NO_ENCONTRADA
+      Conflicto -> 409 CONFLICTO_HUECO_OCUPADO /
+      CONFLICTO_FUERA_DE_FRANJA / CONFLICTO_TRANSICION_INVALIDA /
+      CONFLICTO_SOLICITUD_NO_APTA / CONFLICTO_PLAZO_CANCELACION
+      IllegalArgument / JsonInvalido -> 400 DATOS_INVALIDOS
+    }
+  }
+}
+
+package "iso2-solicitudes 1.2.0 (ripple MINOR pedido por CDU12)" {
+  class "SolicitudServicio\n<<@Service, SolicitudFacade>>" as SOLSERV {
+    + marcarCitada(String) : SolicitudDTO (creada -> citada)
+    + devolverACreada(String) : SolicitudDTO (citada -> creada)
+    ..
+    Rechaza solicitudes canceladas o cerradas con
+    SolicitudConflictoException(NO_APTA_PARA_CITA)
+  }
+  class "Solicitud\n<<JPA, solicitud>>" as SOL {
+    + marcarComoCitada() : void
+    + volverACreada() : void
+    (la huella de no repudio no cambia: no entra
+    en el canonico el estado)
+  }
+}
+
+package "iso2-server-app 0.1.5" {
+  class ConfigSeguridad <<@Configuration>> {
+    + filtroHttp(HttpSecurity, JwtUtils)
+    ..
+    GET /api/citas/**: hasAnyRole(ADMINISTRADOR,
+    MEDICO, RECEPCIONISTA)
+    resto /api/citas/**: hasAnyRole(ADMINISTRADOR,
+    RECEPCIONISTA)
+    (MEDICO lee citas pero no las gestiona;
+    CELADOR y TECNICO quedan fuera)
+  }
+  class "Flyway V1.5.0 (migracion SQL, h2 y mysql)" as FLY {
+    tabla cita (uk cita_id)
+    tabla cita_hueco: uk_cita_hueco_profesional_inicio
+    + uk_cita_hueco_cita + version
+    tabla cita_auditoria (hash encadenado)
+    semilla demo: solicitud citada + citas sobre la
+    franja laborable 2026-11-13 del medico y del tecnico
+  }
+}
+
+package "iso2-seguridad 1.1.0 (RBAC ampliado en CDU12)" {
+  enum Permiso {
+    ...catalogo/agenda/usuario/solicitud...
+    CITA_LEER; CITA_ESCRIBIR
+    + codigo() : String
+  }
+  class MatrizPermisos <<final>> {
+    {static} + tienePermiso(Rol, Permiso) : boolean
+    ..
+    RECEPCIONISTA: cita:leer + cita:escribir
+    MEDICO: cita:leer
+    CELADOR y TECNICO: sin permisos de cita
+    ADMINISTRADOR: todo (allOf)
+  }
+}
+
+package "iso2-client-app 0.1.5 (parte b: recepcionista)" #DDDDDD {
+  class ApiClienteCitas {
+    + POST /api/citas, GET /api/citas, GET /{id},
+    GET /huecos, POST /{id}/confirmar, /realizar,
+    /reprogramar, /cancelar, POST /expirar-vencidas (Bearer)
+  }
+  class VistaGestionCitas <<JavaFX>> {
+    huecos libres del profesional + agendar
+    reprogramar y cancelar con motivo
+  }
+  class VistaConsultaCitas <<JavaFX>> {
+    listado con filtros (medico y administrador)
+  }
+}
+
+CitaServicio ..|> CitaFacade : implementa
+CitaServicio ..> CitaRepositorio
+CitaServicio ..> CitaHuecoRepositorio
+CitaServicio ..> AuditoriaCitasRepositorio
+CitaServicio ..> Cita : reglas en el dominio
+CitaServicio ..> CitaHueco : ocupa y libera el hueco
+CitaServicio ..> AgendaFacade : franjas libres (CDU13)
+CitaServicio ..> PruebaCatalogoFacade : duracion, requiereCita y plazo
+CitaServicio ..> SolicitudFacade : marcarCitada / devolverACreada
+CitaServicio ..> CitaNoEncontradaException : lanza
+CitaServicio ..> CitaConflictoException : lanza
+CitaConflictoException --> Conflicto
+Cita --> Estado
+CitaHueco --> Cita : una fila por cita activa
+CitaRepositorio o-- Cita
+CitaHuecoRepositorio o-- CitaHueco
+CitaControlador --> CitaFacade
+CitaControlador ..> DetalleCitaDTO : detalle
+CitaControlador ..> HuecoDTO : huecosLibres
+CitaManejadorErrores ..> ApiError : 404/409/400 JSON
+AuditoriaCitas ..> Cita : asienta cada cambio
+SOLSERV ..|> SolicitudFacade
+SOLSERV ..> SOL
+ConfigSeguridad ..> MatrizPermisos : reglas derivadas
+ConfigSeguridad ..> Permiso : cita:leer / cita:escribir
+Cita ..> FLY : tablas cita y cita_hueco
+AuditoriaCitas ..> FLY : tabla cita_auditoria
+ApiClienteCitas ..> ApiError : rethrows codes
+ApiClienteCitas ..> CitaDTO
+VistaGestionCitas --> ApiClienteCitas
+VistaConsultaCitas --> ApiClienteCitas
+
+note right of CitaServicio
+  El dominio gobierna la maquina de estados; el
+  servicio orquesta agenda (CDU13), catalogo (CDU16)
+  y solicitudes (CDU06). ArchUnit: web no accede a
+  repositorios, dominio sin Spring. Cobertura JaCoCo
+  exigida en el modulo: 0.80 de linea.
+end note
+
+note bottom of CitaHueco
+  Anti-concurrencia (puerta de CFG-05): la cita se
+  guarda y se hace saveAndFlush de su fila de hueco;
+  el UNIQUE (profesional_id, inicio) es lo que hace
+  imposible la doble reserva aunque dos hilos pasen
+  antes la comprobacion de solape. @Version cubre el
+  control optimista sobre la fila. Al cancelar o
+  expirar se borra la fila (el hueco vuelve a estar
+  libre) y al reprogramar se mueve, todo en la misma
+  transaccion: si el hueco nuevo esta ocupado, la
+  transaccion revierte y la cita conserva su hueco.
+end note
+
+note left of AuditoriaCitas
+  Auditoria encadenada igual que CDU13/CDU16: el
+  hash del asiento anterior viaja en el nuevo
+  ("GENESIS" en el primero) y cadenaIntegra()
+  recalcula la cadena para detectar manipulaciones.
+end note
+
+note bottom of CitaControlador
+  Pruebas tecnicas que sujetan el diseno:
+  ConcurrenciaCitasTest (dos hilos reales sobre el
+  mismo hueco -> 1 creado + 1 conflicto),
+  CitaServicioTest (rollback: hueco ocupado despues
+  de fallar el asiento de auditoria no deja cita),
+  MaquinaEstadosCitasTest, CitaControladorTest
+  (MockMvc), ArquitecturaCitasTest (ArchUnit) y
+  Cdu12MatrizTdopTest (matriz TDOP de D33).
+end note
+@enduml

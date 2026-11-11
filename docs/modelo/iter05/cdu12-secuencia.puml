@@ -1,0 +1,175 @@
+@startuml cdu12-secuencia
+' CDU12 (Iter5/CFG-05) - Secuencia de asignacion anti-concurrencia, estados y liberacion de hueco
+' Autor: agente (diseno previo al codigo, issue #40) - fuentes PlantUML (D31)
+title CDU12 - Agendar sobre hueco libre y pelear por el mismo hueco (flujo principal + 409/404/400/403)
+
+skinparam sequence {
+  LifeLineParticipant true
+}
+
+actor "Recepcionista\n(rol RECEPCIONISTA)" as RECEP
+actor "Medico\n(rol MEDICO)" as MEDICO
+actor "Celador\n(rol CELADOR)" as CEL
+boundary "CitaControlador\n/api/citas" as CTRL
+control "CitaServicio\n(iso2-citas 1.1.0)" as SVC
+entity "Cita / CitaHueco\n(JPA, cita + cita_hueco\nUNIQUE (profesional_id, inicio))" as CITA
+database "cita_auditoria\n(hash encadenado)" as AUD
+participant "AgendaFacade\n(CDU13)" as AGENDA
+participant "PruebaCatalogoFacade\n(CDU16)" as CAT
+participant "SolicitudFacade\n(CDU06)" as SOL
+participant "JwtAutenticacionFiltro\n(CDU17)" as FILTRO
+
+== Ver los huecos libres (motor de asignacion) ==
+RECEP -> CTRL : GET /api/citas/huecos?profesionalId=medico\n&desde=2026-11-13&hasta=2026-11-13\n(Authorization: Bearer <token>)
+CTRL <- FILTRO : token valido: ROLE_RECEPCIONISTA,\nmatriz concedera cita:leer
+CTRL -> SVC : huecosLibres(profesionalId, desde, hasta,\nduracionMinutos nullable)
+SVC -> AGENDA : franjasLibres(profesionalId, desde, hasta)
+AGENDA --> SVC : franjas laborables (sin festivos)
+SVC -> CAT : si no llega duracionMinutos, buscarPorCodigo\npara tomar la duracion de la prueba
+SVC -> CITA : huecos ocupados del profesional\nen el rango (tabla cita_hueco)
+SVC --> CTRL : List~HuecoDTO~ (la franja partida por\nlo ya reservado, sin huecos solapados)
+CTRL --> RECEP : 200 + lista JSON de huecos
+
+== Agendar una cita de una solicitud ==
+RECEP -> CTRL : POST /api/citas\n{solicitudId, profesionalId,\ninicio, duracionMinutos}
+CTRL -> SVC : agendar(CitaNuevaDTO)
+SVC -> SOL : buscar(solicitudId) y validar que admiste cita
+SOL --> SVC : solicitud en estado creada\n(si esta cancelada: NO_APTA_PARA_CITA)
+SVC -> CAT : buscarPorCodigo(prueba de la solicitud)
+CAT --> SVC : requiereCita = true, duracion,\npolitica.plazoCancelacionHoras
+SVC -> AGENDA : franjasLibres(profesionalId, dia, dia)
+alt la cita no cabe entera en una franja, o cae en festivo
+  SVC --> CTRL : CitaConflictoException(FUERA_DE_FRANJA)
+  CTRL --> RECEP : 409 + ApiError(CONFLICTO_FUERA_DE_FRANJA)
+else cabe en franja laborable
+  SVC -> CITA : solapa con otro hueco activo\ndel mismo profesional?
+  alt hueco ocupado
+    SVC --> CTRL : CitaConflictoException(HUECO_OCUPADO)
+    CTRL --> RECEP : 409 + ApiError(CONFLICTO_HUECO_OCUPADO)
+  else hueco libre
+    group UNA sola transaccion (cita + hueco + auditoria)
+      SVC -> CITA : insert cita (estado programada)
+      SVC -> CITA : insert fila de hueco + saveAndFlush
+      note right of CITA
+        Aqui cae la puerta dura anti-concurrencia:
+        UNIQUE (profesional_id, inicio) de cita_hueco.
+        Si otro hilo ya metio su fila, este insert falla
+        con DataIntegrityViolationException y la
+        transaccion revierte por completo.
+      end note
+      SVC -> SOL : marcarCitada(solicitudId)\n(creada -> citada)
+      SVC -> AUD : registrar(AGENDAMIENTO, citaId, usuario,\nhashAnterior = hash del asiento previo o GENESIS)
+    end
+    SVC --> CTRL : CitaDTO(citaId, estado "programada")
+    CTRL --> RECEP : 201 + CitaDTO(JSON)
+  end
+end
+
+== Dos hilos peleando por el mismo hueco (puerta CFG-05) ==
+note over SVC
+  ConcurrenciaCitasTest lanza DOS hilos reales a la vez contra
+  el mismo hueco del mismo profesional.
+end note
+par peticion del hilo A
+  SVC -> CITA : A comprueba el solape: el hueco esta libre
+  SVC -> CITA : saveAndFlush de la fila de hueco de A
+  CITA --> SVC : insert correcto
+else peticion del hilo B (mismo profesionalId, mismo inicio)
+  SVC -> CITA : B comprueba el solape: el hueco aun parece libre
+  SVC -> CITA : saveAndFlush de la fila de hueco de B
+  CITA --> SVC : viola uk_cita_hueco_profesional_inicio\n(DataIntegrityViolationException)
+end
+SVC --> RECEP : A termina con 201 + CitaDTO(JSON)
+SVC --> RECEP : B termina con 409 + ApiError(CONFLICTO_HUECO_OCUPADO)
+note over SVC
+  Al final solo hay UNA cita en BD y una sola fila de cita_hueco.
+  @Version en la fila del hueco da el control optimista; el UNIQUE
+  (profesional_id, inicio) es la garantia definitiva.
+end note
+
+== Reprogramar y cancelar (el hueco se mueve o se libera) ==
+RECEP -> CTRL : POST /api/citas/{id}/reprogramar\n{"inicio": "2026-11-13T10:00"}
+CTRL -> SVC : reprogramar(id, inicio)
+SVC -> CITA : estado actual de la cita
+alt estado terminal (realizada, cancelada, expirada)
+  SVC --> CTRL : CitaConflictoException(TRANSICION_INVALIDA)
+  CTRL --> RECEP : 409 + ApiError(CONFLICTO_TRANSICION_INVALIDA)
+else cita activa
+  SVC -> AGENDA : validar la nueva franja y el festivo
+  SVC -> CITA : borrar la fila del hueco viejo e insertar\nla del nuevo en la MISMA transaccion
+  note right of CITA
+    Si el hueco nuevo esta ocupado, todo revierte: la cita
+    conserva su hueco y su estado anteriores (TC de rollback
+    de la matriz CFG-05).
+  end note
+  SVC -> AUD : registrar(REPROGRAMACION, ...)
+  CTRL --> RECEP : 200 + CitaDTO(JSON)
+end
+RECEP -> CTRL : POST /api/citas/{id}/cancelar\n{"motivo": "paciente no disponible"}
+CTRL -> SVC : cancelar(id, motivo)
+SVC -> CAT : politica.plazoCancelacionHoras de la prueba
+alt motivo vacio
+  SVC --> CTRL : IllegalArgumentException
+  CTRL --> RECEP : 400 + ApiError(DATOS_INVALIDOS)
+else fuera del plazo de cancelacion
+  SVC --> CTRL : CitaConflictoException(PLAZO_CANCELACION)
+  CTRL --> RECEP : 409 + ApiError(CONFLICTO_PLAZO_CANCELACION)
+else plazo dentro de norma
+  SVC -> CITA : estado CANCELADA + deleteByCitaId\n(el hueco vuelve a estar libre)
+  SVC -> SOL : devolverACreada(solicitudId)\n(citada -> creada, para re-agendar)
+  SVC -> AUD : registrar(CANCELACION, ...)
+  CTRL --> RECEP : 200 + CitaDTO(estado "cancelada")
+end
+
+== Confirmar, realizar y expirar (maquina de estados) ==
+RECEP -> CTRL : POST /api/citas/{id}/confirmar
+CTRL -> SVC : confirmar(id)
+SVC -> CITA : programada -> confirmada
+CTRL --> RECEP : 200 + CitaDTO(estado "confirmada")
+RECEP -> CTRL : POST /api/citas/{id}/confirmar (otra vez)
+CTRL -> SVC : confirmar(id)
+SVC -> CITA : confirmada -> confirmada NO es transicion
+SVC --> CTRL : CitaConflictoException(TRANSICION_INVALIDA)
+CTRL --> RECEP : 409 + ApiError(CONFLICTO_TRANSICION_INVALIDA)
+RECEP -> CTRL : POST /api/citas/{id}/realizar
+CTRL -> SVC : realizar(id)
+SVC -> CITA : confirmada -> realizada\n(estado terminal: ya no se mueve ni se cancela)
+CTRL --> RECEP : 200 + CitaDTO(estado "realizada")
+RECEP -> CTRL : POST /api/citas/expirar-vencidas\n{"corte": "2026-11-13T15:00"}
+CTRL -> SVC : expirarVencidas(corte)
+SVC -> CITA : programada/confirmada con fin < corte\n-> EXPIRADA y se borra su fila de hueco
+SVC --> CTRL : List~CitaDTO~ de las expiradas
+CTRL --> RECEP : 200 + lista JSON
+RECEP -> CTRL : GET /api/citas/{id}
+alt id inexistente
+  SVC --> CTRL : CitaNoEncontradaException
+  CTRL --> RECEP : 404 + ApiError(CITA_NO_ENCONTRADA)
+else id existente
+  CTRL --> RECEP : 200 + DetalleCitaDTO(JSON)
+end
+
+== Autorizacion rechazada (matriz CFG-05) ==
+CEL -> CTRL : GET /api/citas (token de celador)
+CTRL <- FILTRO : rol CELADOR: sin cita:leer
+CTRL --> CEL : 403 + ApiError(FORBIDDEN)\n(sin llegar al servicio)
+MEDICO -> CTRL : POST /api/citas (agendar)
+CTRL <- FILTRO : rol MEDICO: solo cita:leer
+CTRL --> MEDICO : 403 + ApiError(FORBIDDEN)\n(lee citas, pero no las gestiona)
+CEL -> CTRL : GET /api/citas/huecos (sin Authorization)
+CTRL --> CEL : 401 + ApiError(AUTENTICACION_REQUERIDA)\n(el filtro JWT corta antes del controlador)
+note right of CTRL
+  Mismo reparto que la matriz CFG-05 de SOFTWAREQUALITY.md:
+  cita:leer para ADMINISTRADOR, MEDICO y RECEPCIONISTA;
+  cita:escribir solo para ADMINISTRADOR y RECEPCIONISTA.
+  CELADOR y TECNICO quedan fuera de las citas.
+end note
+
+note over AUD
+  Cada cambio de estado escribe su asiento con el hash del
+  asiento anterior ("GENESIS" en el primero) usando el mismo
+  SHA-256 hex que CDU13/CDU16; el usuario sale del claim JWT y
+  es "sistema" cuando llama un job. Los endpoints PUT/PATCH no
+  existen: la cita solo cambia por las acciones de la maquina
+  de estados (MaquinaEstadosCitasTest + CitaServicioTest).
+end note
+@enduml
