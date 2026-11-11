@@ -1,0 +1,118 @@
+@startuml cdu12-casos-uso
+' CDU12 (Iter5/CFG-05) - Casos de uso de "Gestionar citas: asignar, reprogramar, cancelar"
+' Autor: agente (diseno previo al codigo, issue #40) - fuentes PlantUML (D31)
+title CDU12 - Gestionar citas (motor de asignacion anti-concurrencia y maquina de estados)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Recepcionista\n(ROL: RECEPCIONISTA)" as RECEP
+actor "Medico\n(ROL: MEDICO)" as MEDICO
+actor "Administrador\n(ROL: ADMINISTRADOR)" as SYSADMIN
+actor "Celador\n(ROL: CELADOR)" as CEL
+actor "Tecnico\n(ROL: TECNICO)" as TEC
+actor "Sistema\n(filtro JWT + reglas de dominio)" as SYS #D9D9D9
+
+rectangle "ISO2 Radiodiagnostico - CDU12" {
+  usecase "UC12.1\nVer huecos libres\nde un profesional" as UC1
+  usecase "UC12.2\nAgendar una cita\n(de solicitud o directa)" as UC2
+  usecase "UC12.3\nConfirmar una\ncita programada" as UC3
+  usecase "UC12.4\nReprogramar una cita\na otro hueco libre" as UC4
+  usecase "UC12.5\nCancelar una cita\ncon motivo" as UC5
+  usecase "UC12.6\nMarcar la cita\ncomo realizada" as UC6
+  usecase "UC12.7\nExpirar las citas\nvencidas sin presentar" as UC7
+  usecase "UC12.8\nConsultar citas\n(listado con filtros)" as UC8
+  usecase "UC12.9\nBloquear el hueco\n(una fila por hueco)" as UC9
+  usecase "UC12.10\nValidar franja libre y\nfestivo (CDU13)" as UC10
+  usecase "UC12.11\nMarcar / reabrir la\nsolicitud (CDU06)" as UC11
+  usecase "UC12.12\nRegistrar la auditoria\ncon hash encadenado" as UC12
+  usecase "UC17.5-6\nAutenticar y autorizar\n(CDU17)" as UC17 #FFFFFF
+}
+
+RECEP --> UC1
+RECEP --> UC2
+RECEP --> UC3
+RECEP --> UC4
+RECEP --> UC5
+RECEP --> UC6
+RECEP --> UC8
+MEDICO --> UC1
+MEDICO --> UC8
+SYSADMIN --> UC1
+SYSADMIN --> UC2
+SYSADMIN --> UC3
+SYSADMIN --> UC4
+SYSADMIN --> UC5
+SYSADMIN --> UC6
+SYSADMIN --> UC7
+SYSADMIN --> UC8
+
+UC2 ..> UC17 : <<include>>
+UC3 ..> UC17 : <<include>>
+UC4 ..> UC17 : <<include>>
+UC5 ..> UC17 : <<include>>
+UC6 ..> UC17 : <<include>>
+UC7 ..> UC17 : <<include>>
+UC8 ..> UC17 : <<include>>
+
+UC2 ..> UC1 : <<include>>
+UC2 ..> UC10 : <<include>>
+UC2 ..> UC9 : <<include>>
+UC2 ..> UC11 : <<include>>
+UC4 ..> UC10 : <<include>>
+UC4 ..> UC9 : <<include>>
+UC5 ..> UC9 : <<include>>
+UC5 ..> UC11 : <<include>>
+UC2 ..> UC12 : <<include>>
+UC3 ..> UC12 : <<include>>
+UC4 ..> UC12 : <<include>>
+UC5 ..> UC12 : <<include>>
+UC6 ..> UC12 : <<include>>
+UC7 ..> UC12 : <<include>>
+
+SYS --> UC9
+SYS --> UC7
+SYS --> UC12
+
+note right of UC9
+  Anti-concurrencia (RF12, puerta de CFG-05):
+  - dos reservas del mismo hueco -> UNA sola cita
+  - la segunda se rechaza con
+    CONFLICTO_HUECO_OCUPADO (409)
+  - el hueco queda bloqueado mientras la cita
+    este programada o confirmada
+end note
+
+note bottom of UC10
+  La cita tiene que caber entera dentro de una
+  franja de trabajo del profesional (CDU13) y no
+  puede caer en festivo. La duracion, si el alta
+  no la manda, sale del catalogo de pruebas
+  (CDU16); una prueba que no requiere cita no se
+  agenda aqui.
+end note
+
+note left of UC11
+  Si la cita nace de una solicitud (CDU06), la
+  solicitud pasa a CITADA; al cancelar la cita
+  vuelve a CREADA para que se le busque otro
+  hueco. La cita directa no toca solicitudes.
+end note
+
+note bottom of UC5
+  Plazo de cancelacion (RF12, cancelar con motivo):
+  si la prueba tiene plazo en la politica del catalogo
+  (plazoCancelacionHoras), cancelar mas tarde de
+  ese plazo se rechaza con CONFLICTO_PLAZO_CANCELACION.
+  El motivo es obligatorio.
+end note
+
+note bottom of UC7
+  Maquina de estados de la cita (matriz CFG-05):
+  programada -> confirmada -> realizada
+  programada / confirmada -> cancelada
+  programada / confirmada -> expirada
+  El resto de transiciones se rechaza con
+  CONFLICTO_TRANSICION_INVALIDA (409).
+end note
+@enduml

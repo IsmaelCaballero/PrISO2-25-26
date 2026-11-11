@@ -336,3 +336,44 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 - **Por qué no Bean Validation:** `iso2-catalogo` no usa JSR-380 y meter `spring-boot-starter-validation` ahora abriría un segundo camino de errores (`MethodArgumentNotValidException`) con cuerpo distinto del `ApiError` del contrato. Se valora para Iter5 si crece la superficie escrita.
 - **Modelo primero (D31):** las invariantes nuevas de longitud y de dominio de `categoria` se añaden a los `.puml` de `docs/modelo/iter01/` **antes** de tocar el código, y se regeneran los `.png`.
 - **Efectos:** el contrato firmado en CFG-00 **no cambia de firma** (sigue siendo MINOR), solo se ciñe su semántica de errores; los tests de `iso2-server-app` y de cliente que usan categorías y códigos válidos no se ven afectados; se corrige el stub de `ApiClienteCatalogoTest` que simula `CODIGO_EN_USO` cuando el servidor emite `CODIGO_DUPLICADO`.
+
+
+## D36. El hueco se protege con un UNIQUE en la tabla de ocupación y el duelo lo decide la base de datos - PROPUESTA (11/11/2026, agente; pendiente de visto bueno de Ismael)
+
+- **Contexto:** CFG-05 exige tres puertas que un `synchronized` casero no satisface: *TC 2 hilos reservando el mismo hueco -> 1 éxito*, *TC rollback de cita + hueco + auditoría* y `@Version` en el hueco (`SOFTWAREQUALITY.md`, apartado CDU12). Y hay que poder reprogramar y cancelar sin dejar huecos huérfanos ni citas sin hueco.
+- **Decisión (ya implementada en `iso2-citas` 1.1.0):**
+  1. Tabla de ocupación **`cita_hueco`**: una fila por **cita activa** (`cita_id` único), con `@Version int version` y `UNIQUE (profesional_id, inicio)`. Como cancelar, realizar y expirar borran la fila (`deleteByCitaId`), en la tabla solo viven las citas activas, así que su sola presencia ya significa "hueco ocupado".
+  2. El servicio hace dos pre-chequeos para dar mensajes claros (inicio exacto con `findByProfesionalIdAndInicio`, y solape con `findByProfesionalIdAndInicioBetween` en una ventana de +/-1 día filtrada por `CitaHueco.solapaCon`) y **deja que el duelo real lo decida la base de datos** en `huecos.saveAndFlush(...)`: el perdedor recibe el rechazo del índice único.
+  3. Ese rechazo **no se captura dentro de la transacción** porque la envenenaría y el resultado sería un 500: `DataIntegrityViolationException` y `ObjectOptimisticLockingFailureException` se mapean en `CitaManejadorErrores` a **409 `CONFLICTO_HUECO_OCUPADO`**, el mismo código que `CitaConflictoException(HUECO_OCUPADO)`, de modo que el cliente solo ve un código pase lo que pase.
+  4. `reprogramar` **mueve** la fila existente (`CitaHueco.moverA` + `saveAndFlush`) en lugar de borrarla e insertar otra, para que el `@Version` que exige `SOFTWAREQUALITY.md` proteja también dos reprogramaciones concurrentes.
+- **Reglas de semántica derivadas, escritas en los `.puml` antes que en el código (D31) y pendientes de confirmación:** la solicitud apta es **solo** la que está en estado `creada` (el contrato ya decía "no existe, no está en creada o ya está citada" -> 409 `CONFLICTO_SOLICITUD_NO_APTA`, y por eso una solicitud inexistente es 409 y no 404); un profesional **sin agenda** cuenta como `FUERA_DE_FRANJA`, porque sin franja no hay hueco posible; el preaviso de cancelación solo aplica a las citas que vienen de una solicitud con prueba catalogada (una cita directa no tiene política que exigir); y en `cancelar` manda la máquina de estados, así que `TRANSICION_INVALIDA` gana a `PLAZO_CANCELACION`. El flag `requiereCita = false` del catálogo **no** bloquea agendar (la semilla `SEM-RX-TORAX` lo tiene en false y aun así tiene una cita sembrada): el catálogo aporta duración y preaviso, no la decisión de si hace falta cita.
+- **Efectos:** el contrato firmado en CFG-00 no cambia de firma. En el módulo hacen falta pruebas con transacción real (`@Transactional(propagation = NOT_SUPPORTED)`) porque `reprogramar` muta la entidad gestionada antes de validar el hueco de destino: con una transacción compartida por la prueba, el cambio se queda en la caché de Hibernate y el TC de rollback no mide nada.
+
+
+## D37. Medir la tasa de defectos por iteración (4 familias) para decidir cuándo hace falta un modelo más potente - ACEPTADA (11/11/2026, Ismael)
+
+- **Contexto:** el proyecto se está haciendo con un modelo cuantizado (Qwen3.8-Flash-Next `iq3_s`) y no hay
+  ningún dato que diga si eso basta o si en ciertos trabajos hace falta un modelo más potente. Las cifras que
+  circulaban en conversaciones ("3 defectos de RBAC", "5 fallos por saltarse pasos") no tienen respaldo en
+  `STATUS.md` ni en `DECISIONS.md`, así que no son utilizables.
+- **Decisión:** se crea **`TASADEFECTOS.md`** en la raíz con (1) un libro de defectos con su evidencia
+  (commit/tag/registro de sesión), (2) la tabla por iteración con el esfuerzo medido como
+  `git rev-list --count` entre etiquetas, y (3) las métricas de apoyo (CI, tests, líneas). Los defectos se
+  clasificarán en 4 familias: **F1 proceso/protocolo** (violar D29/D30, issues sin artefacto), **F2
+  entorno/herramienta** (trampas de la cadena de build), **F3 semántica/contrato** (spec o decisión de diseño
+  contra lo publicado) y **F4 código** (comportamiento distinto del contrato). **Solo F4 mide la valía del
+  modelo de código**; F1/F2/F3 se arreglan con reglas y revisión, no con un modelo más caro.
+- **Regla de exclusión (sesgo declarado):** no se cuenta lo que pillan el compilador o `mvn -B -ntp clean
+  verify` local antes de pushear. Las cifras quedan sesgadas a la baja por diseño; a cambio son auditables.
+  Unidad de conteo: familia de hueco, no caso de prueba (los 16 fallos del rojo D33 de Iter1 son 1 F4 + 2 F3).
+- **Registro obligatorio a partir de ahora:** en cada cierre de CFG (D29) se actualiza `TASADEFECTOS.md`
+  (libro + tabla) y el registro de sesión de `STATUS.md` lleva la línea con los 6 contadores: commits del
+  tramo, F1, F2, F3, F4, total y fugados. Plantilla en §7 de `TASADEFECTOS.md`.
+- **Umbrales para pedir modelo más potente** (revisar en cada cierre): una familia de CDU acumula **> 2
+  defectos F4** detectados en revisión/TC humanos, o **1 decisión de diseño errónea que obligue a reescribir
+  código ya commiteado**, o **1 falso verde colado en CI**. Mientras no salten, se sigue con el flash
+  cuantizado + D33 + CI; si saltan, el modelo más potente se pide para ese trabajo concreto (diseño de
+  contrato, pruebas de concurrencia/transiciones), no para todo el iterativo.
+- **Situación de partida (11/11/2026):** 13 defectos en 101 commits (12,9/100); 6 F1, 3 F2, 2 F3, **2 F4**
+  (2,0/100: DEF-05/D35 en Iter1 y `ae79d7e` en Iter3); 11 fugados y 2 detectados en local; 0 roturas llegan a
+  CI. Veredicto provisional y lectura de la serie en §6 de `TASADEFECTOS.md`.

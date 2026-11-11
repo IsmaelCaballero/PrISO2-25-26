@@ -351,8 +351,17 @@ del valor límite + conjetura de errores compuestos con **pairwise**, los mismos
 las tablas TDOP **solo** se generan con `python tools/pairwise.py` y `python tools/tc_plantillas.py`), **D34**
 (MySQL en Docker + DAO + Agente, **implementada 11/11/2026**: JPA sigue siendo el acceso primario del dominio y
 la capa DAO/Agente es nueva en `iso2-server-app`), **D35** (las cotas del contrato se validan en el servicio →
-400, nunca contra la BD → 500) y el **flujo diseño-primero** (editar el `.puml` antes que el código cuando
+400, nunca contra la BD → 500), **D37** (tasa de defectos por iteración: en **cada cierre de CFG** se
+actualiza `TASADEFECTOS.md` —libro de defectos con evidencia y tabla por tramo de etiquetas— y el registro de
+sesión de `STATUS.md` lleva la línea con los 6 contadores `commits · F1 · F2 · F3 · F4 · total (fugados)`,
+plantilla en §7 de ese fichero) y el **flujo diseño-primero** (editar el `.puml` antes que el código cuando
 cambia un invariante).
+
+**Datos de defectos al 11/11/2026 (D37):** 101 commits (94 en `develop` + 7 en la rama de Iter5) → **13
+defectos** = 6 F1 proceso + 3 F2 entorno + 2 F3 contrato + **2 F4 código** · 11 fugados · 12,9 por 100 commits
+(F4 solo 2,0). Iter0 2, Iter1 3, Iter2 0, Iter3 3, Iter4 2, tramo D33/D34 2, Iter5 en curso 1. CI: 64/66 en
+verde, los 2 rojos son la puerta JaCoCo planificada de `iso2-citas` sin tests. Detalle y receta de recálculo en
+`TASADEFECTOS.md`.
 
 Datos para volver a ejecutar TC por HTTP: `mvn spring-boot:run -pl iso2-server-app` deja el servidor en
 `http://localhost:8080` con H2 en `./data`; login con campo **`password`** y semillas `admin/iso2-admin`,
@@ -381,3 +390,30 @@ contra `mysql:8.4` real: `mvn -B -ntp clean verify` = **356 tests, 0 saltados** 
 en verde. `develop` = `737b932`; el PR de la D34 espera fusión de Ismael (al fusionar cierra **#34** a mano y
 aprovecha para fusionar **#39**), **#40** abierta con el prompt de Iter5/CDU12 (objetivo 20/11). Siguen
 pendientes la extensión del método D33 a Iter2/CDU17 e Iter3/CDU13 y los TC humanos de CDU17/13/06.
+
+
+**Cierre de jornada 11/11/2026 (fin de la sesión 19, Iter5/CDU12 en curso):** la rama `feature/iter05-cdu12-citas` queda **pusheada** sobre `develop` = `6feabdf` con 5 commits: `a7b88e8` (los 4 `.puml` + `.png` de CDU12 antes de escribir código, D31), `0a58892` (re-renderizado del PNG de CDU06 que PlantUML recortaba), `107e1d4` (`CitaFacade` 1.1.0 con estado y hueco + estado `CITADA` en `iso2-solicitudes` + migraciones `V1.5.0` H2 y MySQL + poms `0.1.5-SNAPSHOT` y JaCoCo 0,80 en `iso2-citas`), `3aee742` (el modelo fija "sin agenda = `FUERA_DE_FRANJA`" y "solicitud apta solo en creada") y `99696e5` (implementación completa de `iso2-citas`: dominio JPA `cita`/`cita_hueco`/`cita_auditoria`, repositorios, `CitaServicio` con anti-concurrencia y auditoría encadenada, `CitaControlador` + `CitaManejadorErrores`, y el andamiaje de pruebas del módulo).
+
+* Comprobado **ejecutando**: Flyway aplica las 5 migraciones con `V1.5.0` y `iso2-server-app-0.1.5-SNAPSHOT.jar` arranca; `POST /api/auth/login` con `admin/iso2-admin` devuelve token; `GET /api/citas` sigue respondiendo **401 `AUTENTICACION_REQUERIDA`** incluso con token válido porque el RBAC de citas **aún no está cableado** - es el siguiente trabajo, no un fallo.
+* Pendiente para reanudar, en este orden: (1) pruebas del módulo - `CitaServicioTest`, `ConcurrenciaCitasTest` (2 hilos reales sobre el mismo hueco, más los TC de rollback de cita + hueco + auditoría), `MaquinaEstadosCitasTest`, `CitaControladorTest` y `ArquitecturaCitasTest`; (2) `mvn -B -ntp -pl iso2-citas verify` hasta que pase la puerta JaCoCo de línea (0,80); (3) RBAC `cita:leer` / `cita:escribir` en `Permiso` + `MatrizPermisos` + `ConfigSeguridad` y `CitasApiTest` en `iso2-server-app`, y las vistas de recepcionista del `iso2-client-app` (`ApiClienteCitas`, `VistaGestionCitas`, `VistaConsultaCitas` y sus predicates en `NavegacionPorRol`) con `VERSION` a `0.1.5-SNAPSHOT`; (4) método D33 de CDU12 - spec en `docs/test/iter05/tdop-cdu12-espec.json`, CSVs generados en `iso2-citas/src/test/resources/tdop/`, bloque gestionado de `docs/tc/cdu12-tc-humanos.md` y `Cdu12MatrizTdopTest`, lo que exige dos ajustes genéricos en `tools/tc_plantillas.py` (derivar el paquete `tdop` del módulo desde la spec y admitir un mapa `operaciones` por CDU); (5) página de wiki `Iter5-CDU12-citas.md` nombrando la clase probada; (6) `mvn -B -ntp clean verify`, PR a `develop` con `Ref: #40` sin `Closes`, tag `cfg-iter05` y cierre manual de **#40** (D29).
+* Decisión nueva registrada como **PROPUESTA** y a la espera del visto bueno de Ismael: **D36** (arriba), que es la que fija cómo se cierra el duelo de concurrencia y qué códigos de error salen.
+* Datos para el equipo nuevo: `tools/plantuml.jar` **no** está versionado (`*.jar` en `.gitignore`) y hay que volver a bajarlo para re-renderizar, siempre con `java "-DPLANTUML_LIMIT_SIZE=16384" -jar tools/plantuml.jar -tpng -Playout=smetana` porque el límite por defecto (4096 px) recorta los PNG en silencio. El H2 en fichero de `./data` y el `ISO2_JWT_SECRET` del arrancado suelto del jar son desechables: en la máquina nueva `./data` se regenera con Flyway y sus semillas.
+
+
+* **CI del push `e44f7c1` (run 43044676645) en rojo por una sola causa, ya diagnosticada**: la puerta JaCoCo de `iso2-citas` (`lines covered ratio is 0.00, but expected minimum is 0.80`) porque el módulo todavía solo tiene el smoke del contrato. Compilación, Javadoc estricto y los otros 13 módulos van en verde. Está dicho también en un comentario de la PR #42.
+* **El issue #40 amaneció cerrado** (10:06 UTC del 11/11, sin PR enlazada) cuando CFG-05 está a mitad de alcance. Reabierto con el visto bueno de Ismael y con un comentario que enlaza la PR #42 y resume el punto de continuación, para que siga siendo el ancla del iter.
+* **Estado de la máquina al cerrar**: árbol de trabajo limpio, `HEAD` = `origin/feature/iter05-cdu12-citas` = `e44f7c1`, PR **#42** abierta como borrador hacia `develop`, issue **#40** abierto, ningún proceso `java` suelto ni el 8080 ocupado. `data/iso2-server.mv.db` es el H2 de la prueba de arranque: desechable y fuera de Git.
+
+
+**Trabajo de la sesión 20 (11/11/2026, métrica de calidad - D37):** creado **`TASADEFECTOS.md`** en la raíz:
+libro de 13 defectos con su evidencia (commits/merge/registros de sesión), tabla por iteración con el esfuerzo
+medido como `git rev-list --count` entre etiquetas (101 commits = 94 en `develop` + 7 en la rama de Iter5) y
+recetas de recálculo en PowerShell. Nueva **D37** en `DECISIONS.md` (aceptada por Ismael al pedirla): 4 familias
+de defecto (F1 proceso, F2 entorno, F3 contrato, F4 código - solo F4 mide la valía del modelo), regla de
+exclusión de lo que pilla el gate local antes de pushear, y umbrales para pedir un modelo más potente (> 2 F4
+por familia de CDU, 1 decisión de diseño que obligue a reescribir código commiteado, o 1 falso verde en CI).
+Desde ahora, en cada cierre de CFG se actualiza `TASADEFECTOS.md` y el registro de sesión de `STATUS.md` lleva
+la línea de 6 contadores (plantilla en §7 de `TASADEFECTOS.md`). Cifra de partida: 12,9 defectos por 100
+commits, de los que solo 2,0 son de código; los 2 rojos de CI son la puerta JaCoCo planificada de `iso2-citas`.
+Nota: en el punto anterior `HEAD` figura como `e44f7c1`, pero el punta real de la rama es `7abea47`.
+

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  iso2-solicitudes — CFG-04 — v1.1.0 (CDU06)
+  iso2-solicitudes — CFG-04/CFG-05 — v1.2.0 (CDU06 + ripple CDU12)
   Solicitudes de prueba desde Atencion Primaria: dominio (solicitud con huella de no
   repudio SHA-256), servicio que implementa SolicitudFacade con validacion de campos
   obligatorios, prueba activa del catalogo (CDU16) y anti-duplicado, y endpoints REST
@@ -16,9 +16,11 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-solicitudes</artifactId>
-  <!-- CFG-04 (D22/D23): sube MINOR de 1.0.0 a 1.1.0 al implementar CDU06. En la rama
-       feature queda 1.1.0-SNAPSHOT; al fusionar a develop perdera el sufijo. -->
-  <version>1.1.0-SNAPSHOT</version>
+  <!-- CFG-04 (D22/D23): sube MINOR de 1.0.0 a 1.1.0 al implementar CDU06. CFG-05 (D23):
+       sube a 1.2.0 por el ripple MINOR que pide CDU12 (marcarCitada/devolverACreada en
+       SolicitudFacade). En la rama feature queda 1.2.0-SNAPSHOT; al fusionar a develop
+       perdera el sufijo. -->
+  <version>1.2.0-SNAPSHOT</version>
   <name>iso2-solicitudes</name>
 
   <properties>
