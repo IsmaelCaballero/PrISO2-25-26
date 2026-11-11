@@ -61,10 +61,27 @@
          producto todavia; el umbral se activa en CFG-01 con el primer modulo real. -->
     <jacoco.line.min>0.00</jacoco.line.min>
     <javadoc.failOnError>true</javadoc.failOnError>
+
+    <!-- D34: version de Testcontainers. El BOM de Boot 3.5.4 gestiona 1.21.3, que
+         habla la API 1.32 de Docker; Docker Engine 29 (Docker Desktop de Ismael)
+         rechaza clientes por debajo de 1.40 y responde 400, asi que los tests de
+         MySQL se saltaban. 1.21.4 es la serie 1.x compatible con Docker 29. OJO:
+         como el BOM de Boot se importa (scope import) y no se hereda de
+         spring-boot-starter-parent, la propiedad testcontainers.version NO surte
+         efecto; hay que importar testcontainers-bom ANTES que spring-boot-dependencies. -->
+    <testcontainers.version>1.21.4</testcontainers.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <!-- D34: debe ir antes que spring-boot-dependencies para que gane 1.21.4. -->
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
@@ -137,7 +154,11 @@
         <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
-          <version>0.8.12</version>
+          <!-- 0.8.15 (D34): desde 0.8.14 JaCoCo soporta los class files de Java 25
+               (major 69). Con 0.8.12 el agente fallaba instrumentando clases del JDK
+               y, de rebote, Testcontainers no detectaba Docker y saltaba los tests
+               de MySQL. -->
+          <version>0.8.15</version>
         </plugin>
         <plugin>
           <groupId>org.springframework.boot</groupId>

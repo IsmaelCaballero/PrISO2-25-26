@@ -1,8 +1,13 @@
-# Configuracion de tests: H2 en memoria para que Flyway no toque el fichero ./data
-# (el resto de la configuracion se hereda del application.yml principal).
+# Configuracion de tests: H2 en memoria para que Flyway no toque el fichero ./data.
+# OJO (D34): este fichero SOMBREA al application.yml principal (Spring solo resuelve
+# el primer classpath:/application.yml, y target/test-classes va primero), asi que lo
+# que se ponga en el principal NO llega a los tests: hay que repetir aqui lo que
+# afecte a Flyway. Las migraciones de test son siempre las de la carpeta h2.
 spring:
   datasource:
     url: jdbc:h2:mem:iso2-test;DB_CLOSE_DELAY=-1
+  flyway:
+    locations: classpath:db/migration/h2
 
 # Secreto FIJO de pruebas (no es un secreto real: solo firma tokens de test y esta
 # aqui porque los tests necesitan verificar tokens caducados/manipulados construidos

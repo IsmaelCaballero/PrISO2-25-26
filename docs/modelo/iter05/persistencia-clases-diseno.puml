@@ -1,0 +1,91 @@
+@startuml persistencia-clases-diseno
+allowmixing
+' D34 (Iter5/CFG-05) - Clases de diseno de la capa de persistencia MySQL/DAO/Agente
+' Autor: agente (diseno previo al codigo, issue #34) - fuentes PlantUML (D31)
+' (allowmixing: permite dibujar los nodos de base de datos junto a las clases)
+
+title D34 Persistencia - Clases de diseno previstas (iso2-server-app 0.1.5-SNAPSHOT)
+
+skinparam classAttributeIconSize 0
+
+package "es.uclm.iso2.server.persistencia (nuevo)" {
+  interface Agente <<patrón Agente: oculta el SGBD>> {
+    + nombre() : String
+    + conexion() : Connection
+    + esquemaActual() : String
+  }
+  abstract class AgenteSobreDataSource {
+    # dataSource : DataSource
+    + conexion() : Connection
+    + esquemaActual() : String
+    # consultaEsquema() : String {abstract}
+    + nombre() : String (viene del subtipo al construir)
+  }
+  class AgenteH2 {
+    # consultaEsquema() : "SELECT CURRENT_SCHEMA()"
+    + nombre() : "H2"
+  }
+  class AgenteMySQL {
+    # consultaEsquema() : "SELECT DATABASE()"
+    + nombre() : "MySQL"
+  }
+  class ConfigPersistencia <<@Configuration>> {
+    + agente(DataSource) : Agente
+    ..
+    elige AgenteH2 o AgenteMySQL segun
+    DatabaseMetaData.getDatabaseProductName()
+  }
+  class DiagnosticoPersistenciaDao <<@Repository: patrón DAO>> {
+    - agente : Agente
+    + tablasDelEsquema() : List~String~
+    + cuentaRegistros(String tabla) : long
+    + conteoPorTabla() : List~ConteoTabla~
+  }
+  class ConteoTabla <<record>> {
+    + tabla : String
+    + registros : long
+  }
+  class DiagnosticoPersistenciaController <<@RestController>> {
+    + diagnostico() : DiagnosticoSgbD
+    ..
+    GET /api/persistencia/diagnostico
+  }
+  class DiagnosticoSgbD <<record>> {
+    + sgbd : String
+    + esquema : String
+    + tablas : List~ConteoTabla~
+  }
+}
+
+class ConfigSeguridad <<modificado>> {
+  Regla nueva: las peticiones bajo /api/persistencia
+  exigen rol ADMINISTRADOR
+}
+
+package "acceso de datos existente (no cambia)" {
+  interface "Repositorios JPA\n(catalogo, seguridad,\nagendas, solicitudes)" as ReposJPA
+}
+
+database "H2 file (perfil por defecto)\ndb/migration/h2" as H2
+database "MySQL 8.4 en Docker (perfil mysql)\ndb/migration/mysql\ngestoroperaciones=DML, iso2_flyway=DDL" as MYSQL
+
+AgenteSobreDataSource ..|> Agente
+AgenteH2 --|> AgenteSobreDataSource
+AgenteMySQL --|> AgenteSobreDataSource
+ConfigPersistencia ..> AgenteSobreDataSource : crea
+DiagnosticoPersistenciaDao o--> Agente
+DiagnosticoPersistenciaController o--> DiagnosticoPersistenciaDao
+DiagnosticoPersistenciaController ..> DiagnosticoSgbD : crea
+ConfigSeguridad ..> DiagnosticoPersistenciaController : protege
+ReposJPA --> H2 : perfil por defecto
+ReposJPA --> MYSQL : perfil mysql
+Agente --> H2 : perfil por defecto
+Agente --> MYSQL : perfil mysql
+note right of DiagnosticoPersistenciaDao
+  El DAO usa informacion de INFORMATION_SCHEMA
+  y SQL portatil: el Agente es lo unico que
+  conoce el SGBD. La aplicacion entra por un
+  usuario solo-DML: el esquema solo lo toca
+  Flyway con su usuario DDL aparte (D34).
+end note
+@enduml

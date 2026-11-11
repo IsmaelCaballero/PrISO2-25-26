@@ -1,0 +1,44 @@
+@startuml persistencia-secuencia
+' D34 (Iter5/CFG-05) - Secuencia del diagnostico de persistencia (GET /api/persistencia/diagnostico)
+' Autor: agente (diseno previo al codigo, issue #34) - fuentes PlantUML (D31)
+title D34 Persistencia - Secuencia: diagnostico del SGBD (ADMIN) y arranque con Flyway
+
+skinparam sequenceMessageAlign center
+
+actor "Receptor/\nAdministrador" as Actor
+boundary "DiagnosticoPersistencia\nController" as Ctrl
+participant "DiagnosticoPersistencia\nDao" as Dao
+participant "Agente\n(H2 o MySQL)" as Ag
+database "SGBD\n(H2 file o MySQL Docker)" as DB
+collections "Flyway" as Fw
+
+== Arranque de la aplicacion ==
+Fw -> DB : migraciones db/migration/h2 o\ndb/migration/mysql segun perfil,\nmismo V1.x, con usuario DDL (iso2_flyway en MySQL)
+DB --> Fw : esquema versionado listo
+note right of Fw
+  La aplicacion se conecta despues con el
+  usuario de aplicacion (gestoroperaciones
+  en MySQL: solo DML), y Hibernate no toca
+  el esquema (ddl-auto: none).
+end note
+
+== GET /api/persistencia/diagnostico (solo ADMINISTRADOR) ==
+Actor -> Ctrl : GET /api/persistencia/diagnostico\n(JWT bearer, rol ADMINISTRADOR)
+Ctrl -> Dao : conteoPorTabla()
+Dao -> Ag : conexion()
+Ag --> Dao : Connection del DataSource comun
+Dao -> DB : SQL de INFORMATION_SCHEMA\n(tablas del esquema actual)
+DB --> Dao : nombres de tabla
+loop por cada tabla del esquema
+  Dao -> DB : SELECT COUNT(*) FROM <tabla>
+  DB --> Dao : registros
+end
+Dao --> Ctrl : List<ConteoTabla>
+Ctrl --> Actor : 200 DiagnosticoSgbD\n{ sgbd, esquema, tablas[] }
+
+== Si el rol no es ADMINISTRADOR ==
+Actor -> Ctrl : GET /api/persistencia/diagnostico\n(JWT con rol MEDICO/TECNICO/...)
+note over Ctrl : ConfigSeguridad: /api/persistencia/**\ntiene hasRole("ADMINISTRADOR")
+Ctrl --> Actor : 403 Forbidden
+
+@enduml
