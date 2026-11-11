@@ -180,6 +180,7 @@ técnicas, la D33 y sus TC humanos.
 | 15 | 08/11/2026 | **Iter4 · CDU06 solicitudes (CFG-04, Prompt 13) — flujo diseño-primero:** rama `feature/iter04-cdu06-solicitudes` desde `develop` (`c8fe2d7`). **Primero el modelo** (commit `cce3af2`, 19:04): `docs/modelo/iter04/` con los 4 `.puml` + 4 `.png` (casos de uso, análisis, diseño y secuencia) validados con `tools/plantuml.jar -tpng -Playout smetana`; el diseño fija el dominio `Solicitud` con **huella SHA-256 del canónico**, `creadaEn` truncado a `MICROS`, anti-duplicado de servicio, Flyway `V1.4.0`, permisos `solicitud:leer/escribir` y puerta `jacoco.line.min=0.85`. **Servidor** (`71ce94b`, 19:34): `iso2.version` y `iso2-solicitudes` a **1.1.0-SNAPSHOT**, apps **0.1.4-SNAPSHOT**; `SolicitudFacade` extendida en MINOR (`prescribir`/`listarPorMedico`/`detalle`/`trazable`) sin tocar el baseline congelado; dominio JPA con RF obligatorios (indicación clínica, prioridad, tipo de prueba, profesional, paciente), no repudio (autor + timestamp + huella), duplicado imposible, `Clock` inyectable; REST `/api/solicitudes` con RBAC y Flyway `V1.4.0__cdu06_solicitudes.sql`. **Fix** (`7f85678`): doclint no admite `@throws` en un `record`. **Cliente** (`b4c4e27`, 19:51): `ApiClienteSolicitudes` (5 campos; el autor NO viaja en el cuerpo, lo fija el servidor), `VistaSolicitudesMedico` + `VistaConsultaSolicitudes` y puertas `solicitudesVisiblesPara`/`solicitudesPrescribiblesPara`. **Reactor verde** `mvn -B -ntp verify javadoc:javadoc`: **229 tests** (Iter3: 172; solicitudes 1→24, server-app 46→60, client-app 37→57) y **JaCoCo de `iso2-solicitudes` 87,2 %** (109/125 líneas, 32/50 ramas) ≥ 85 %. **PR #31 → `develop` abierto** (19:55, sin `Closes`) con la CI `construir` **en verde** (run 42512406096, 2m6s). #30 ya la había cerrado Ismael a las 19:01 (D29 por adelantado) | — |
 | 16 | 08/11/2026 | **Cierre de Iter4 en GitHub + nueva estrategia de pruebas (D33) y arranque de la persistencia MySQL (Prompt 14):** Ismael fusiona **PR #31** (merge `a3fe109`) y **PR #32** (merge `3b02718`), CI verde. El agente crea y sube el tag anotado **`cfg-iter04` sobre `a3fe109`** (el merge del código, no el documental posterior) y borra la rama `feature/iter04-cdu06-solicitudes` (remoto y local). Wiki: página nueva **`Iter4-CDU06-solicitudes.md`** con 4 PNG en `images/` y `Home.md` enlazado (merge `5207bae` del repo wiki). Creada la plantilla que faltaba, **`docs/tc/cdu06-tc-humanos.md`** (14 casos TC06-01…TC06-14 sobre la superficie real: `POST /api/solicitudes`, `GET /mias`, `GET /{id}`, `GET /{id}/integridad`, semillas `SEM-RX-TORAX`/`SEM-RM-RODILLA`). Detectada **nueva desviación de D30**: el PR #29 fusionó `develop` → `main` (merge `d12388b`, 19:01) sin etiqueta de release. Nuevas directrices de Ismael: **D33** — diseñar los casos con **clases de equivalencia + teorema del valor límite + conjetura de errores**, composarlos con **pairwise**, ejecutarlos con **JUnit/Maven** y usar **esos mismos casos** en las plantillas de TC humanos; el agente genera casos y plantillas; se empieza por **las pruebas de la Iteración 1**, con **JavaDoc** en los ficheros de test y la wiki al día **identificando la clase probada**; y **persistencia MySQL** con **Docker (MySQL + phpMyAdmin)**, usuario `gestoroperaciones` y patrones **DAO** y **Agente** particularizado en **`AgenteMySQL`** (ADR **D34** al implementarse) | — |
 | 17 | 09/11/2026 | **Iter1/CFG-01 cerrada del todo: método D33 sobre CDU16 + TC humanos (Prompts 15 y 16):** rama `feature/iter01-pruebas-d33` desde `develop`. Primero la **spec** (`355ade9`): `docs/test/iter01/tdop-cdu16-espec.json` con las clases de equivalencia, los puntos límite y la conjetura de errores de CDU16, y dos generadores nuevos en `tools/` — **`pairwise.py`** (compone con pairwise sobre restricciones y generadores de valores, sin librerías) y **`tc_plantillas.py`** (proyecta la matriz a la plantilla de TC humanos entre `<!-- TDOP:BEGIN -->`/`<!-- TDOP:END -->`). Matrices generadas: **A33 + B15 + C36 + D9 + E22 = 115 casos** en `docs/test/iter01/tdop-cdu16.md` y en `iso2-catalogo/src/test/resources/tdop/`. Rojo real: **16 fallos** sobre 115, que destaparon los huecos de D35 y **dos discrepancias de spec** (`CODIGO_DUPLICADO`, y el 400 por tamaño de página) → **se arregla la spec, no el test**. Fixes (`b2f7356`, D35): `LímitesCatalogo` valida las cotas en el servicio devolviendo 400 en vez de reventar contra la BD, y se valida `pagina`/`tamano`; antes, **el `.puml` de iter01** (`3a17a9a`, D31). Verde (`f73ac80`): **115/115 TDOP** y **139 tests en `iso2-catalogo`**, **JaCoCo 97,5 % líneas (195/200) y 82,5 % ramas (33/40)** sobre la puerta real `jacoco.line.min=0.60`. **PR #36 → `develop` fusionado por Ismael** (merge `f43721c`), CI verde. Wiki rehecha (merge `7b36c5c`) con la matriz, la clase probada y los 16 fallos del rojo. **TC humanos de CDU16 rellenados y ejecutados por el agente** (excepción puntual a D28, anotada en el doc): TC16-01…06 en 16 pasos, 5 asientos de auditoría nuevos y el doc corregido (decía 5 TC, son 6) → **PR #37 fusionado** (commit `e70bc50`, merge `3601fd6`, tip de `develop`). Tag **`cfg-iter01` reanotado** sobre `df09bca` (objeto `af95aff` → `429d67f`, `--force-with-lease`) con el bloque «Reanotado el 09/11/2026». Comentario de cierre en **#35** (Ismael la había cerrado a mano a las 00:26). **Borradas 12 ramas remotas y 12 locales** fusionadas. Detectado: **#34 quedó cerrada a la vez (00:26) sin trabajo de D34 detrás**. BD H2 local `./data/iso2-server` **conservada** con las filas `TC16H-*` y los asientos de auditoría | — |
+| 18 | 11/11/2026 | **D34 implementada: MySQL 8.4 en Docker + Flyway dual + capa DAO/Agente (Prompt 17, issue #34 reabierta):** rama `feature/iter05-persistencia-mysql` desde `develop` (`737b932`, merge del PR #38). Commits: `b15d927` (`docker/`: `mysql:8.4` en host **3307** + phpMyAdmin **8081** + volumen `iso2-mysql-datos` + `init/01-usuarios.sql` con `gestoroperaciones` solo DML y `iso2_flyway` con DDL; root `Iso2Curso25-26-Root`), `64e92eb` (Flyway **dual** `db/migration/h2` + `db/migration/mysql` elegida **por perfil** — descartado `{vendor}` porque Flyway 11 escanea ambas subcarpetas y produce versiones duplicadas; perfil `mysql` en el `application.yml`; `mysql-connector-j` + `flyway-mysql`; apps subidas a **0.1.5-SNAPSHOT**, tren de la release CFG-05), `ae40ad7` (diseño-primero D31: `docs/modelo/iter05/persistencia-clases.{puml,png}` + README **antes** del código) y `bba56f8` (paquete **nuevo** `es.uclm.iso2.server.persistencia`: interfaz `Agente` + `AgenteH2`/`AgenteMySQL` elegidos por `DatabaseMetaData.getDatabaseProductName()`, DAO JDBC `DiagnosticoPersistenciaDao`, REST `GET /api/persistencia/diagnostico` solo ADMINISTRADOR (regla nueva en `ConfigSeguridad`), 9 tests de API en H2 + 3 Testcontainers contra `mysql:8.4` real, incluido TC-D34-MY-03: `gestoroperaciones` no puede hacer DDL → error 1142). **Incidente Testcontainers/Docker:** el BOM de Boot 3.5.4 gestiona TC 1.21.3, que habla la API Docker 1.32, y Docker Engine 29 rechaza clientes < 1.40 → HTTP 400 → los tests se **saltaban en silencio**; fix = importar **`testcontainers-bom` 1.21.4 ANTES** de `spring-boot-dependencies` en el padre (la propiedad `testcontainers.version` no vale con BOM importado) + JaCoCo del padre **0.8.12 → 0.8.15** (Java 25). Decisión de Ismael sobre el punto suelto de D34: **JPA sigue siendo el acceso primario del dominio; DAO + Agente es capa nueva en `iso2-server-app`**, no sustituye a los `Repository`. Puertas en verde: `mvn -B -ntp clean verify` = **356 tests, 0 saltados** (server-app 60→72) con JaCoCo y javadoc estricto OK; los tests de MySQL autodesactivables sin Docker (`disabledWithoutDocker`). **PR pendiente** a `develop`; Ismael debe cerrar **#34** a mano al fusionar y refrendar los TC humanos de CDU16 en la H2 nueva; **#40** creada con el prompt de Iter5/CDU12 | — |
 
 ## Deuda / pendientes inmediatos
 
@@ -242,42 +243,45 @@ técnicas, la D33 y sus TC humanos.
     `pagina`/`tamano` + 415) previa edición de los `.puml` de `docs/modelo/iter01/` (D31). **Lo que queda:**
     aplicar el mismo procedimiento a `iso2-seguridad` (CDU17) y `iso2-agendas` (CDU13), con sus plantillas de
     TC humanos regeneradas (`docs/tc/cdu17-tc-humanos.md`, `docs/tc/cdu13-tc-humanos.md`) y sus páginas de wiki.
-19. **Nueva capa de persistencia MySQL — D34 aceptada y concretada, implementación SIN EMPEZAR:** desplegar
-    **Docker** con **MySQL + phpMyAdmin** más el servidor y el cliente; base `iso2` con usuario de
-    entrada/salida `gestoroperaciones` (password `Iso2Curso25-26`); acceso con **patrón DAO** y conexión con
-    **patrón Agente** particularizado en **`AgenteMySQL`** (permitir varios SGBD). Ya decidido: **Testcontainers
-    con MySQL 8** en las pruebas técnicas, **migraciones Flyway duales** (`db/migration/h2` +
-    `db/migration/mysql` por perfil), `gestoroperaciones` **solo DML** con usuario DDL aparte para Flyway,
-    driver `com.mysql:mysql-connector-j` contra **MySQL 8.4** con volumen persistente.
-    ⚠️ **Aviso de seguimiento:** la issue **#34** que la contenía la cerró Ismael a mano el **09/11 00:26 sin
-    trabajo detrás** (en el repo no hay ni `docker-compose`, ni MySQL, ni DAO, ni `AgenteMySQL`); no debe
-    contarse como hecha. Para arrancarla hace falta **reabrirla o abrir una issue nueva** (apertura y cierre de
-    issues es de Ismael, **D29**) y ramificarse `feature/iter05-persistencia-mysql` desde `develop` = `3601fd6`.
+19. ~~**Nueva capa de persistencia MySQL — D34 aceptada y concretada, implementación SIN EMPEZAR**~~ →
+    **Implementada 11/11/2026 (sesión 18)** en `feature/iter05-persistencia-mysql` (commits `b15d927`..`bba56f8`
+    + docs): **Docker** con `mysql:8.4` (host **3307**) + **phpMyAdmin** (8081) + volumen `iso2-mysql-datos`;
+    base `iso2` con `gestoroperaciones` **solo DML** y `iso2_flyway` con **DDL** para Flyway; **Flyway dual**
+    `db/migration/h2` + `db/migration/mysql` por perfil; **patrón DAO** y **patrón Agente** (`AgenteH2`/
+    `AgenteMySQL`) como **capa nueva** en `iso2-server-app` (JPA sigue siendo el acceso primario del dominio,
+    decidió Ismael); **Testcontainers con `mysql:8.4`** en la puerta (3 tests) y reactor verde **356 tests,
+    0 saltados**. Queda de Ismael: **fusionar el PR** a `develop` y **cerrar #34 a mano** (D29). El aviso de
+    seguimiento (cierre de #34 del 09/11 sin trabajo detrás) quedó zanjado reabriendo la issue el 11/11.
 
 ## Punto exacto de continuación para la próxima sesión
 
-**Arrancar desde `develop` = `3601fd6`** (tip tras el merge del PR #37; CI `construir` en verde; **sin PRs ni
-issues abiertas** en GitHub). La **Iter1 · CDU16 / CFG-01 quedó cerrada del todo** el 09/11 — puertas técnicas
-+ método **D33** + **TC humanos** + issue cerrada a mano + wiki rehecha — y ese es el ciclo completo que hay que
-replicar en CFG-02/03/04. Todo lo demás que había en esta sección es historia ya recogida en el
-«Registro de sesiones»; aquí solo queda lo vivo.
+**Arrancar desde `develop` = `737b932`** (tip tras el merge del PR #38; CI `construir` en verde). La **D34 está
+implementada** (Deuda nº 19): la rama `feature/iter05-persistencia-mysql` tiene sus commits listos y **su PR a
+`develop` espera fusión de Ismael**, que al fusionar cierra **#34** a mano (D29). En GitHub quedan abiertos:
+ese PR de D34, el **PR #39** (`opencode.json`) y la issue **#40** (prompt ejecutable de Iter5/CDU12). La
+**Iter1 · CDU16 / CFG-01 quedó cerrada del todo** el 09/11 — puertas técnicas + método **D33** + **TC humanos**
++ issue cerrada a mano + wiki rehecha — y ese es el ciclo completo que hay que replicar en CFG-02/03/04/05.
+Todo lo demás que había en esta sección es historia ya recogida en el «Registro de sesiones»; aquí solo queda
+lo vivo.
 
 ### 0) Arranque en el equipo nuevo (10/11/2026)
 
 A partir del 10/11 se trabaja en otra máquina y en otra ubicación, **partiendo de un clon nuevo**. Nada vive ya
 en esta máquina salvo lo que está en GitHub, así que el arranque es:
 
-1. Fusionar el **PR #38** (sync documental de la sesión 17) para que `develop` traiga este `STATUS.md` y
-   `PROMPTS.md` actualizados, y clonar después: `git clone https://github.com/IsmaelCaballero/PrISO2-25-26.git`
-   → `git checkout develop`. Los tags (`cfg-iter00`…`cfg-iter04`, `cfg-iter01` reanotado y `v0.1.0`) llegan solos
-   con el clon. La wiki es un repositorio aparte, rama `master` (D32):
-   `git clone https://github.com/IsmaelCaballero/PrISO2-25-26.wiki.git`
-2. Identidad de git: `user.name` = `IsmaelCaballero`, `user.email` = `IsmaelCaballero@users.noreply.github.com`
-   (los commits del repo usan esa dirección) y autenticación con GitHub (`gh auth login` o clave SSH).
-3. Herramientas: **JDK 21 o superior** (`maven.compiler.release` es 21 y la CI usa Temurin 21; en esta máquina
-   había JDK 25), **Maven 3.9.x** — no hay wrapper versionado, hay que instalarlo —, **Python 3.12** para
-   `tools/pairwise.py` y `tools/tc_plantillas.py` (solo librería estándar, nada que instalar con `pip`) y
-   **Docker Desktop**, imprescindible para la **D34** (Testcontainers con MySQL).
+1. ~~Fusionar el **PR #38** y clonar~~ → **Hecho 11/11**: `develop` = `737b932` (merge del PR #38) y el equipo
+   nuevo trabaja sobre el clon `C:\ProgIA\PrISO2-2025-2026`. Los tags (`cfg-iter00`…`cfg-iter04`,
+   `cfg-iter01` reanotado y `v0.1.0`) llegaron con el clon; la wiki es el repo aparte
+   `PrISO2-25-26.wiki.git`, rama `master` (D32).
+2. ~~Identidad de git y autenticación~~ → **Hecho 11/11**: `user.name` = `IsmaelCaballero`,
+   `user.email` = `IsmaelCaballero@users.noreply.github.com` y `gh auth login` en regla (el agente abre issues
+   con `gh`, D29; los cierres son de Ismael).
+3. ~~Herramientas~~ → **Comprobado 11/11**: JDK 25 (vale: `maven.compiler.release` es 21), Maven 3.9.x,
+   Python 3.12 para `tools/pairwise.py` y `tools/tc_plantillas.py`, y **Docker Desktop** (Engine 29), que ya no
+   solo es útil para la D34: los tests Testcontainers de MySQL corren en `mvn verify` (sin Docker se
+   autodesactivan, pero la puerta D34 exige Docker para contarlos). Ojo al acople
+   Testcontainers↔Docker Engine 29 documentado en D34: el `testcontainers-bom` del padre debe ir **antes** de
+   `spring-boot-dependencies`.
 4. Primera compilación: `mvn -B verify` en la raíz. El `~/.m2` del equipo nuevo está vacío, así que la primera
    ejecución baja todas las dependencias (Maven Central, sin repositorio privado ni `settings.xml`). Antes de
    compilar un módulo suelto con `-pl` sin `-am`, lanzar una vez `mvn -B install -DskipTests` para que existan
@@ -290,36 +294,39 @@ en esta máquina salvo lo que está en GitHub, así que el arranque es:
 
 ### 1) Antes de programar nada (acciones de Ismael, D29)
 
-1. **Reabrir la issue #34 o abrir una nueva para D34.** La cerró él mismo el 09/11 a las 00:26 **sin trabajo
-   detrás**: en el repo no hay `docker-compose`, ni MySQL, ni DAO, ni `AgenteMySQL`. D34 sigue aceptada,
-   redactada y con los cinco puntos decididos; hace falta un contenedor de seguimiento para poder ramificar
-   `feature/iter05-persistencia-mysql` (ver Deuda nº 19).
-2. **Abrir la issue de Iter5/CDU12 (CFG-05)** con el prompt ejecutable en el cuerpo cuando arranque.
-3. Decidir si **se borra la rama `feature/iter01-cdu16-catalogo`**, la única suelta tras la limpieza de ramas:
-   su único commit propio `19dff72` es una nota de cierre de la jornada del 07/11 ya sustituida por este
-   fichero.
+1. ~~**Reabrir la issue #34 o abrir una nueva para D34**~~ → **Hecho 11/11**: #34 reabierta con el comentario de
+   la comprobación; D34 ya está implementada sobre ella (Deuda nº 19). Queda de Ismael **cerrarla a mano** al
+   fusionar su PR (D29).
+2. ~~**Abrir la issue de Iter5/CDU12 (CFG-05)**~~ → **Hecho 11/11**: issue **#40** con el prompt ejecutable en
+   el cuerpo.
+3. ~~Decidir si **se borra la rama `feature/iter01-cdu16-catalogo`**~~ → **Hecho 11/11**: borrada (remoto y
+   local); era la única suelta y su commit `19dff72` era una nota sustituida por este fichero.
 4. **Refrendar los TC humanos de CDU16** que ejecutó el agente el 09/11 (excepción puntual a D28 anotada en el
    doc) y, si quiere, repetirlos él mismo. A partir del 10/11 eso se hace contra la H2 nueva del otro equipo:
    las filas `TC16H-*` y los 5 asientos de auditoría se quedan en esta máquina (apartado 0, punto 5).
 
 ### 2) Siguiente iteración: Iter5 · CDU12 citas (CFG-05)
 
-Rama `feature/iter05-cdu12-citas` desde `develop` = `3601fd6`, con `Ref: #<issue>` en cada commit. Versiones:
-`iso2-citas` a **1.1.0**, apps a **0.1.5-SNAPSHOT**, migración Flyway **`V1.5.0__…`** y modelo en
-`docs/modelo/iter05/` (4 `.puml` + `.png` incrustados en su README, D31) **antes de escribir código** (flujo
-diseño-primero, convención desde Iter4). Puertas de CFG-05 en `docs/mapa-configuraciones.csv`: **concurrencia
-de hueco** (doble reserva sobre el mismo hueco → una sola cita, prueba con dos hilos), **rollback
-transaccional** y **máquina de estados** de la cita, con cobertura JaCoCo **≥ 80 %** en `iso2-citas`. Fecha
-objetivo **20/11/2026**. Orden de lectura al llegar: CONTEXT.md → DECISIONS.md (D28-D35) → STATUS.md →
-PLAN.md §4 → matriz CFG-05. Después de Iter5 queda **Iter6 · CDU19 integración (CFG-06)** con el hito
-**`v0.2.0-alpha`**.
+**Primero: Ismael fusiona el PR de la D34** (y cierra #34 a mano, D29; fusiona también el PR #39 si le vale).
+La rama `feature/iter05-cdu12-citas` se abre **desde `develop` ya con la D34 dentro**, con `Ref: #40` en cada
+commit. Versiones: las apps **ya están en 0.1.5-SNAPSHOT** (la D34 subió el tren de la release en esta rama) y
+`iso2-citas` pasa a **1.1.0**; la migración Flyway **`V1.5.0__…` hay que escribirla en las dos carpetas**,
+`db/migration/h2/` **y** `db/migration/mysql/` (D34 dual: si solo se pone en `h2/`, el perfil `mysql` se queda
+en V1.4.0 y los tests Testcontainers fallan). Modelo en `docs/modelo/iter05/` —que ya tiene el diagrama de la
+capa de persistencia— añadiendo los **4 `.puml` + `.png` de CDU12** incrustados en su README (D31) **antes de
+escribir código** (flujo diseño-primero, convención desde Iter4). Puertas de CFG-05 en
+`docs/mapa-configuraciones.csv`: **concurrencia de hueco** (doble reserva sobre el mismo hueco → una sola cita,
+prueba con dos hilos), **rollback transaccional** y **máquina de estados** de la cita, con cobertura JaCoCo
+**≥ 80 %** en `iso2-citas`. Fecha objetivo **20/11/2026**. Orden de lectura al llegar: CONTEXT.md →
+DECISIONS.md (D28-D35) → STATUS.md → PLAN.md §4 → matriz CFG-05. Después de Iter5 queda **Iter6 · CDU19
+integración (CFG-06)** con el hito **`v0.2.0-alpha`**.
 
-**La D34 (MySQL + Docker + DAO + `AgenteMySQL`) se ejecuta en paralelo o justo antes de Iter5**, en su propia
-rama `feature/iter05-persistencia-mysql`. Su alcance ya lo cerró Ismael: **Testcontainers con MySQL 8** en las
-pruebas técnicas, **Flyway dual** `db/migration/h2` + `db/migration/mysql` por perfil, `gestoroperaciones`
-**solo DML** con usuario DDL aparte para Flyway y `com.mysql:mysql-connector-j` sobre **MySQL 8.4** con
-volumen. El único punto suyo todavía sin decidir: **si las entidades JPA se conservan por encima del DAO o el
-DAO pasa a ser el acceso primario**.
+**La D34 ya está ejecutada** (Deuda nº 19 y registro sesión 18), así que Iter5 parte de: MySQL 8.4 en Docker
+(host **3307**, `docker compose up -d` desde `docker/`), Flyway dual por perfil con usuario DDL `iso2_flyway` y
+usuario de aplicación `gestoroperaciones` (solo DML), y la capa DAO/Agente en `es.uclm.iso2.server.persistencia`
+como **capa nueva de `iso2-server-app`**: **JPA/Spring Data sigue siendo el acceso primario del dominio** (decisión
+de Ismael del 11/11 que zanjaba el último punto suelto de D34), y CDU12 usará Repositorios JPA como el resto del
+dominio. Los tests Testcontainers (`mysql:8.4`) ya corren dentro del reactor; sin Docker se autodesactivan.
 
 ### 3) Pendientes heredados que no cerró ninguna iteración
 
@@ -342,17 +349,35 @@ pushear a `master` del repo wiki), **D31** (modelado PlantUML: `.puml` + `.png` 
 **D32** (Javadoc publicado en Pages desde `develop`, `…/apidocs/`), **D33** (clases de equivalencia + teorema
 del valor límite + conjetura de errores compuestos con **pairwise**, los mismos casos en JUnit y en los TC;
 las tablas TDOP **solo** se generan con `python tools/pairwise.py` y `python tools/tc_plantillas.py`), **D34**
-(MySQL, aceptada y sin implementar), **D35** (las cotas del contrato se validan en el servicio → 400, nunca
-contra la BD → 500) y el **flujo diseño-primero** (editar el `.puml` antes que el código cuando cambia un
-invariante).
+(MySQL en Docker + DAO + Agente, **implementada 11/11/2026**: JPA sigue siendo el acceso primario del dominio y
+la capa DAO/Agente es nueva en `iso2-server-app`), **D35** (las cotas del contrato se validan en el servicio →
+400, nunca contra la BD → 500) y el **flujo diseño-primero** (editar el `.puml` antes que el código cuando
+cambia un invariante).
 
 Datos para volver a ejecutar TC por HTTP: `mvn spring-boot:run -pl iso2-server-app` deja el servidor en
 `http://localhost:8080` con H2 en `./data`; login con campo **`password`** y semillas `admin/iso2-admin`,
-`medico/iso2-medico` y `celador/iso2-ses`; 401 → `AUTENTICACION_REQUERIDA`, 403 → `FORBIDDEN`. **No borrar
-`./data/iso2-server`**: guarda las filas `TC16H-*` de los TC de CDU16 y sus asientos de auditoría.
+`medico/iso2-medico`, `tecnico/iso2-tecnico`, `recepcionista/iso2-rec` y `celador/iso2-ses`; 401 →
+`AUTENTICACION_REQUERIDA`, 403 → `FORBIDDEN`. En el equipo nuevo `./data` se regenera vacía con Flyway y las
+semillas (las filas `TC16H-*` de los TC de CDU16 se quedaron en la máquina antigua; ver §0 punto 5).
+
+**Datos D34 (persistencia):** `docker compose up -d` desde `docker/` levanta **`mysql:8.4` en el host 3307**
+(phpMyAdmin en **8081**, volumen `iso2-mysql-datos`; `down -v` borra los datos). Para correr el servidor
+contra MySQL: `$env:ISO2_JWT_SECRET="…"; mvn -pl iso2-server-app spring-boot:run
+"-Dspring-boot.run.profiles=mysql"` — la aplicación usa `gestoroperaciones` (solo DML) y Flyway `iso2_flyway`
+(DDL), con `ISO2_MYSQL_HOST/ISO2_MYSQL_PORT/ISO2_DB_USER/ISO2_DB_PASSWORD/ISO2_FLYWAY_USER/ISO2_FLYWAY_PASSWORD`
+como válvulas de escape. Diagnóstico en vivo: `GET /api/persistencia/diagnostico` con token `admin` (solo
+ADMINISTRADOR) devuelve SGBD, esquema y conteos por tabla.
 
 **Cierre de jornada 09/11/2026 (fin de la sesión 17):** **Iter0-Iter4 fusionadas y etiquetadas** — 156 h de
 las 612 h con IA del plan ≈ **25,5 % del esfuerzo** (5 de 22 iteraciones) — y **cerradas del todo** (con TC
 humanos e issue cerrada a mano) solo **Iter0/CFG-00 e Iter1/CFG-01**: 62 h ≈ **10,1 %**. `develop` =
 `3601fd6`, tag `cfg-iter01` reanotado sobre `df09bca`, wiki al día con la Iter1 rehecha con D33, 12 ramas
 fusionadas borradas y repo limpio para arrancar la D34 y la Iter5.
+
+**Cierre de jornada 11/11/2026 (fin de la sesión 18):** **D34 implementada** — MySQL 8.4 + phpMyAdmin en
+Docker (host 3307/8081), Flyway dual `h2`/`mysql` por perfil con usuarios DDL/DML separados, capa **DAO +
+Agente** nueva en `iso2-server-app` (JPA sigue siendo el acceso primario del dominio) y puerta Testcontainers
+contra `mysql:8.4` real: `mvn -B -ntp clean verify` = **356 tests, 0 saltados** con JaCoCo y javadoc estricto
+en verde. `develop` = `737b932`; el PR de la D34 espera fusión de Ismael (al fusionar cierra **#34** a mano y
+aprovecha para fusionar **#39**), **#40** abierta con el prompt de Iter5/CDU12 (objetivo 20/11). Siguen
+pendientes la extensión del método D33 a Iter2/CDU17 e Iter3/CDU13 y los TC humanos de CDU17/13/06.
