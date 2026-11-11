@@ -83,6 +83,9 @@ public class ConfigSeguridad {
                         // (solicitud:escribir, actor Medico del CDU06).
                         .requestMatchers(HttpMethod.GET, "/api/solicitudes/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
                         .requestMatchers("/api/solicitudes/**").hasAnyRole("ADMINISTRADOR", "MEDICO")
+                        // D34 (Iter5): el diagnostico de persistencia revela estructura interna
+                        // de la base (tablas y registros), solo para ADMINISTRADOR.
+                        .requestMatchers("/api/persistencia/**").hasRole("ADMINISTRADOR")
                         .anyRequest().authenticated())
                 .exceptionHandling(manejo -> manejo
                         .authenticationEntryPoint((peticion, respuesta, causa) ->
