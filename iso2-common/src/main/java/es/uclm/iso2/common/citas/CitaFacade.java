@@ -87,7 +87,8 @@ public interface CitaFacade {
      * @param profesionalId filtro por profesional (opcional)
      * @param estado        filtro por estado en minusculas (opcional)
      * @return citas que cumplen los filtros, ordenadas por inicio
-     * @throws CitaConflictoException si el rango de fechas no es coherente
+     * @throws IllegalArgumentException si el rango de fechas no es coherente o si el
+     *                                  estado pedido no es de la maquina de estados
      */
     List<DetalleCitaDTO> listar(LocalDateTime desde, LocalDateTime hasta,
                                 String profesionalId, String estado);
