@@ -351,8 +351,17 @@ del valor límite + conjetura de errores compuestos con **pairwise**, los mismos
 las tablas TDOP **solo** se generan con `python tools/pairwise.py` y `python tools/tc_plantillas.py`), **D34**
 (MySQL en Docker + DAO + Agente, **implementada 11/11/2026**: JPA sigue siendo el acceso primario del dominio y
 la capa DAO/Agente es nueva en `iso2-server-app`), **D35** (las cotas del contrato se validan en el servicio →
-400, nunca contra la BD → 500) y el **flujo diseño-primero** (editar el `.puml` antes que el código cuando
+400, nunca contra la BD → 500), **D37** (tasa de defectos por iteración: en **cada cierre de CFG** se
+actualiza `TASADEFECTOS.md` —libro de defectos con evidencia y tabla por tramo de etiquetas— y el registro de
+sesión de `STATUS.md` lleva la línea con los 6 contadores `commits · F1 · F2 · F3 · F4 · total (fugados)`,
+plantilla en §7 de ese fichero) y el **flujo diseño-primero** (editar el `.puml` antes que el código cuando
 cambia un invariante).
+
+**Datos de defectos al 11/11/2026 (D37):** 101 commits (94 en `develop` + 7 en la rama de Iter5) → **13
+defectos** = 6 F1 proceso + 3 F2 entorno + 2 F3 contrato + **2 F4 código** · 11 fugados · 12,9 por 100 commits
+(F4 solo 2,0). Iter0 2, Iter1 3, Iter2 0, Iter3 3, Iter4 2, tramo D33/D34 2, Iter5 en curso 1. CI: 64/66 en
+verde, los 2 rojos son la puerta JaCoCo planificada de `iso2-citas` sin tests. Detalle y receta de recálculo en
+`TASADEFECTOS.md`.
 
 Datos para volver a ejecutar TC por HTTP: `mvn spring-boot:run -pl iso2-server-app` deja el servidor en
 `http://localhost:8080` con H2 en `./data`; login con campo **`password`** y semillas `admin/iso2-admin`,
@@ -394,3 +403,17 @@ pendientes la extensión del método D33 a Iter2/CDU17 e Iter3/CDU13 y los TC hu
 * **CI del push `e44f7c1` (run 43044676645) en rojo por una sola causa, ya diagnosticada**: la puerta JaCoCo de `iso2-citas` (`lines covered ratio is 0.00, but expected minimum is 0.80`) porque el módulo todavía solo tiene el smoke del contrato. Compilación, Javadoc estricto y los otros 13 módulos van en verde. Está dicho también en un comentario de la PR #42.
 * **El issue #40 amaneció cerrado** (10:06 UTC del 11/11, sin PR enlazada) cuando CFG-05 está a mitad de alcance. Reabierto con el visto bueno de Ismael y con un comentario que enlaza la PR #42 y resume el punto de continuación, para que siga siendo el ancla del iter.
 * **Estado de la máquina al cerrar**: árbol de trabajo limpio, `HEAD` = `origin/feature/iter05-cdu12-citas` = `e44f7c1`, PR **#42** abierta como borrador hacia `develop`, issue **#40** abierto, ningún proceso `java` suelto ni el 8080 ocupado. `data/iso2-server.mv.db` es el H2 de la prueba de arranque: desechable y fuera de Git.
+
+
+**Trabajo de la sesión 20 (11/11/2026, métrica de calidad - D37):** creado **`TASADEFECTOS.md`** en la raíz:
+libro de 13 defectos con su evidencia (commits/merge/registros de sesión), tabla por iteración con el esfuerzo
+medido como `git rev-list --count` entre etiquetas (101 commits = 94 en `develop` + 7 en la rama de Iter5) y
+recetas de recálculo en PowerShell. Nueva **D37** en `DECISIONS.md` (aceptada por Ismael al pedirla): 4 familias
+de defecto (F1 proceso, F2 entorno, F3 contrato, F4 código - solo F4 mide la valía del modelo), regla de
+exclusión de lo que pilla el gate local antes de pushear, y umbrales para pedir un modelo más potente (> 2 F4
+por familia de CDU, 1 decisión de diseño que obligue a reescribir código commiteado, o 1 falso verde en CI).
+Desde ahora, en cada cierre de CFG se actualiza `TASADEFECTOS.md` y el registro de sesión de `STATUS.md` lleva
+la línea de 6 contadores (plantilla en §7 de `TASADEFECTOS.md`). Cifra de partida: 12,9 defectos por 100
+commits, de los que solo 2,0 son de código; los 2 rojos de CI son la puerta JaCoCo planificada de `iso2-citas`.
+Nota: en el punto anterior `HEAD` figura como `e44f7c1`, pero el punta real de la rama es `7abea47`.
+
