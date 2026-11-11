@@ -1,0 +1,51 @@
+# D34 (Iter5): base de datos de desarrollo MySQL 8.4 + phpMyAdmin.
+# Uso:  docker compose up -d     (desde la carpeta docker/)
+#       docker compose down      (para de; el volumen conserva los datos)
+#       docker compose down -v   (BORRA los datos)
+#
+# Puertos elegidos para no chocar con el servidor Spring (8080) ni con un MySQL
+# local instalado en la maquina (3306):
+#   - MySQL:       3307 en el host  ->  3306 en el contenedor
+#   - phpMyAdmin:  8081 en el host  ->  80   en el contenedor
+#
+# Los usuarios y permisos los crea init/01-usuarios.sql la primera vez que se
+# levanta el volumen (D34: 'gestoroperaciones' solo DML; DDL aparte para Flyway).
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: iso2-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    environment:
+      # Contrasenas de DESARROLLO (igual que la semilla BCrypt de las migraciones
+      # V1.2.0/V1.3.0: no son credenciales de produccion y van documentadas).
+      MYSQL_ROOT_PASSWORD: Iso2Curso25-26-Root
+      MYSQL_DATABASE: iso2
+    ports:
+      - "3307:3306"
+    volumes:
+      - iso2-mysql-datos:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-pIso2Curso25-26-Root"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: iso2-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    ports:
+      - "8081:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  iso2-mysql-datos:
