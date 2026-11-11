@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  iso2-citas — CFG-05 — v1.1.0 (CDU12)
+  Gestion de citas sobre las agendas de CDU13: dominio (cita con maquina de estados,
+  hueco bloqueado con control optimista @Version y auditoria de hash encadenado),
+  servicio que implementa CitaFacade con el motor anti-concurrencia de asignacion de
+  huecos, y endpoints REST /api/citas para la pantalla de recepcion.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -9,25 +16,54 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-citas</artifactId>
-  <!-- Baseline contractual 1.0.0 (D22). Subira MINOR con el CDU que le corresponda (D23). -->
-  <version>1.0.0</version>
+  <!-- CFG-05 (D22/D23): sube MINOR de 1.0.0 a 1.1.0 al implementar CDU12. En la rama
+       feature queda 1.1.0-SNAPSHOT; al fusionar a develop perdera el sufijo. -->
+  <version>1.1.0-SNAPSHOT</version>
   <name>iso2-citas</name>
   <properties>
-    <!-- Baseline sin clases publicas: el Javadoc no rompe el CI. Cambiar a true
-         (o quitar la propiedad) al anadir la primera clase del CDU. -->
-    <javadoc.failOnError>false</javadoc.failOnError>
+    <!-- Puerta de calidad CFG-05 (D24/D27): cobertura de linea >= 80 % en el modulo,
+         exigida por la matriz de calidad para el motor de asignacion de huecos. -->
+    <jacoco.line.min>0.80</jacoco.line.min>
   </properties>
 
-  <description>Gestion de citas (baseline Iter0).</description>
+  <description>Gestion de citas con hueco bloqueado anti-concurrencia (CDU12, CFG-05).</description>
   <dependencies>
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-common</artifactId>
       <version>${iso2.version}</version>
     </dependency>
+
+    <!-- Persistencia JPA/Hibernate y web MVC: el modulo se ensambla en iso2-server-app. -->
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <!-- Usuario de auditoria desde SecurityContextHolder (JWT desde CDU17). -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-core</artifactId>
+    </dependency>
+
+    <!-- Tests tecnicos del CDU12 (concurrencia, maquina de estados y matriz TDOP);
+         los TC humanos los ejecuta Ismael segun D28. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

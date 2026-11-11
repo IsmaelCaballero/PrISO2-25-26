@@ -212,6 +212,62 @@ class SolicitudServicioTest {
     }
 
     @Test
+    void citarYDevolverACreadaEsLaPuertaQueUsaCDU12() {
+        SolicitudDTO creada = servicio.prescribir(prescripcion("medico1", "P1", "RX01"));
+        String huellaAlNacer = servicio.trazable(creada.solicitudId()).huella();
+
+        SolicitudDTO citada = servicio.marcarCitada(creada.solicitudId());
+        assertEquals("citada", citada.estado());
+
+        // Marcada dos veces: la solicitud ya no esta en creada y CDU12 lo necesita asi
+        // para que una solicitud no tenga dos citas activas a la vez.
+        SolicitudConflictoException e = assertThrows(SolicitudConflictoException.class,
+                () -> servicio.marcarCitada(creada.solicitudId()));
+        assertEquals(SolicitudConflictoException.Conflicto.NO_APTA_PARA_CITA, e.tipo());
+
+        // Cancelada la cita, la solicitud vuelve a creada y se puede citar otra vez.
+        SolicitudDTO devuelta = servicio.devolverACreada(creada.solicitudId());
+        assertEquals("creada", devuelta.estado());
+        assertEquals("citada", servicio.marcarCitada(creada.solicitudId()).estado());
+
+        // El estado no entra en el canonico de no repudio (RF06.2): la huella no cambia.
+        assertEquals(huellaAlNacer, servicio.trazable(creada.solicitudId()).huella());
+    }
+
+    @Test
+    void devolverACreadaSoloValeDesdeCitada() {
+        SolicitudDTO creada = servicio.prescribir(prescripcion("medico1", "P1", "RX01"));
+
+        SolicitudConflictoException e = assertThrows(SolicitudConflictoException.class,
+                () -> servicio.devolverACreada(creada.solicitudId()));
+        assertEquals(SolicitudConflictoException.Conflicto.NO_APTA_PARA_CITA, e.tipo());
+
+        assertThrows(SolicitudNoEncontradaException.class, () -> servicio.devolverACreada("no-existe"));
+        assertThrows(SolicitudNoEncontradaException.class, () -> servicio.marcarCitada("no-existe"));
+        // Identificador en blanco: no hay fila, asi que es 404 como en detalle(), no 400.
+        assertThrows(SolicitudNoEncontradaException.class, () -> servicio.marcarCitada(" "));
+        assertThrows(SolicitudNoEncontradaException.class, () -> servicio.devolverACreada(""));
+    }
+
+    @Test
+    void unaSolicitudCanceladaNoSirveParaCitarNiParaDevolver() {
+        Solicitud cancelada = solicitudes.save(new Solicitud("P1", "RX01", "ind",
+                Prioridad.ORDINARIA, "AP", "medico1", FIJO));
+        cancelada.cancelar();
+        em.flush();
+        String id = cancelada.getSolicitudId();
+
+        // Estado de maquina: solo desde creada se cita y solo desde citada se devuelve.
+        SolicitudConflictoException alCitar = assertThrows(SolicitudConflictoException.class,
+                () -> servicio.marcarCitada(id));
+        assertEquals(SolicitudConflictoException.Conflicto.NO_APTA_PARA_CITA, alCitar.tipo());
+
+        SolicitudConflictoException alDevolver = assertThrows(SolicitudConflictoException.class,
+                () -> servicio.devolverACreada(id));
+        assertEquals(SolicitudConflictoException.Conflicto.NO_APTA_PARA_CITA, alDevolver.tipo());
+    }
+
+    @Test
     void elDominioSellaYSoloSePuedeCancelar() {
         Solicitud s = new Solicitud("P1", "RX01", "ind", Prioridad.PREFERENTE, "AP", "medico1", FIJO);
         assertTrue(s.esActiva());

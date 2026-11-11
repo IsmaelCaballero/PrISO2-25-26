@@ -14,7 +14,7 @@ package "iso2-common 1.1.0 (contrato: baseline congelado + extension MINOR CDU12
     + realizar(String citaId) : CitaDTO
     + reprogramar(String citaId, LocalDateTime inicio) : CitaDTO
     + listar(LocalDateTime desde, LocalDateTime hasta,
-    String profesionalId, String estado) : List~CitaDTO~
+    String profesionalId, String estado) : List~DetalleCitaDTO~
     + detalle(String citaId) : DetalleCitaDTO
     + huecosLibres(String profesionalId, LocalDate desde,
     LocalDate hasta, Integer duracionMinutos) : List~HuecoDTO~
@@ -134,8 +134,8 @@ package "iso2-citas 1.1.0 (modulo elevado a CFG-05)" {
       - citaId : String
       - profesionalId : String
       - usuario : String (claim JWT o "sistema")
-      - instantanea : String (instante ISO)
-      - hashAnterior : String (GENESIS en el 1o)
+      - instante : Instant (TIMESTAMP(6) WITH TIME ZONE)
+      - hashAnterior : String (null en el 1o)
       - hash : String (SHA-256 hex encadenado)
       + AccionAuditoria { AGENDAMIENTO; CONFIRMACION;
       REPROGRAMACION; CANCELACION; REALIZACION; EXPIRACION }
@@ -232,8 +232,8 @@ package "iso2-server-app 0.1.5" {
     tabla cita_hueco: uk_cita_hueco_profesional_inicio
     + uk_cita_hueco_cita + version
     tabla cita_auditoria (hash encadenado)
-    semilla demo: solicitud citada + citas sobre la
-    franja laborable 2026-11-13 del medico y del tecnico
+    semilla demo: solicitudes citadas + citas del
+    medico y del tecnico (una vencida y una cancelada)
   }
 }
 
