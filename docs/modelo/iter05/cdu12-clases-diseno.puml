@@ -110,7 +110,7 @@ package "iso2-citas 1.1.0 (modulo elevado a CFG-05)" {
       + esActiva() : boolean (programada o confirmada)
       + duracionMinutos() : int
     }
-    enum Estado {
+    enum "Cita.Estado" as Estado {
       PROGRAMADA; CONFIRMADA; REALIZADA
       CANCELADA; EXPIRADA
       + esTerminal() : boolean
@@ -123,6 +123,7 @@ package "iso2-citas 1.1.0 (modulo elevado a CFG-05)" {
       - fin : LocalDateTime
       - version : int (@Version)
       + solapaCon(LocalDateTime inicio, LocalDateTime fin) : boolean
+      + moverA(LocalDateTime nuevoInicio, LocalDateTime nuevoFin) : void
       ..
       UNIQUE (profesional_id, inicio): la puerta
       dura anti-concurrencia; solo existen aqui las
@@ -168,11 +169,14 @@ package "iso2-citas 1.1.0 (modulo elevado a CFG-05)" {
       + listar / detalle / huecosLibres
       ..
       Reglas: franja CDU13 (contencion total y no
-      festivo), duracion y requiereCita del catalogo
-      CDU16, solicitud apta (creada/citada) y su
+      festivo; no haber agenda del profesional
+      tambien cuenta como FUERA_DE_FRANJA), duracion
+      y requiereCita del catalogo CDU16, solicitud
+      apta (solo creada) y su
       plazoCancelacionHoras, solape contra cita_hueco,
-      saveAndFlush + DataIntegrityViolationException
-      -> CitaConflictoException(HUECO_OCUPADO)
+      saveAndFlush: si la base de datos rechaza el
+      UNIQUE, DataIntegrityViolation / OptimisticLock
+      -> la web responde 409 CONFLICTO_HUECO_OCUPADO
       Todo el cambio de estado va en UNA transaccion
       (cita + cita_hueco + cita_auditoria)
       Reloj inyectable para corte de expiracion

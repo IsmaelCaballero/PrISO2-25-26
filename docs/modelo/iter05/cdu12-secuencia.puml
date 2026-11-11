@@ -38,7 +38,7 @@ SOL --> SVC : solicitud en estado creada\n(si esta cancelada: NO_APTA_PARA_CITA)
 SVC -> CAT : buscarPorCodigo(prueba de la solicitud)
 CAT --> SVC : requiereCita = true, duracion,\npolitica.plazoCancelacionHoras
 SVC -> AGENDA : franjasLibres(profesionalId, dia, dia)
-alt la cita no cabe entera en una franja, o cae en festivo
+alt la cita no cabe entera en una franja, o cae en festivo, o no hay agenda del profesional
   SVC --> CTRL : CitaConflictoException(FUERA_DE_FRANJA)
   CTRL --> RECEP : 409 + ApiError(CONFLICTO_FUERA_DE_FRANJA)
 else cabe en franja laborable
