@@ -10,9 +10,9 @@ import java.util.Optional;
  * cambiar un codigo es un cambio de contrato (SemVer).
  *
  * <p>En CDU17 (CFG-02) se materializaron los permisos del catalogo (CDU16 ya existente) y
- * la autogestion de seguridad; con CDU13 (CFG-03) se anaden los de agenda. Los permisos
- * de los demas dominios (solicitudes, citas, informes) se iran anadiendo con su CDU
- * correspondiente.</p>
+ * la autogestion de seguridad; con CDU13 (CFG-03) se anaden los de agenda y con CDU06
+ * (CFG-04) los de solicitudes. Con CDU12 (CFG-05) llegan los de citas. Los permisos de
+ * los demas dominios (informes) se iran anadiendo con su CDU correspondiente.</p>
  *
  * @since 1.1.0 (CFG-02)
  */
@@ -35,6 +35,12 @@ public enum Permiso {
 
     /** Prescribir pruebas desde Atencion Primaria (actor Medico del CDU06). */
     SOLICITUD_ESCRIBIR("solicitud:escribir"),
+
+    /** Consultar citas (llega con CDU12). */
+    CITA_LEER("cita:leer"),
+
+    /** Asignar, reprogramar y cancelar citas (actor Administrativo del CDU12). */
+    CITA_ESCRIBIR("cita:escribir"),
 
     /** Gestionar usuarios y roles (llega completo con CDU18). */
     USUARIO_GESTIONAR("usuario:gestionar");

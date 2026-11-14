@@ -17,7 +17,9 @@ import java.util.Set;
  * amplian con su CDU. Con CDU13 (CFG-03) el actor Administrativo del CDU (recepcion)
  * recibe escritura de agendas junto al ADMINISTRADOR, y medico/tecnico leen su agenda.
  * Con CDU06 (CFG-04) el Medico prescribe (solicitud:escribir) y el resto de roles
- * sanitarios solo consultan: recepcion lee solicitudes, tecnico y celador no.</p>
+ * sanitarios solo consultan: recepcion lee solicitudes, tecnico y celador no.
+ * Con CDU12 (CFG-05) recepcion gestiona citas (cita:escribir, actor Administrativo del
+ * CDU12) y medico solo las lee; tecnico y celador quedan fuera de las citas.</p>
  *
  * @since 1.1.0 (CFG-02)
  */
@@ -28,11 +30,12 @@ public final class MatrizPermisos {
     static {
         MATRIZ.put(Rol.ADMINISTRADOR, EnumSet.allOf(Permiso.class));
         MATRIZ.put(Rol.MEDICO, EnumSet.of(Permiso.CATALOGO_LEER, Permiso.AGENDA_LEER,
-                Permiso.SOLICITUD_LEER, Permiso.SOLICITUD_ESCRIBIR));
+                Permiso.SOLICITUD_LEER, Permiso.SOLICITUD_ESCRIBIR, Permiso.CITA_LEER));
         MATRIZ.put(Rol.TECNICO, EnumSet.of(Permiso.CATALOGO_LEER, Permiso.AGENDA_LEER));
         MATRIZ.put(Rol.CELADOR, EnumSet.of(Permiso.CATALOGO_LEER));
         MATRIZ.put(Rol.RECEPCIONISTA, EnumSet.of(Permiso.CATALOGO_LEER,
-                Permiso.AGENDA_LEER, Permiso.AGENDA_ESCRIBIR, Permiso.SOLICITUD_LEER));
+                Permiso.AGENDA_LEER, Permiso.AGENDA_ESCRIBIR, Permiso.SOLICITUD_LEER,
+                Permiso.CITA_LEER, Permiso.CITA_ESCRIBIR));
     }
 
     private MatrizPermisos() {
