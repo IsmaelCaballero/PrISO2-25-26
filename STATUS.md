@@ -255,14 +255,21 @@ técnicas, la D33 y sus TC humanos.
 
 ## Punto exacto de continuación para la próxima sesión
 
-**Arrancar desde `develop` = `737b932`** (tip tras el merge del PR #38; CI `construir` en verde). La **D34 está
-implementada** (Deuda nº 19): la rama `feature/iter05-persistencia-mysql` tiene sus commits listos y **su PR a
-`develop` espera fusión de Ismael**, que al fusionar cierra **#34** a mano (D29). En GitHub quedan abiertos:
-ese PR de D34, el **PR #39** (`opencode.json`) y la issue **#40** (prompt ejecutable de Iter5/CDU12). La
-**Iter1 · CDU16 / CFG-01 quedó cerrada del todo** el 09/11 — puertas técnicas + método **D33** + **TC humanos**
-+ issue cerrada a mano + wiki rehecha — y ese es el ciclo completo que hay que replicar en CFG-02/03/04/05.
-Todo lo demás que había en esta sección es historia ya recogida en el «Registro de sesiones»; aquí solo queda
-lo vivo.
+**Arrancar en la rama `feature/iter05-cdu12-citas`** (PR **#42** abierta como borrador hacia `develop`, issue
+**#40** abierta, `Ref: #40`). Estado a 14/11: **módulo `iso2-citas` verde** (66 ejecuciones, puerta JaCoCo
+0,80 superada), **RBAC de citas cableado** (`cita:leer`/`cita:escribir` en `Permiso`/`MatrizPermisos`/
+`ConfigSeguridad` + `CitasApiTest` 18 ejecuciones), **D36 aceptada por Ismael** y reporte **D37** de mitad de
+tramo commiteado. Parte b del contrato (cliente): **`ApiClienteCitas` + `VistaGestionCitas` (recepcionista/
+administrador) + `VistaConsultaCitas` (médico) + predicates de `NavegacionPorRol` + `VERSION` 0.1.5-SNAPSHOT**,
+cliente verde (80 ejecuciones) y servidor sin regresiones (90 ejecuciones, 3 skip de Testcontainers sin
+Docker). **Lo que queda, en orden:** (1) método **D33 de CDU12** — spec `docs/test/iter05/tdop-cdu12-espec.json`
+→ `python tools/pairwise.py` → CSVs en `iso2-citas/src/test/resources/tdop/` → `Cdu12MatrizTdopTest` → bloque
+gestionado de `docs/tc/cdu12-tc-humanos.md` (previos dos ajustes genéricos en `tools/tc_plantillas.py`:
+paquete `tdop` derivado del módulo de la spec y mapa `operaciones` por CDU); (2) wiki **`Iter5-CDU12-citas.md`**
+nombrando la clase probada + enlace en `Home.md` (pushear a `master` de la wiki, D30); (3) levantar **Docker
+Desktop** y `mvn -B -ntp clean verify` completo (puerta D34); (4) quitar el borrador al PR #42 y comentario
+final con la línea de 6 contadores D37 + cierre de `TASADEFECTOS.md`; (5) **Ismael fusiona #42, etiqueta
+`cfg-iter05` y cierra #40 a mano** (D29). Tras eso queda **Iter6 · CDU19 (CFG-06)** con el hito `v0.2.0-alpha`.
 
 ### 0) Arranque en el equipo nuevo (10/11/2026)
 
