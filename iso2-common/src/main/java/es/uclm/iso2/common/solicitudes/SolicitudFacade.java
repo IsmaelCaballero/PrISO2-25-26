@@ -15,7 +15,7 @@ import java.util.Optional;
  * prohibicion de solicitudes duplicadas del mismo medico (RF06.3) y trazabilidad de
  * no repudio con huella SHA-256 (RF06.2).</p>
  *
- * @since 1.0.0 (CFG-00); ampliada en 1.1.0 (CDU06, CFG-04)
+ * @since 1.0.0 (CFG-00); ampliada en 1.1.0 (CDU06, CFG-04) y en 1.2.0 (CFG-05, CDU12)
  */
 public interface SolicitudFacade {
 
@@ -157,4 +157,39 @@ public interface SolicitudFacade {
     record TrazabilidadSolicitudDTO(String solicitudId, String autor, Instant creadaEn,
                                     String huella, boolean integridadOk) {
     }
+
+    // ------------------------------------------------------------------
+    // Extension MINOR 1.2.0 (CFG-05, CDU12): la cita del CDU12 es la que
+    // consume estos dos metodos; el resto del contrato no cambia.
+    // ------------------------------------------------------------------
+
+    /**
+     * Marca una solicitud como citada cuando el CDU12 le asigna una cita. Solo es
+     * legal sobre una solicitud en estado {@code creada}: si no existe, ya no esta en
+     * {@code creada} o ya tenia una cita, se rechaza con
+     * {@link SolicitudConflictoException.Conflicto#NO_APTA_PARA_CITA} (409) y la
+     * operacion de agendamiento completo revierte.
+     *
+     * <p>La huella de no repudio (RF06.2) no se toca: el estado no forma parte del
+     * canonico de la huella, asi que citar una solicitud no altera su sellado.</p>
+     *
+     * @param solicitudId identificador de la solicitud
+     * @return solicitud con estado {@code citada}
+     * @throws SolicitudNoEncontradaException si la solicitud no existe (404)
+     * @throws SolicitudConflictoException    si no admite cita (409)
+     * @since 1.2.0 (CFG-05, CDU12)
+     */
+    SolicitudDTO marcarCitada(String solicitudId);
+
+    /**
+     * Devuelve una solicitud a estado {@code creada} cuando el CDU12 cancela, expira o
+     * cierra la cita que la originaba, de modo que pueda volverse a agendar.
+     *
+     * @param solicitudId identificador de la solicitud
+     * @return solicitud con estado {@code creada}
+     * @throws SolicitudNoEncontradaException si la solicitud no existe (404)
+     * @throws SolicitudConflictoException    si no se puede reabrir (409)
+     * @since 1.2.0 (CFG-05, CDU12)
+     */
+    SolicitudDTO devolverACreada(String solicitudId);
 }

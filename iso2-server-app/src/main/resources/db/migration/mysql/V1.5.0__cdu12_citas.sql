@@ -1,0 +1,128 @@
+-- V1.5.0 CDU12 (Iter5/CFG-05): citas sobre las agendas de CDU13, con hueco bloqueado
+-- anti-concurrencia (control optimista @Version) y auditoria de hash encadenado. El
+-- esquema sigue siendo autoritativo (spring.jpa.hibernate.ddl-auto = none).
+-- Variante MySQL (D34): AUTO_INCREMENT y DATETIME(6) (la conexion JDBC fuerza UTC), y
+-- las marcas con zona de la version h2 pasan a DATETIME(6) en UTC.
+
+CREATE TABLE cita (
+    id                 BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    cita_id            VARCHAR(36)  NOT NULL,
+    solicitud_id       VARCHAR(36),
+    profesional_id     VARCHAR(60)  NOT NULL,
+    inicio             DATETIME(6)  NOT NULL,
+    fin                DATETIME(6)  NOT NULL,
+    estado             VARCHAR(20)  NOT NULL,
+    motivo_cancelacion VARCHAR(300),
+    CONSTRAINT uk_cita_cita_id UNIQUE (cita_id),
+    -- FK natural sobre el identificador funcional: una cita directa no nace de solicitud
+    -- (cita de revision acordada por telefono), por eso la columna es nullable.
+    CONSTRAINT fk_cita_solicitud FOREIGN KEY (solicitud_id) REFERENCES solicitud (solicitud_id)
+);
+
+-- Indices de las consultas del CDU12: la agenda del profesional por fecha (listar y el
+-- corte de vencidas), el filtro por estado y las citas de una solicitud.
+CREATE INDEX idx_cita_profesional_inicio ON cita (profesional_id, inicio);
+CREATE INDEX idx_cita_estado ON cita (estado);
+CREATE INDEX idx_cita_solicitud ON cita (solicitud_id);
+
+-- Registro de ocupacion de hueco. Existe UNA fila por cita ACTIVA (programada o
+-- confirmada), asi que cancelar o expirar borra la fila y libera el hueco. La puerta
+-- dura anti-concurrencia es el unique (profesional_id, inicio): si dos usuarios reservan
+-- el mismo hueco a la vez, uno comitea y la otra insercion choca contra la restriccion
+-- (el servicio la traduce a 409 CONFLICTO_HUECO_OCUPADO). version es el @Version de
+-- Hibernate para reprogramaciones concurrentes sobre el mismo hueco.
+CREATE TABLE cita_hueco (
+    id             BIGINT      NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    cita_id        VARCHAR(36) NOT NULL,
+    profesional_id VARCHAR(60) NOT NULL,
+    inicio         DATETIME(6) NOT NULL,
+    fin            DATETIME(6) NOT NULL,
+    version        INT         NOT NULL,
+    CONSTRAINT uk_cita_hueco_cita UNIQUE (cita_id),
+    CONSTRAINT uk_cita_hueco_profesional_inicio UNIQUE (profesional_id, inicio),
+    CONSTRAINT fk_cita_hueco_cita FOREIGN KEY (cita_id) REFERENCES cita (cita_id)
+);
+
+-- Auditoria con hash encadenado (mismo patron que CDU13/CDU16): el hash del asiento
+-- anterior viaja en el nuevo ("GENESIS" al calcular el primero, columna NULL).
+CREATE TABLE cita_auditoria (
+    id             BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    accion         VARCHAR(20)  NOT NULL,
+    cita_id        VARCHAR(36)  NOT NULL,
+    profesional_id VARCHAR(60)  NOT NULL,
+    usuario        VARCHAR(100) NOT NULL,
+    instante       DATETIME(6)  NOT NULL,
+    hash           VARCHAR(64)  NOT NULL,
+    hash_anterior  VARCHAR(64)
+);
+
+CREATE INDEX idx_cita_auditoria_cita ON cita_auditoria (cita_id);
+
+-- Datos semilla de DESARROLLO: solicitudes de las pruebas SEM-* de la V1.4.0 y citas
+-- apoyadas en las franjas de la V1.3.0 (medico 2026-11-09/11-11/11-13 de 08:00 a 15:00,
+-- tecnico 2026-11-10/11-12 de 09:00 a 14:00, festivo del medico el 2026-11-10). Identifi-
+-- cadores SEM-* propios, distintos de los que crean los tests de la API (SMOKE-*), y
+-- duraciones iguales que la duracion estimada del catalogo para que el semilla sea coherente.
+-- Las huellas son el SHA-256 real del canonico de no repudio (RF06.2), asi que la traza
+-- de las solicitudes semilla pasa la verificacion de integridad del CDU06.
+INSERT INTO solicitud (solicitud_id, paciente_id, codigo_prueba, indicacion_clinica, prioridad,
+                       origen, medico_id, creada_en, estado, huella) VALUES
+    ('SEM-SOL-CITA-01', 'HC-1001', 'SEM-RM-RODILLA', 'Dolor de rodilla tras traumatismo deportivo',
+     'URGENTE', 'AP', 'medico', '2026-11-09 09:15:00', 'CITADA',
+     '2adab15704a5720033a69ffc4b41fd824761a26405d6bd367ce6af5b9681ff60'),
+    ('SEM-SOL-CITA-02', 'HC-1002', 'SEM-RX-TORAX', 'Tos persistente de tres semanas',
+     'ORDINARIA', 'AP', 'medico', '2026-11-09 09:45:00', 'CITADA',
+     '5c1daf6e4db69d419a9c7f609cd54da4d878bc295d91201f32eebe5c7c1673c3'),
+    ('SEM-SOL-CITA-03', 'HC-1003', 'SEM-RX-TORAX', 'Control post-operatorio',
+     'PREFERENTE', 'HOSPITAL', 'medico', '2026-11-06 08:30:00', 'CITADA',
+     'e0441a8277218971ef0c75a5a5e86f52ad5f9b31a25a8ac7a10b0deb178d2bd7'),
+    -- la 05 esta en creada otra vez: su unica cita fue cancelada y vuelve a admitir agendamiento
+    ('SEM-SOL-CITA-05', 'HC-1004', 'SEM-RM-RODILLA', 'Cervicalgia cronica en estudio',
+     'URGENTE', 'AP', 'medico', '2026-11-06 09:00:00', 'CREADA',
+     'e70fee4a76fcea9a88923ab6b7681fcd78212621dd9704d61b4f2cca518e56b7');
+
+-- Semillas de cita (en orden: las identidades coinciden con el orden de la auditoria):
+--  001 cita de solicitud confirmada en la franja del medico del 2026-11-13 (30 min = RM rodilla)
+--  002 cita de solicitud programada en la franja del tecnico del 2026-11-12 (10 min = RX torax)
+--  003 cita directa, sin solicitud, el mismo dia del medico y sin solapar con la 001
+--  004 cita ya vencida (su fin paso): trabajo para POST /api/citas/expirar-vencidas
+--  005 cita cancelada con motivo: sin hueco y con su solicitud devuelta a creada
+INSERT INTO cita (cita_id, solicitud_id, profesional_id, inicio, fin, estado, motivo_cancelacion) VALUES
+    ('CITA-SEM-001', 'SEM-SOL-CITA-01', 'medico',  '2026-11-13 08:30:00', '2026-11-13 09:00:00', 'CONFIRMADA', NULL),
+    ('CITA-SEM-002', 'SEM-SOL-CITA-02', 'tecnico', '2026-11-12 09:30:00', '2026-11-12 09:40:00', 'PROGRAMADA', NULL),
+    ('CITA-SEM-003', NULL,              'medico',  '2026-11-13 10:00:00', '2026-11-13 10:30:00', 'PROGRAMADA', NULL),
+    ('CITA-SEM-004', 'SEM-SOL-CITA-03', 'medico',  '2026-11-09 09:00:00', '2026-11-09 09:30:00', 'PROGRAMADA', NULL),
+    ('CITA-SEM-005', 'SEM-SOL-CITA-05', 'medico',  '2026-11-13 11:00:00', '2026-11-13 11:30:00', 'CANCELADA',
+     'el paciente avisa de que no puede acudir');
+
+-- Huecos bloqueados solo por las citas activas (la 005 cancelada ya no ocupa hueco).
+INSERT INTO cita_hueco (cita_id, profesional_id, inicio, fin, version) VALUES
+    ('CITA-SEM-001', 'medico',  '2026-11-13 08:30:00', '2026-11-13 09:00:00', 0),
+    ('CITA-SEM-002', 'tecnico', '2026-11-12 09:30:00', '2026-11-12 09:40:00', 0),
+    ('CITA-SEM-003', 'medico',  '2026-11-13 10:00:00', '2026-11-13 10:30:00', 0),
+    ('CITA-SEM-004', 'medico',  '2026-11-09 09:00:00', '2026-11-09 09:30:00', 0);
+
+-- Auditoria encadenada del semilla (usuario recepcionista, el que gestiona citas). El
+-- hash se calcula sobre el canonico accion|citaId|profesionalId|usuario|instante|hashAnterior
+-- o GENESIS; las filas van en orden de asiento para que la cadena sea verificable.
+INSERT INTO cita_auditoria (accion, cita_id, profesional_id, usuario, instante, hash, hash_anterior) VALUES
+    ('AGENDAMIENTO', 'CITA-SEM-004', 'medico',  'recepcionista', '2026-11-06 09:05:00',
+     '1d73dcd7929473efa807f305108f526082c62e215c5701e9413f9654c665204f', NULL),
+    ('AGENDAMIENTO', 'CITA-SEM-005', 'medico',  'recepcionista', '2026-11-06 09:10:00',
+     'fa131fa9568fe662ffd4d2074f3f022dffcc922fc1e9d09d040e2635f36f441d',
+     '1d73dcd7929473efa807f305108f526082c62e215c5701e9413f9654c665204f'),
+    ('AGENDAMIENTO', 'CITA-SEM-001', 'medico',  'recepcionista', '2026-11-09 09:20:00',
+     'fdc991924286222e7fca91928279f1296e2cfbb6a3af1b5fbcd912f312d4158f',
+     'fa131fa9568fe662ffd4d2074f3f022dffcc922fc1e9d09d040e2635f36f441d'),
+    ('AGENDAMIENTO', 'CITA-SEM-002', 'tecnico', 'recepcionista', '2026-11-09 10:00:00',
+     'efbd691566550fab108d983b42951c80dd0d845018e25c62c7452394b3342cf3',
+     'fdc991924286222e7fca91928279f1296e2cfbb6a3af1b5fbcd912f312d4158f'),
+    ('AGENDAMIENTO', 'CITA-SEM-003', 'medico',  'recepcionista', '2026-11-09 11:30:00',
+     '6e2fc343d014d2076bafa332a0c220fd8a31b6055df58a0e3c9ae55f517bc6c2',
+     'efbd691566550fab108d983b42951c80dd0d845018e25c62c7452394b3342cf3'),
+    ('CANCELACION',  'CITA-SEM-005', 'medico',  'recepcionista', '2026-11-10 07:30:00',
+     'b07ce0391f01aa2d6c9e637b548b97d6a85ae13a429b3f74eeccf4e3afb80c79',
+     '6e2fc343d014d2076bafa332a0c220fd8a31b6055df58a0e3c9ae55f517bc6c2'),
+    ('CONFIRMACION', 'CITA-SEM-001', 'medico',  'recepcionista', '2026-11-10 08:05:00',
+     'da44534343fd2e7a6601858f9fe1a37c067c383351cf4b274b69fdf1e1062526',
+     'b07ce0391f01aa2d6c9e637b548b97d6a85ae13a429b3f74eeccf4e3afb80c79');

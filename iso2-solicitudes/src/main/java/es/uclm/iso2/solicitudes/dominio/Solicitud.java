@@ -203,6 +203,27 @@ public class Solicitud {
     }
 
     /**
+     * Pasa la solicitud de creada a citada cuando el CDU12 le asigna una cita (UC12.2).
+     * El estado no forma parte del canonico de la huella, asi que el sellado de no
+     * repudio (RF06.2) sigue siendo integro despues de citar.
+     *
+     * @since 1.2.0 (CFG-05, CDU12)
+     */
+    public void marcarComoCitada() {
+        this.estado = Estado.CITADA;
+    }
+
+    /**
+     * Devuelve la solicitud a creada al cancelar, expirar o cerrar la cita (UC12.5 y
+     * UC12.7): la solicitud vuelve a admitir un agendamiento.
+     *
+     * @since 1.2.0 (CFG-05, CDU12)
+     */
+    public void volverACreada() {
+        this.estado = Estado.CREADA;
+    }
+
+    /**
      * Devuelve el identificador tecnico de la solicitud.
      *
      * @return id

@@ -2,7 +2,8 @@ package es.uclm.iso2.client;
 
 /**
  * Reglas de navegacion por rol del cliente (CDU17, Iter2/CFG-02; ampliadas a las
- * agendas en CDU13, Iter3/CFG-03 y a las solicitudes en CDU06, Iter4/CFG-04).
+ * agendas en CDU13, Iter3/CFG-03, a las solicitudes en CDU06, Iter4/CFG-04 y a
+ * las citas en CDU12, Iter5/CFG-05).
  *
  * <p>Separadas de JavaFX a proposito: es la unica logica de menus por rol del cliente
  * y queda cubierta por JaCoCo y por tests unitarios (las vistas {@code ui/**} estan
@@ -11,7 +12,7 @@ package es.uclm.iso2.client;
  * someter al usuario a 403 seguros.</p>
  *
  * @since 0.1.2 (CFG-02); secciones de agenda desde 0.1.3 (CFG-03); seccion de
- * solicitudes desde 0.1.4 (CFG-04)
+ * solicitudes desde 0.1.4 (CFG-04); seccion de citas desde 0.1.5 (CFG-05)
  */
 public final class NavegacionPorRol {
 
@@ -86,5 +87,36 @@ public final class NavegacionPorRol {
      */
     public static boolean solicitudesPrescribiblesPara(String rol) {
         return "ADMINISTRADOR".equals(rol) || "MEDICO".equals(rol);
+    }
+
+    /**
+     * Si el rol puede ver la seccion de citas. TECNICO y CELADOR no tienen el
+     * permiso {@code cita:leer} en la matriz RBAC, asi que la seccion no se les
+     * muestra (el servidor les responderia 403 igualmente). El MEDICO si la ve:
+     * necesita leer la cita que se le ha agendado para trabajar sobre ella, aunque
+     * el PD no concediera esa lectura (concesion reflejada en la matriz, D36).
+     *
+     * @param rol nombre del rol del claim JWT (ver {@code AutenticacionFacade.SesionDTO})
+     * @return true para ADMINISTRADOR, MEDICO y RECEPCIONISTA
+     * @since 0.1.5 (CDU12, CFG-05)
+     */
+    public static boolean citasVisiblePara(String rol) {
+        return switch (rol == null ? "" : rol) {
+            case "ADMINISTRADOR", "MEDICO", "RECEPCIONISTA" -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * Si el rol puede gestionar citas (agendar, confirmar, reprogramar, cancelar y
+     * expirar). Solo ADMINISTRADOR y RECEPCIONISTA tienen {@code cita:escribir}
+     * (actor Administrativo del CDU12); MEDICO ve las citas en solo lectura.
+     *
+     * @param rol nombre del rol del claim JWT (ver {@code AutenticacionFacade.SesionDTO})
+     * @return true solo para ADMINISTRADOR y RECEPCIONISTA
+     * @since 0.1.5 (CDU12, CFG-05)
+     */
+    public static boolean citasEditablesPara(String rol) {
+        return "ADMINISTRADOR".equals(rol) || "RECEPCIONISTA".equals(rol);
     }
 }

@@ -99,6 +99,39 @@ class NavegacionPorRolTest {
     }
 
     /**
+     * Tabla rol -&gt; ve la seccion de citas (matriz RBAC: TECNICO y CELADOR sin
+     * {@code cita:leer}; MEDICO la ve por la concesion de D36, necesita leer la cita
+     * que se le agenda).
+     */
+    @ParameterizedTest
+    @CsvSource({
+            "ADMINISTRADOR,   true",
+            "MEDICO,          true",
+            "RECEPCIONISTA,   true",
+            "TECNICO,         false",
+            "CELADOR,         false",
+    })
+    void soloTecnicoYCeladorNoVenLaSeccionDeCitas(String rol, boolean esperado) {
+        assertTrue(NavegacionPorRol.citasVisiblePara(rol) == esperado, rol);
+    }
+
+    /**
+     * Tabla rol -&gt; gestiona citas (matriz RBAC: {@code cita:escribir} solo para el
+     * actor Administrativo del CDU12 y el administrador del sistema; MEDICO solo lee).
+     */
+    @ParameterizedTest
+    @CsvSource({
+            "ADMINISTRADOR,   true",
+            "RECEPCIONISTA,   true",
+            "MEDICO,          false",
+            "TECNICO,         false",
+            "CELADOR,         false",
+    })
+    void soloAdministradorYRecepcionistaGestionanCitas(String rol, boolean esperado) {
+        assertTrue(NavegacionPorRol.citasEditablesPara(rol) == esperado, rol);
+    }
+
+    /**
      * Defectos de entrada (nulo, vacio, rol desconocido): sin seccion de agenda ni de
      * solicitudes y sin edicion, nunca permiso por defecto.
      */
@@ -116,5 +149,9 @@ class NavegacionPorRolTest {
         assertFalse(NavegacionPorRol.solicitudesVisiblesPara("PIRATA"));
         assertFalse(NavegacionPorRol.solicitudesPrescribiblesPara(null));
         assertFalse(NavegacionPorRol.solicitudesPrescribiblesPara("medico"), "el claim usa el nombre del enum en mayusculas");
+        assertFalse(NavegacionPorRol.citasVisiblePara(null));
+        assertFalse(NavegacionPorRol.citasVisiblePara("PIRATA"));
+        assertFalse(NavegacionPorRol.citasEditablesPara(null));
+        assertFalse(NavegacionPorRol.citasEditablesPara("recepcionista"), "el claim usa el nombre del enum en mayusculas");
     }
 }

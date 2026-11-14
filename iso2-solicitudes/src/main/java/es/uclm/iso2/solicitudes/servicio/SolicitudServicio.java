@@ -152,6 +152,36 @@ public class SolicitudServicio implements SolicitudFacade {
         return solicitudes.findBySolicitudId(solicitudId).map(SolicitudServicio::aDTO);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    @Transactional
+    public SolicitudDTO marcarCitada(String solicitudId) {
+        Solicitud s = buscarEntidad(solicitudId);
+        if (s.getEstado() != Solicitud.Estado.CREADA) {
+            throw new SolicitudConflictoException(
+                    SolicitudConflictoException.Conflicto.NO_APTA_PARA_CITA,
+                    "la solicitud " + solicitudId + " no admite cita: esta en estado "
+                            + s.getEstado().name().toLowerCase(Locale.ROOT));
+        }
+        s.marcarComoCitada();
+        return aDTO(s);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional
+    public SolicitudDTO devolverACreada(String solicitudId) {
+        Solicitud s = buscarEntidad(solicitudId);
+        if (s.getEstado() != Solicitud.Estado.CITADA) {
+            throw new SolicitudConflictoException(
+                    SolicitudConflictoException.Conflicto.NO_APTA_PARA_CITA,
+                    "la solicitud " + solicitudId + " no se puede reabrir: esta en estado "
+                            + s.getEstado().name().toLowerCase(Locale.ROOT));
+        }
+        s.volverACreada();
+        return aDTO(s);
+    }
+
     private Solicitud buscarEntidad(String solicitudId) {
         return solicitudes.findBySolicitudId(solicitudId)
                 .orElseThrow(() -> new SolicitudNoEncontradaException("la solicitud " + solicitudId + " no existe"));

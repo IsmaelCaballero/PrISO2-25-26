@@ -38,6 +38,10 @@ import java.time.Instant;
  *       MEDICO, RECEPCIONISTA); TECNICO y CELADOR quedan fuera por matriz.</li>
  *   <li>Alta de solicitudes: solo {@code ADMINISTRADOR} y {@code MEDICO}
  *       ({@code solicitud:escribir}, actor Medico del CDU06).</li>
+ *   <li>GET de citas (CDU12): roles con {@code cita:leer} (ADMINISTRADOR, MEDICO,
+ *       RECEPCIONISTA); TECNICO y CELADOR quedan fuera por matriz.</li>
+ *   <li>Agendar/reprogramar/cancelar citas: solo {@code ADMINISTRADOR} y
+ *       {@code RECEPCIONISTA} ({@code cita:escribir}, actor Administrativo del CDU12).</li>
  *   <li>{@code /h2-console/**}: solo {@code ADMINISTRADOR}. Como el navegador no puede
  *       enviar la cabecera {@code Authorization} en la navegación HTML, la consola se
  *       usa en desarrollo con herramientas que sí pueden (curl/scripts) adjuntando el
@@ -83,6 +87,11 @@ public class ConfigSeguridad {
                         // (solicitud:escribir, actor Medico del CDU06).
                         .requestMatchers(HttpMethod.GET, "/api/solicitudes/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
                         .requestMatchers("/api/solicitudes/**").hasAnyRole("ADMINISTRADOR", "MEDICO")
+                        // CDU12: lectura para roles con cita:leer (tecnico y celador, sin el
+                        // permiso, fuera); agendar/reprogramar/cancelar solo ADMINISTRADOR y
+                        // RECEPCIONISTA (cita:escribir, actor Administrativo del CDU12).
+                        .requestMatchers(HttpMethod.GET, "/api/citas/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
+                        .requestMatchers("/api/citas/**").hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
                         // D34 (Iter5): el diagnostico de persistencia revela estructura interna
                         // de la base (tablas y registros), solo para ADMINISTRADOR.
                         .requestMatchers("/api/persistencia/**").hasRole("ADMINISTRADOR")

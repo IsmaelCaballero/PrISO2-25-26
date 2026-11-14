@@ -9,36 +9,41 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test parametrico de la matriz RBAC autoritativa (CFG-02, ampliada en CFG-03 y CFG-04):
- * 5 roles x 7 permisos. La matriz espera exactamente lo pactado en los issues #13, #15
- * y #30: ADMINISTRADOR con todo; recepcionista gestiona agendas y lee solicitudes;
- * medico prescribe solicitudes; tecnico y celador no tocan solicitudes. Cualquier
- * cambio en la matriz obliga a actualizar esta tabla (y a revisarla con el cliente).
+ * Test parametrico de la matriz RBAC autoritativa (CFG-02, ampliada en CFG-03, CFG-04
+ * y CFG-05): 5 roles x 9 permisos. La matriz espera exactamente lo pactado en los issues
+ * #13, #15, #30 y #40: ADMINISTRADOR con todo; recepcionista gestiona agendas y citas y
+ * lee solicitudes; medico prescribe solicitudes y lee citas; tecnico y celador no tocan
+ * solicitudes ni citas. Cualquier cambio en la matriz obliga a actualizar esta tabla
+ * (y a revisarla con el cliente).
  */
 class MatrizPermisosTest {
 
     /**
      * Tabla completa de la matriz: fila = rol, columnas = tiene_permiso esperado para
      * catalogo:leer, catalogo:escribir, agenda:leer, agenda:escribir, solicitud:leer,
-     * solicitud:escribir, usuario:gestionar.
+     * solicitud:escribir, cita:leer, cita:escribir, usuario:gestionar.
      */
     @ParameterizedTest
     @CsvSource({
-            "ADMINISTRADOR,   true,  true,  true,  true,  true,  true,  true",
-            "MEDICO,          true,  false, true,  false, true,  true,  false",
-            "TECNICO,         true,  false, true,  false, false, false, false",
-            "CELADOR,         true,  false, false, false, false, false, false",
-            "RECEPCIONISTA,   true,  false, true,  true,  true,  false, false",
+            "ADMINISTRADOR,   true,  true,  true,  true,  true,  true,  true,  true,  true",
+            "MEDICO,          true,  false, true,  false, true,  true,  true,  false, false",
+            "TECNICO,         true,  false, true,  false, false, false, false, false, false",
+            "CELADOR,         true,  false, false, false, false, false, false, false, false",
+            "RECEPCIONISTA,   true,  false, true,  true,  true,  false, true,  true,  false",
     })
     void laMatrizConcedeExactamenteLoPactado(Rol rol, boolean catLeer, boolean catEscribir,
                                              boolean agLeer, boolean agEscribir,
-                                             boolean solLeer, boolean solEscribir, boolean gestionar) {
+                                             boolean solLeer, boolean solEscribir,
+                                             boolean citaLeer, boolean citaEscribir,
+                                             boolean gestionar) {
         assertEquals(catLeer, MatrizPermisos.tienePermiso(rol, Permiso.CATALOGO_LEER), rol + " catalogo:leer");
         assertEquals(catEscribir, MatrizPermisos.tienePermiso(rol, Permiso.CATALOGO_ESCRIBIR), rol + " catalogo:escribir");
         assertEquals(agLeer, MatrizPermisos.tienePermiso(rol, Permiso.AGENDA_LEER), rol + " agenda:leer");
         assertEquals(agEscribir, MatrizPermisos.tienePermiso(rol, Permiso.AGENDA_ESCRIBIR), rol + " agenda:escribir");
         assertEquals(solLeer, MatrizPermisos.tienePermiso(rol, Permiso.SOLICITUD_LEER), rol + " solicitud:leer");
         assertEquals(solEscribir, MatrizPermisos.tienePermiso(rol, Permiso.SOLICITUD_ESCRIBIR), rol + " solicitud:escribir");
+        assertEquals(citaLeer, MatrizPermisos.tienePermiso(rol, Permiso.CITA_LEER), rol + " cita:leer");
+        assertEquals(citaEscribir, MatrizPermisos.tienePermiso(rol, Permiso.CITA_ESCRIBIR), rol + " cita:escribir");
         assertEquals(gestionar, MatrizPermisos.tienePermiso(rol, Permiso.USUARIO_GESTIONAR), rol + " usuario:gestionar");
     }
 
@@ -49,11 +54,12 @@ class MatrizPermisosTest {
     @Test
     void losPermisosDeRolSonInmutables() {
         var permisos = MatrizPermisos.permisosDe(Rol.MEDICO);
-        assertEquals(4, permisos.size());
+        assertEquals(5, permisos.size());
         assertTrue(permisos.contains(Permiso.CATALOGO_LEER));
         assertTrue(permisos.contains(Permiso.AGENDA_LEER));
         assertTrue(permisos.contains(Permiso.SOLICITUD_LEER));
         assertTrue(permisos.contains(Permiso.SOLICITUD_ESCRIBIR));
+        assertTrue(permisos.contains(Permiso.CITA_LEER));
         assertThrowsUnsupported(permisos);
     }
 
@@ -68,6 +74,8 @@ class MatrizPermisosTest {
         assertEquals("agenda:escribir", Permiso.AGENDA_ESCRIBIR.codigo());
         assertEquals("solicitud:leer", Permiso.SOLICITUD_LEER.codigo());
         assertEquals("solicitud:escribir", Permiso.SOLICITUD_ESCRIBIR.codigo());
+        assertEquals("cita:leer", Permiso.CITA_LEER.codigo());
+        assertEquals("cita:escribir", Permiso.CITA_ESCRIBIR.codigo());
         assertEquals("usuario:gestionar", Permiso.USUARIO_GESTIONAR.codigo());
         assertTrue(Permiso.desdeCodigo("catalogo:leer").orElseThrow() == Permiso.CATALOGO_LEER);
         assertTrue(Permiso.desdeCodigo("no:existe").isEmpty());

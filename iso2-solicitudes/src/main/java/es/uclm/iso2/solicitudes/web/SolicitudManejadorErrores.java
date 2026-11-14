@@ -45,6 +45,7 @@ public class SolicitudManejadorErrores {
         String codigo = switch (e.tipo()) {
             case DUPLICADA -> "CONFLICTO_SOLICITUD_DUPLICADA";
             case PRUEBA_NO_DISPONIBLE -> "CONFLICTO_PRUEBA_NO_DISPONIBLE";
+            case NO_APTA_PARA_CITA -> "CONFLICTO_SOLICITUD_NO_APTA";
         };
         return error(HttpStatus.CONFLICT, codigo, e.getMessage());
     }

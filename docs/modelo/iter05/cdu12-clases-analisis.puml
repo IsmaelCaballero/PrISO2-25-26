@@ -1,0 +1,140 @@
+@startuml cdu12-clases-analisis
+' CDU12 (Iter5/CFG-05) - Clases de analisis (conceptos del dominio de citas y huecos)
+' Autor: agente (diseno previo al codigo, issue #40) - fuentes PlantUML (D31)
+title CDU12 - Clases de analisis: cita, hueco ocupado, franja y maquina de estados
+
+class "Cita" as CITA {
+  - identificador de cita
+  - solicitud de origen (opcional: cita directa)
+  - profesional atendido (medico o tecnico)
+  - inicio y fin
+  - estado (programada..expirada)
+  - motivo de cancelacion (obligatorio al cancelar)
+  --
+  ?puede confirmarse / realizarse / cancelarse /
+  expirar? : si/no (maquina de estados)
+  ?ocupa un hueco? : si, mientras este activa
+}
+
+class "Hueco de agenda\n(ocupacion)" as HUECO {
+  - profesional
+  - inicio y fin
+  - version de control (anti-concurrencia)
+  --
+  libre? : si/no (existe fila = ocupado)
+  solapa con?(otro hueco del mismo profesional) : si/no
+  ?cabe entero en una franja? : si/no
+}
+
+class "Franja de trabajo\n(CDU13)" as FRANJA {
+  - profesional
+  - dia, hora de inicio y de fin
+  - (solo las franjas dadas de alta son agenda)
+}
+
+class "Festivo\n(CDU13)" as FESTIVO {
+  - profesional
+  - dia no laborable
+}
+
+class "Solicitud de prueba\n(CDU06)" as SOLICITUD {
+  - identificador de solicitud
+  - prueba y paciente
+  - estado (creada, citada, ..)
+  --
+  ?admite cita? : si/no (creada o citada, no cancelada)
+}
+
+class "Prueba de imagen\n(CDU16)" as PRUEBA {
+  - codigo
+  - duracion estimada (minutos)
+  - requiere cita (si/no)
+  - plazo de cancelacion (horas)
+}
+
+class "Motor de asignacion" as MOTOR {
+  --
+  huecos libres de un profesional\nen un rango y duracion : propuesta
+  reservar(hueco) : aceptada / hueco ocupado
+}
+
+class "Maquina de estados de la cita" as MAQUINA {
+  - estados (programada, confirmada,
+    realizada, cancelada, expirada)
+  --
+  ?transicion permitida? : si/no
+  (las demas se rechazan)
+}
+
+class "Conflicto de cita" as CONF {
+  - tipo (HUECO_OCUPADO, FUERA_DE_FRANJA,
+    TRANSICION_INVALIDA, SOLICITUD_NO_APTA,
+    PLAZO_CANCELACION)
+  - mensaje para el usuario
+}
+
+class "Auditoria de citas" as AUDITORIA {
+  - accion y cita afectada
+  - usuario y instante
+  - hash del registro anterior (SHA-256)
+  - hash propio (SHA-256 encadenado)
+  --
+  cadena integra? : si/no (recalculando)
+}
+
+class "Permiso de cita" as PERMISO {
+  - codigo (cita:leer, cita:escribir)
+}
+
+CITA "0..*" -- "1" HUECO : ocupa uno mientras esta activa
+CITA "0..1" --> "1" SOLICITUD : nace de una (o cita directa)
+HUECO "0..*" -- "1" FRANJA : debe caber en una
+HUECO ..> FESTIVO : nunca cae en uno
+SOLICITUD "1" -- "1" PRUEBA : pide una
+MOTOR ..> HUECO : propone y reserva
+MOTOR ..> FRANJA : lee la agenda libre (CDU13)
+MOTOR ..> PRUEBA : toma duracion, cita obligatoria y plazo
+MAQUINA -- CITA : gobierna sus cambios de estado
+CONF ..> CITA : se levanta al asignar o mover
+AUDITORIA ..> CITA : asienta cada cambio
+PERMISO ..> CITA : protege su lectura y escritura
+
+note right of HUECO
+  Invariantes del CDU12 (matriz CFG-05):
+  - un hueco del mismo profesional no puede
+    estar ocupado dos veces (concurrencia real:
+    dos hilos, un solo exito)
+  - la cita cabe entera en una franja laborable
+    y no pisa otro hueco ocupado
+  - cancelar o expirar libera el hueco;
+    reprogramar mueve el hueco viejo al nuevo
+  - cita, hueco y auditoria se escriben en una
+    sola transaccion: si algo falla, no queda nada
+end note
+
+note bottom of MAQUINA
+  Transiciones admitidas:
+  programada -> confirmada -> realizada
+  programada -> cancelada / expirada
+  confirmada -> cancelada / expirada
+  el resto de transiciones se rechaza (409):
+  realizada, cancelada y expirada son finales:
+  no se reprograma ni se cancela una cita cerrada.
+end note
+
+note left of SOLICITUD
+  La cita y la solicitud son dos ciclos de vida
+  distintos: al agendar, la solicitud pasa a
+  CITADA; al cancelar la cita, vuelve a CREADA
+  para poder re-agendarse. La cita directa no
+  pasa por la solicitud.
+end note
+
+note bottom of AUDITORIA
+  Mismo patron que CDU13/CDU16: cada asiento
+  enlaza su SHA-256 con el hash del asiento
+  anterior ("GENESIS" en el primero), de modo
+  que alterar el rastro despues de escribir
+  rompe la cadena.
+end note
+@enduml
