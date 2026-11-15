@@ -242,7 +242,7 @@ public class PruebasCitas {
     }
 
     /** Solicitudes de prueba con estado en memoria y fallos provocables. */
-    static class SolicitudesFalsas implements SolicitudFacade {
+    public static class SolicitudesFalsas implements SolicitudFacade {
 
         private final Map<String, SolicitudDTO> datos = new HashMap<>();
 
@@ -254,7 +254,7 @@ public class PruebasCitas {
         }
 
         /** Vuelve al estado inicial de las solicitudes de prueba. */
-        final void reiniciar() {
+        public final void reiniciar() {
             datos.clear();
             fallaDevolverACreada = false;
             datos.put(SOL_CREADA, nueva(SOL_CREADA, "creada"));

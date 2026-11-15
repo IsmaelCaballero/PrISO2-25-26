@@ -1,0 +1,14 @@
+estado;http;codigoError;descripcion
+CREADO;201;-;cita creada y hueco bloqueado (POST /api/citas)
+OK;200;-;peticion atendida con cuerpo (consulta, operacion de estado o lote de vencidas)
+INVALIDOS;400;DATOS_INVALIDOS;entrada fuera de clase o regla de negocio violada en el servicio
+SOLICITUD_MALFORMADA;400;DATOS_INVALIDOS;el cuerpo ni siquiera se puede leer: HttpMessageNotReadableException tiene consejo propio -> 400 con cuerpo ApiError DATOS_INVALIDOS (HALLAZGO: comparte codigo con INVALIDOS)
+NO_ENCONTRADA;404;CITA_NO_ENCONTRADA;el id de la ruta no apunta a ninguna cita
+RUTA_INEXISTENTE;404;-;ninguna mano del controlador atiende la ruta: 404 de Spring sin cuerpo ApiError (alternativa al 500 conjeturado, la rojo decide)
+METODO_NO_PERMITIDO;405;-;la ruta si esta mapeada para otros metodos pero no para el enviado: Spring resuelve el 405 antes de llamar a cualquier handler, asi que el consejo Exception del controlador no lo alcanza y el cuerpo no es ApiError (la rojo decide)
+TRANSICION;409;CONFLICTO_TRANSICION_INVALIDA;la operacion no esta permitida desde el estado actual de la cita
+FUERA_FRANJA;409;CONFLICTO_FUERA_DE_FRANJA;el profesional no tiene agenda, o el dia es festivo, o la cita no cabe en la franja
+HUECO_OCUPADO;409;CONFLICTO_HUECO_OCUPADO;el hueco ya esta bloqueado por otra cita activa (o la base de datos lo rechazo por la restriccion unica)
+SOLICITUD_NO_APTA;409;CONFLICTO_SOLICITUD_NO_APTA;la solicitud no existe o no esta en estado creada (D36)
+PLAZO;409;CONFLICTO_PLAZO_CANCELACION;cancelar fuera de las 24 h de antelacion que fija la politica de la prueba
+ERROR_INTERNO;500;ERROR_INTERNO;el consejo Exception generico absorbe lo que no tiene handler propio: falta un parametro obligatorio, el tipo del parametro no casa, metodo o ruta sin mapear (HALLAZGO: en CDU12 no se arreglaron estos casos como en D35)

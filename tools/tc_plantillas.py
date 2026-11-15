@@ -105,7 +105,7 @@ def bloque_tecnico(nombre_tabla: str, tabla: dict, filas: list[dict]) -> list[st
                   "(el rechazo tiene un unico motivo)")
     lineas += [linea, "", "**Puerta que cubre:** %s" % tabla["puerta"], ""]
 
-    if tabla["kind"] != "conjetura":
+    if tabla["kind"] != "conjetura" and tabla.get("factores"):
         lineas += ["### Niveles y criterios", ""] + leyenda_factores(tabla) + [""]
         lineas += ["### Reglas de precedencia (dan el resultado esperado)", ""] \
                   + reglas(tabla) + [""]
@@ -134,8 +134,8 @@ def documento_evidencia(spec: dict, tablas: list[tuple[dict, list[dict]], str]) 
         "--resources %s/src/test/resources/tdop` (semilla %s)." % (
             spec["iter"], spec["cdu"].lower(), spec["modulo"], spec["semilla"]),
         "Las mismas filas las ejecutan los JUnit parametrizados de "
-        "`es.uclm.iso2.catalogo.tdop` y las tablas de `docs/tc/%s-tc-humanos.md`: "
-        "un ID vale para las dos." % spec["cdu"].lower(),
+        "`es.uclm.iso2.%s.tdop` y las tablas de `docs/tc/%s-tc-humanos.md`: "
+        "un ID vale para las dos." % (spec["modulo"].split("-")[1], spec["cdu"].lower()),
         "",
         "## Leyenda de tokens",
         "",
@@ -184,6 +184,22 @@ OPERACIONES = {
     "BAJA": "DELETE /api/catalogo/pruebas/{codigo}",
     "REACTIVAR": "PUT /api/catalogo/pruebas/{codigo}/reactivar",
     "LISTADO": "GET /api/catalogo/pruebas",
+    # operaciones de CDU12 (citas)
+    "AGENDAR": "POST /api/citas",
+    "CONFIRMAR": "POST /api/citas/{id}/confirmar",
+    "REALIZAR": "POST /api/citas/{id}/realizar",
+    "REPROGRAMAR": "POST /api/citas/{id}/reprogramar",
+    "CANCELAR": "POST /api/citas/{id}/cancelar",
+    "EXPIRAR_LOTE": "POST /api/citas/expirar-vencidas",
+    "HUECOS": "GET /api/citas/huecos",
+}
+# operaciones que cada modulo reinterpreta con sus rutas (pisan a las genericas)
+OPERACIONES_EXTRA = {
+    "iso2-citas": {
+        "DETALLE": "GET /api/citas/{id}",
+        "BAJA": "DELETE /api/citas/{id}",
+        "AUDITORIA": "GET /api/citas/{id}/auditoria",
+    },
 }
 RUTA_EXTRA = {
     "AUDITORIA": "la ruta extra /auditoria (que la API no tiene: 404 sin cuerpo ApiError)",
@@ -213,25 +229,45 @@ CUERPOS = {
     "CONTRATO_INCOMPLETO": "cuerpo JSON al que le faltan campos obligatorios",
     "NINGUNO": "sin cuerpo",
     "-": "sin cuerpo",
+    # cuerpos de CDU12 (citas)
+    "VALIDO": "cuerpo valido y completo",
+    "JSON_NULO": "cuerpo con el literal null",
+    "JSON_VACIO": "cuerpo {} (los campos obligatorios ausentes)",
+    "JSON_SIN_DURACION": "cuerpo valido al que le falta duracionMinutos",
+    "JSON_DUR_CERO": "cuerpo valido con duracionMinutos: 0",
+    "JSON_DUR_NEGATIVA": "cuerpo valido con duracionMinutos: -5",
+    "JSON_SIN_SOL": "cuerpo valido al que le falta solicitudId",
+    "JSON_PROF_ESPACIOS": "cuerpo valido con el profesionalId entre espacios",
+    "JSON_SOL_ESPACIOS": "cuerpo valido con la solicitudId entre espacios",
+    "PROPIO_HUECO": "cuerpo con el inicio actual de la propia cita",
+    "JSON_MOTIVO_VACIO": "cuerpo {motivo: \"\"} (motivo en blanco)",
+    "TEXT_PLANO": "cuerpo de texto plano con Content-Type text/plain",
 }
 
 
 def pasos_de(tabla: dict, fila: dict, factores: list[str], spec: dict) -> str:
     """Pasos reproducibles: peticion + niveles de la fila (descritos en la evidencia)."""
     previo = "" if fila["setup"] == "NINGUNO" else "Previo `%s`; " % fila["setup"]
-    peticion = OPERACIONES.get(fila.get("operacion", ""), tabla.get("solicitud", ""))
+    ops = dict(OPERACIONES)
+    ops.update(OPERACIONES_EXTRA.get(spec.get("modulo", ""), {}))
+    peticion = ops.get(fila.get("operacion", ""), tabla.get("solicitud", ""))
     if tabla["kind"] in ("conjetura", "filas") and "operacion" in fila:
         detalle = ""
-        cuerpo = CUERPOS.get(fila.get("cuerpo", "-"), fila.get("cuerpo", ""))
-        if cuerpo:
-            detalle += " con %s" % cuerpo
+        if fila.get("cuerpo") not in (None, "-", ""):
+            cuerpo = CUERPOS.get(fila["cuerpo"], fila["cuerpo"])
+            if cuerpo.startswith("sin "):
+                detalle += " %s" % cuerpo
+            elif cuerpo:
+                detalle += " con %s" % cuerpo
         extra = fila.get("rutaExtra", "-")
         if extra not in ("-", ""):
             detalle += ", ruta con %s" % RUTA_EXTRA.get(extra, "`%s`" % extra)
-        estado = fila.get("estadoRecurso", "-")
-        if estado not in ("-", "NO_EXISTE"):
+        estado = fila.get("estadoRecurso", fila.get("estadoCita", "-"))
+        if estado not in ("-", "NO_EXISTE", "NO_ENCUENTRA"):
             detalle += " sobre recurso en estado `%s`" % estado
-        if tabla.get("solicitud") and fila.get("operacion") not in OPERACIONES:
+        if fila.get("plazo") not in (None, "-", ""):
+            detalle += " · plazo `%s`" % fila["plazo"]
+        if tabla.get("solicitud") and fila.get("operacion") not in ops:
             peticion = tabla["solicitud"]
     else:
         niveles = [", ".join("%s=%s" % (f["nombre"], fila[f["nombre"]])

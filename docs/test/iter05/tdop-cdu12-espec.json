@@ -1,0 +1,1695 @@
+{
+  "_notas": [
+    "Matrices TDOP de la CDU12 (Iter 5, CFG-05). D33 exige evidencia real: estos CSV se consumen desde",
+    "es.uclm.iso2.citas.tdop.Cdu12MatrizTdopTest (spring-mvc-test sobre el montaje de PruebasCitas:",
+    "reloj fijo 2026-11-11T08:00, agenda falsa 08:00-15:00 salvo festivo 2026-11-10, solicitudes api-*).",
+    "Unica fuente de verdad: editar ESTE json y regenerar con",
+    "  python tools/pairwise.py docs/test/iter05/tdop-cdu12-espec.json --resources iso2-citas/src/test/resources/tdop",
+    "  python tools/tc_plantillas.py docs/test/iter05/tdop-cdu12-espec.json --tc docs/tc/cdu12-tc-humanos.md",
+    "Los CSV que caen en src/test/resources/tdop son los que lee JUnit: asi las tablas documentadas",
+    "y las que se ejecutan no pueden divergir.",
+    "Espejo de factores: factores -> niveles -> reglas -> estado esperado, igual que en D32. Los niveles",
+    "marcados 'valido: false' salen en las matrices de forma intencionada: se combinan con los validos",
+    "para poder comprobar que la API los rechaza con un codigo de error estable.",
+    "Jerarquia de tablas: A alta de cita, B reprogramacion, C huecos libres, D listado (TDOP de verdad,",
+    "generadas por pairwise), E operaciones de estado (enumeracion escrita a mano: operacion x estado de",
+    "la cita, como la tabla D de CDU16) y F conjetura de errores.",
+    "Los valores esperados salen del contrato REAL revisado en el codigo (CitaControlador,",
+    "CitaManejadorErrores y CitaServicio), no al reves. Las precedencias leidas del servicio fijan el",
+    "ORDEN de las reglas de cada tabla:",
+    " - agendar: parseo del cuerpo -> profesional en blanco -> inicio nulo -> duracion negativa ->",
+    "   solicitud existente y en estado creada -> agenda/franja -> hueco libre -> alta. Por eso una",
+    "   duracion negativa con solicitud inexistente da 400 INVALIDOS, no 409 SOLICITUD_NO_APTA.",
+    " - reprogramar: el inicio nulo se rechaza ANTES de buscar la cita (400 gana a 404) y la transicion",
+    "   prohibida ANTES de mirar franja y hueco.",
+    " - cancelar: el motivo en blanco se exige ANTES de buscar la cita; la transicion prohibida gana al",
+    "   plazo de cancelacion (D36): cancelar una CANCELADA cerca del plazo da TRANSICION, no PLAZO.",
+    "HALLAZGOS previstos (la fase rojo sobre la rama confirma o corrige cada uno):",
+    " (1) CitaManejadorErrores no tiene consejo para HttpMediaTypeNotSupportedException (CDU16 lo anadio",
+    "   en D35): un Content-Type text/plain cae en el consejo Exception generico -> 500 ERROR_INTERNO.",
+    " (2) Los @RequestParam obligatorios de /huecos y las fechas mal tipadas (TEXTO_ILEGAL, FECHA_CORTA)",
+    "   tampoco tienen consejo propio: MissingServletRequestParameter / TypeMismatch caen al generico",
+    "   -> 500 ERROR_INTERNO. Las guardas de null del servicio son inalcanzables por HTTP (solo sirven",
+    "   a llamadas internas).",
+    " (3) Leido del dominio: Cita.nueva recorta profesionalId y lo mismo hace huecosLibres, asi que NO hay",
+    "   asimetria: ' api-medico ' encuentra agenda al agendar (TC12-F07 -> 201) y al pedir huecos (filas de C",
+    "   con ESPACIOS -> 200). La asimetria estaba conjeturada y queda descartada por la lectura del codigo.",
+    " (4) solicitudId en blanco se trata como null: la cita se crea sin solicitud y CDU06 no se consulta.",
+    " (5) Sin cuerpo legible (vacio, JSON roto, tipo erroneo) hay consejo propio: 400 con cuerpo",
+    "   ApiError DATOS_INVALIDOS; el estado SOLICITUD_MALFORMADA comparte codigo con INVALIDOS y el",
+    "   cliente no puede distinguir ilegible de fuera-de-clase (mismo hallazgo que en CDU16).",
+    " (6) No hay subrecurso GET /api/citas/{id}/auditoria ni DELETE de citas: la auditoria cae en 404 de Spring",
+    "   sin cuerpo ApiError (ruta sin mapear, estado RUTA_INEXISTENTE) y el DELETE en 405 (la ruta si esta",
+    "   mapeada para GET, asi que Spring resuelve el metodo antes de entrar al handler: estado",
+    "   METODO_NO_PERMITIDO). En los dos casos el consejo Exception del controlador no interviene.",
+    "   TC12-05 'auditoria de cada cambio' sigue sin endpoint de historial: HALLAZGO COMP.",
+    " (7) Cita no tiene estado CREADA (PROGRAMADA/CONFIRMADA/REALIZADA/CANCELADA/EXPIRADA), como fijo D36.",
+    " (8) El alta con duracion ausente o cero usa el defecto del catalogo de la solicitud (30 min para",
+    "   api-prueba) y crea la cita; sin solicitud util el mismo caso acaba en 400 (TC12-F03..F06)."
+  ],
+  "cdu": "CDU12",
+  "iter": "iter05",
+  "config": "CFG-05",
+  "modulo": "iso2-citas",
+  "idPrefijo": "TC12",
+  "semilla": 20261114,
+  "metodo": "Clases de equivalencia + teorema de valores limite + conjetura de errores, compuestas con pairwise (todo par de niveles de factores distintos queda cubierto).",
+  "leyendaTokens": {
+    "AUT": "valor autocoadyuvante: dentro de la franja falsa (api-medico, 2026-11-13T09:00), siempre dentro de clase",
+    "VACIO": "cadena vacia \"\" en un campo obligatorio",
+    "ESPACIOS": "texto con espacios delante y detras (profesionalId '  api-medico  ')",
+    "AUSENTE": "campo no enviado: el cuerpo JSON no trae la clave",
+    "JSON_MALFORMADO": "cuerpo que no es JSON legible",
+    "JSON_VACIO": "cuerpo {} : JSON legitimo pero sin el campo obligatorio",
+    "JSON_NULO": "cuerpo literal null",
+    "TIPO_ERRONEO": "JSON legitimo con campos de tipo imposible (inicio 'no-fecha', duracion 'treinta')",
+    "TEXT_PLANO": "Content-Type text/plain con cuerpo de texto (la API solo consume JSON)",
+    "JUSTO_CIERRE": "valor limite: inicio 14:30, la cita de 30 min acaba justo al cerrar la franja",
+    "APERTURA_JUSTA": "valor limite: inicio 08:00, exactamente al abrir la franja",
+    "PASADA_CIERRE": "14:45: la cita de 30 min reventaria el cierre (15:15)",
+    "ANTERIOR_APERTURA": "07:00: antes de la apertura de la franja",
+    "FESTIVO": "2026-11-10: dia festivo para la agenda falsa (sin franja)",
+    "NEGATIVA": "-5 minutos: pasa la conversion JSON y la rechaza el servicio",
+    "EXCESIVA": "9999 minutos: no cabe en ninguna franja",
+    "LIBRE": "el hueco pedido no esta ocupado antes de la peticion",
+    "OCUPADO_EXACTO": "hueco sembrado que empieza justo en el inicio pedido",
+    "OCUPADO_SOLAPE": "hueco sembrado que solapa el inicio pedido (empezaria 15 min despues)",
+    "COHERENTE": "rango de dias normal 2026-11-12..2026-11-14",
+    "IGUAL_DIA": "desde == hasta (2026-11-13): franja de un solo dia",
+    "INVERTIDO": "desde despues de hasta: regla de negocio, no error de sintaxis",
+    "SOLO_FESTIVO": "rango 2026-11-10..2026-11-10: solo el festivo, la agenda responde sin franjas",
+    "TEXTO_ILEGAL": "fecha con texto ('hola'): ni siquiera se puede convertir al tipo del parametro",
+    "FECHA_CORTA": "'2026-11': fecha truncada que no cabe en LocalDate/LocalDateTime segun la puerta",
+    "SEM-HUECO-SOL:EXACTO|SOLAPE": "sembrar cita_hueco relativa al inicio del nivel de la propia fila (tabla A)",
+    "SEM-HUECO-DEST:EXACTO|SOLAPE": "sembrar cita_hueco relativa al nuevo inicio del nivel de la propia fila (tabla B)",
+    "SEM-CITA:<EST>": "sembrar una cita en estado <EST> (inicio 2026-11-13T09:00, solicitud api-sol-creada, hueco si esta activa)",
+    "SEM-CITA-CERCANO": "la cita sembrada pasa a inicio 2026-11-11T09:00: dentro de las 24 h del plazo de cancelacion",
+    "SEM-CITA-VENCIDA:<EST>": "cita con inicio 2026-11-12T09:00 (antes del corte 2026-11-13T00:00) en estado <EST>",
+    "SEM-SOL:<EST>": "solicitud de CDU06 con estado <EST> (las api-* vienen presembradas en SolicitudesFalsas)",
+    "SEM-HUECO-FIJO": "hueco hueso 2026-11-13T10:00-10:30 que parte el hueco libre de la agenda",
+    "CERCANO": "plazo: la cita cae dentro de las 24 h de antelacion exigidas por la politica de cancelacion",
+    "LEJOS": "plazo: la cita queda fuera del plazo (cancelar es libre)",
+    "NO_ENCUENTRA": "la ruta apunta a un id de cita que no existe",
+    "-": "no aplica"
+  },
+  "objetivos": {
+    "SEG": "que dos citas no ocupen jamas el mismo hueco del mismo profesional (la restriccion unica manda) y que toda operacion sobre citas mantenga la coherencia cita-hueco-solicitud",
+    "AF": "que la interfaz de citas devuelva codigos HTTP y codigos de error estables y legibles para una integracion externa, incluidos los casos invalidos, mal tipados y de concurrencia",
+    "COMP": "que las consultas prometidas (listado con filtros y huecos libres) devuelvan el calendario prometido por el contrato en su formato acordado"
+  },
+  "estados": {
+    "CREADO": {
+      "http": 201,
+      "descripcion": "cita creada y hueco bloqueado (POST /api/citas)"
+    },
+    "OK": {
+      "http": 200,
+      "descripcion": "peticion atendida con cuerpo (consulta, operacion de estado o lote de vencidas)"
+    },
+    "INVALIDOS": {
+      "http": 400,
+      "codigo": "DATOS_INVALIDOS",
+      "descripcion": "entrada fuera de clase o regla de negocio violada en el servicio"
+    },
+    "SOLICITUD_MALFORMADA": {
+      "http": 400,
+      "codigo": "DATOS_INVALIDOS",
+      "descripcion": "el cuerpo ni siquiera se puede leer: HttpMessageNotReadableException tiene consejo propio -> 400 con cuerpo ApiError DATOS_INVALIDOS (HALLAZGO: comparte codigo con INVALIDOS)",
+      "codigoNota": "la conversion la absorbe el consejo cuerpoIlegible"
+    },
+    "NO_ENCONTRADA": {
+      "http": 404,
+      "codigo": "CITA_NO_ENCONTRADA",
+      "descripcion": "el id de la ruta no apunta a ninguna cita"
+    },
+    "RUTA_INEXISTENTE": {
+      "http": 404,
+      "descripcion": "ninguna mano del controlador atiende la ruta: 404 de Spring sin cuerpo ApiError (alternativa al 500 conjeturado; la rojo decide)"
+    },
+    "METODO_NO_PERMITIDO": {
+      "http": 405,
+      "descripcion": "la ruta si esta mapeada para otros metodos pero no para el enviado: Spring resuelve el 405 antes de llamar a cualquier handler, asi que el consejo Exception del controlador no lo alcanza y el cuerpo no es ApiError (la rojo decide)"
+    },
+    "TRANSICION": {
+      "http": 409,
+      "codigo": "CONFLICTO_TRANSICION_INVALIDA",
+      "descripcion": "la operacion no esta permitida desde el estado actual de la cita"
+    },
+    "FUERA_FRANJA": {
+      "http": 409,
+      "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+      "descripcion": "el profesional no tiene agenda, o el dia es festivo, o la cita no cabe en la franja"
+    },
+    "HUECO_OCUPADO": {
+      "http": 409,
+      "codigo": "CONFLICTO_HUECO_OCUPADO",
+      "descripcion": "el hueco ya esta bloqueado por otra cita activa (o la base de datos lo rechazo por la restriccion unica)"
+    },
+    "SOLICITUD_NO_APTA": {
+      "http": 409,
+      "codigo": "CONFLICTO_SOLICITUD_NO_APTA",
+      "descripcion": "la solicitud no existe o no esta en estado creada (D36)"
+    },
+    "PLAZO": {
+      "http": 409,
+      "codigo": "CONFLICTO_PLAZO_CANCELACION",
+      "descripcion": "cancelar fuera de las 24 h de antelacion que fija la politica de la prueba"
+    },
+    "ERROR_INTERNO": {
+      "http": 500,
+      "codigo": "ERROR_INTERNO",
+      "descripcion": "el consejo Exception generico absorbe lo que no tiene handler propio: falta un parametro obligatorio, el tipo del parametro no casa, metodo o ruta sin mapear (HALLAZGO: en CDU12 no se arreglaron estos casos como en D35)"
+    }
+  },
+  "tabla_A": {
+    "id": "A",
+    "nombre": "Alta de cita (POST /api/citas)",
+    "kind": "pairwise",
+    "csv": "tdop-cdu12-agendar.csv",
+    "puerta": "AF completitud y correccion: toda alta valida crea la cita y bloquea su hueco, y toda alta invalida se rechaza con un codigo de error estable; SEG: ningun hueco queda doblemente reservado",
+    "solicitud": "POST /api/citas",
+    "tipoTC": "feliz + error (TDOP)",
+    "noCombinaInvalidos": true,
+    "noEmparejar": ["cuerpo"],
+    "filasBase": [
+      { "estadoHueco": "OCUPADO_EXACTO" },
+      { "estadoHueco": "OCUPADO_SOLAPE" }
+    ],
+    "estadosBase": [
+      "CREADO",
+      "SOLICITUD_MALFORMADA",
+      "INVALIDOS",
+      "SOLICITUD_NO_APTA",
+      "FUERA_FRANJA",
+      "HUECO_OCUPADO"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "VACIO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "sin cuerpo no hay CitaNuevaDTO: HttpMessageNotReadableException (consejo cuerpoIlegible)"
+      },
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "JSON_MALFORMADO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "el cuerpo no es JSON legible: HttpMessageNotReadableException"
+      },
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "JSON_NULO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "literal null: @RequestBody obligatorio no perdona un cuerpo null y HttpMessageNotReadable lo traduce el consejo cuerpoIlegible"
+      },
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "TIPO_ERRONEO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "los campos no caben en los tipos del record: la conversion JsonMappingException viene envuelta en HttpMessageNotReadableException"
+      },
+      {
+        "si": {
+          "factor": "profesionalId",
+          "igual": "VACIO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "el servicio exige profesional no en blanco justo despues del parseo"
+      },
+      {
+        "si": {
+          "factor": "inicio",
+          "igual": "AUSENTE"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "inicio nulo: IllegalArgumentException del servicio antes de mirar la solicitud"
+      },
+      {
+        "si": {
+          "factor": "duracion",
+          "igual": "NEGATIVA"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "duracionMinutos < 0 se rechaza antes de tocar CDU06 o CDU13 (precedencia leida del servicio)"
+      },
+      {
+        "si": {
+          "factor": "estadoSolicitud",
+          "igual": "INEXISTENTE"
+        },
+        "estado": "SOLICITUD_NO_APTA",
+        "codigo": "CONFLICTO_SOLICITUD_NO_APTA",
+        "porque": "CDU06 no conoce esa solicitud (D36)"
+      },
+      {
+        "si": {
+          "factor": "estadoSolicitud",
+          "igual": "CITADA"
+        },
+        "estado": "SOLICITUD_NO_APTA",
+        "codigo": "CONFLICTO_SOLICITUD_NO_APTA",
+        "porque": "solo vale agendar sobre una solicitud en estado creada (D36)"
+      },
+      {
+        "si": {
+          "factor": "estadoSolicitud",
+          "igual": "PRESCRITA"
+        },
+        "estado": "SOLICITUD_NO_APTA",
+        "codigo": "CONFLICTO_SOLICITUD_NO_APTA",
+        "porque": "la solicitud prescrita todavia no puede llevar cita"
+      },
+      {
+        "si": {
+          "factor": "profesionalId",
+          "igual": "SIN_AGENDA"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "CDU13 responde AgendaNoEncontrado y el servicio lo envuelve en FUERA_DE_FRANJA (D36: profesional sin agenda no es error 404)"
+      },
+      {
+        "si": {
+          "factor": "profesionalId",
+          "igual": "DESCONOCIDO"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "sin agenda para ese id, la franja esta vacia"
+      },
+      {
+        "si": {
+          "factor": "inicio",
+          "igual": "ANTERIOR_APERTURA"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "07:00 no cabe en la franja 08:00-15:00"
+      },
+      {
+        "si": {
+          "factor": "inicio",
+          "igual": "PASADA_CIERRE"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "14:45 + duracion se pasa del cierre 15:00"
+      },
+      {
+        "si": {
+          "factor": "inicio",
+          "igual": "FESTIVO"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "2026-11-10 es festivo: la agenda no da franja ese dia"
+      },
+      {
+        "si": {
+          "factor": "duracion",
+          "igual": "EXCESIVA"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "9999 min no caben en ninguna franja (exigeCaberEnFranja)"
+      },
+      {
+        "si": {
+          "factor": "estadoHueco",
+          "igual": "OCUPADO_EXACTO"
+        },
+        "estado": "HUECO_OCUPADO",
+        "codigo": "CONFLICTO_HUECO_OCUPADO",
+        "porque": "exigeHuecoLibre ve un hueco que arranca justo en el inicio pedido"
+      },
+      {
+        "si": {
+          "factor": "estadoHueco",
+          "igual": "OCUPADO_SOLAPE"
+        },
+        "estado": "HUECO_OCUPADO",
+        "codigo": "CONFLICTO_HUECO_OCUPADO",
+        "porque": "el solape con otro hueco activo tambien lo rechaza el motor anti-colision"
+      },
+      {
+        "si": {},
+        "estado": "CREADO",
+        "codigo": "-",
+        "porque": "alta valida: 201 con la cita y su hueco bloqueado (saveAndFlush contra la unica); con profesionalId ESPACIOS Cita.nueva lo recorta y tambien crea"
+      }
+    ],
+    "factores": [
+      {
+        "nombre": "cuerpo",
+        "descripcion": "que se envia como cuerpo JSON de la peticion",
+        "niveles": [
+          {
+            "valor": "VALIDO",
+            "valido": true,
+            "motivo": "JSON completo con los factores de esta misma fila"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "POST sin cuerpo",
+            "criterio": "clase invalida: solicitud ilegible"
+          },
+          {
+            "valor": "JSON_MALFORMADO",
+            "valido": false,
+            "motivo": "'{no-json'",
+            "criterio": "clase invalida: solicitud ilegible"
+          },
+          {
+            "valor": "JSON_NULO",
+            "valido": false,
+            "motivo": "literal null: tampoco materializa el record",
+            "criterio": "clase invalida: solicitud ilegible"
+          },
+          {
+            "valor": "TIPO_ERRONEO",
+            "valido": false,
+            "motivo": "inicio 'no-fecha' y duracion 'treinta' con Content-Type JSON",
+            "criterio": "clase invalida: tipos imposibles"
+          }
+        ]
+      },
+      {
+        "nombre": "profesionalId",
+        "descripcion": "profesional del cuerpo (campo obligatorio del DTO)",
+        "setupPor": {},
+        "niveles": [
+          {
+            "valor": "MEDICO",
+            "valido": true,
+            "motivo": "api-medico, con agenda 08:00-15:00 salvo festivo"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "cadena vacia: el servicio la rechaza antes de nada util",
+            "criterio": "clase invalida: obligatorio en blanco"
+          },
+          {
+            "valor": "ESPACIOS",
+            "valido": true,
+            "motivo": "'  api-medico  ': Cita.nueva recorta profesionalId, asi que si encuentra agenda"
+          },
+          {
+            "valor": "SIN_AGENDA",
+            "valido": true,
+            "motivo": "api-sin-agenda: existe como id pero CDU13 no le da agenda"
+          },
+          {
+            "valor": "DESCONOCIDO",
+            "valido": true,
+            "motivo": "api-profesional-que-no-existe"
+          }
+        ]
+      },
+      {
+        "nombre": "inicio",
+        "descripcion": "inicio de la cita (LocalDateTime ISO en el cuerpo)",
+        "niveles": [
+          {
+            "valor": "AUT",
+            "valido": true,
+            "motivo": "2026-11-13T09:00 dentro de la franja",
+            "criterio": "clase valida tipica"
+          },
+          {
+            "valor": "APERTURA_JUSTA",
+            "valido": true,
+            "motivo": "2026-11-13T08:00: justo la apertura",
+            "criterio": "valor limite: borde inferior de la franja"
+          },
+          {
+            "valor": "JUSTO_CIERRE",
+            "valido": true,
+            "motivo": "2026-11-13T14:30: con 30 min acaba en el cierre exacto",
+            "criterio": "valor limite: ultimo inicio que cabe"
+          },
+          {
+            "valor": "PASADA_CIERRE",
+            "valido": true,
+            "motivo": "2026-11-13T14:45: un minuto despues del ultimo inicio que cabe",
+            "criterio": "valor limite: primer inicio que revienta el cierre"
+          },
+          {
+            "valor": "ANTERIOR_APERTURA",
+            "valido": true,
+            "motivo": "2026-11-13T07:00: un hora antes de abrir",
+            "criterio": "valor limite: borde inferior fallando"
+          },
+          {
+            "valor": "FESTIVO",
+            "valido": true,
+            "motivo": "2026-11-10T09:00: hora correcta en dia festivo",
+            "criterio": "valor limite: borde del calendario festivo"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "el JSON no trae la clave inicio",
+            "criterio": "clase invalida: obligatorio ausente"
+          }
+        ]
+      },
+      {
+        "nombre": "duracion",
+        "descripcion": "duracionMinutos del cuerpo (int primitivo: ausente vale 0)",
+        "niveles": [
+          {
+            "valor": "TREINTA",
+            "valido": true,
+            "motivo": "30 minutos"
+          },
+          {
+            "valor": "NEGATIVA",
+            "valido": false,
+            "motivo": "-5: el record primitivo la acepta y el servicio no",
+            "criterio": "clase invalida + borde: el entero mas alla de lo minimo"
+          },
+          {
+            "valor": "EXCESIVA",
+            "valido": true,
+            "motivo": "9999 minutos: pasa el parseo, la franja la rechaza",
+            "criterio": "valor limite: longitud desbordada"
+          }
+        ]
+      },
+      {
+        "nombre": "estadoHueco",
+        "descripcion": "situacion del hueco del profesional antes de la peticion",
+        "setupPor": {
+          "LIBRE": "SEM-HUECO-SOL:LIBRE",
+          "OCUPADO_EXACTO": "SEM-HUECO-SOL:EXACTO",
+          "OCUPADO_SOLAPE": "SEM-HUECO-SOL:SOLAPE"
+        },
+        "niveles": [
+          {
+            "valor": "LIBRE",
+            "valido": true,
+            "motivo": "sin fila en cita_hueco en esa hora"
+          },
+          {
+            "valor": "OCUPADO_EXACTO",
+            "valido": true,
+            "motivo": "hueco hueso con inicio == el pedido",
+            "criterio": "valor limite: solape minimo exacto"
+          },
+          {
+            "valor": "OCUPADO_SOLAPE",
+            "valido": true,
+            "motivo": "hueco hueso 15 min despues del inicio pedido",
+            "criterio": "valor limite: solape parcial"
+          }
+        ]
+      },
+      {
+        "nombre": "estadoSolicitud",
+        "descripcion": "solicitud del cuerpo y su estado en CDU06 (falso)",
+        "setupPor": {
+          "CREADA": "SEM-SOL:CREADA",
+          "CITADA": "SEM-SOL:CITADA",
+          "PRESCRITA": "SEM-SOL:PRESCRITA"
+        },
+        "niveles": [
+          {
+            "valor": "CREADA",
+            "valido": true,
+            "motivo": "api-sol-creada: la unica apta para agendar (D36)"
+          },
+          {
+            "valor": "CITADA",
+            "valido": true,
+            "motivo": "api-sol-citada: ya tenia cita"
+          },
+          {
+            "valor": "PRESCRITA",
+            "valido": true,
+            "motivo": "api-sol-prescrita: todavia no es apta"
+          },
+          {
+            "valor": "INEXISTENTE",
+            "valido": true,
+            "motivo": "api-sol-que-no-existe"
+          },
+          {
+            "valor": "NULA",
+            "valido": true,
+            "motivo": "solicitudId null: cita sin solicitud, CDU06 no se consulta"
+          }
+        ]
+      }
+    ]
+  },
+  "tabla_B": {
+    "id": "B",
+    "nombre": "Reprogramacion de cita (POST /api/citas/{id}/reprogramar)",
+    "kind": "pairwise",
+    "csv": "tdop-cdu12-reprogramar.csv",
+    "puerta": "AF correccion: reprogramar mueve el hueco de la propia cita y solo desde estados no terminales; SEG: nunca se pisa el hueco de otra cita",
+    "solicitud": "POST /api/citas/{id}/reprogramar",
+    "tipoTC": "feliz + error (TDOP)",
+    "noCombinaInvalidos": true,
+    "noEmparejar": ["cuerpo"],
+    "filasBase": [
+      { "cuerpo": "JSON_VACIO", "estadoCita": "PROGRAMADA" }
+    ],
+    "estadosBase": [
+      "OK",
+      "SOLICITUD_MALFORMADA",
+      "INVALIDOS",
+      "NO_ENCONTRADA",
+      "TRANSICION",
+      "FUERA_FRANJA",
+      "HUECO_OCUPADO"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "VACIO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "POST sin cuerpo: HttpMessageNotReadableException"
+      },
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "JSON_MALFORMADO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "cuerpo ilegible: HttpMessageNotReadableException"
+      },
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "JSON_NULO"
+        },
+        "estado": "SOLICITUD_MALFORMADA",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "null tampoco materializa ReprogramacionRequest"
+      },
+      {
+        "si": {
+          "factor": "nuevoInicio",
+          "igual": "AUSENTE"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "inicio nulo: el servicio lo comprueba ANTES de buscar la cita (precedencia leida del codigo)"
+      },
+      {
+        "si": {
+          "factor": "cuerpo",
+          "igual": "JSON_VACIO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "{} deja inicio nulo: mismo camino IAE que AUSENTE pero con JSON legitimo"
+      },
+      {
+        "si": {
+          "factor": "estadoCita",
+          "igual": "NO_ENCUENTRA"
+        },
+        "estado": "NO_ENCONTRADA",
+        "codigo": "CITA_NO_ENCONTRADA",
+        "porque": "el id de la ruta no existe (y el cuerpo ya era valido)"
+      },
+      {
+        "si": {
+          "factor": "estadoCita",
+          "igual": "CANCELADA"
+        },
+        "estado": "TRANSICION",
+        "codigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "porque": "moverA rechaza mover una cita terminal antes de mirar franja y hueco"
+      },
+      {
+        "si": {
+          "factor": "estadoCita",
+          "igual": "EXPIRADA"
+        },
+        "estado": "TRANSICION",
+        "codigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "porque": "estado terminal: transicion prohibida"
+      },
+      {
+        "si": {
+          "factor": "estadoCita",
+          "igual": "REALIZADA"
+        },
+        "estado": "TRANSICION",
+        "codigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "porque": "estado terminal: transicion prohibida"
+      },
+      {
+        "si": {
+          "factor": "nuevoInicio",
+          "igual": "FUERA_FRANJA"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "19:00 no cabe en la franja 08:00-15:00"
+      },
+      {
+        "si": {
+          "factor": "nuevoInicio",
+          "igual": "OCUPADO_EXACTO"
+        },
+        "estado": "HUECO_OCUPADO",
+        "codigo": "CONFLICTO_HUECO_OCUPADO",
+        "porque": "hueco hueso en el nuevo inicio: exigeHuecoLibre excluye la cita propia pero no el resto"
+      },
+      {
+        "si": {
+          "factor": "nuevoInicio",
+          "igual": "OCUPADO_SOLAPE"
+        },
+        "estado": "HUECO_OCUPADO",
+        "codigo": "CONFLICTO_HUECO_OCUPADO",
+        "porque": "solape parcial con otro hueco activo"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "reprogramacion valida: 200 con la cita movida y su hueco reescrito"
+      }
+    ],
+    "factores": [
+      {
+        "nombre": "cuerpo",
+        "descripcion": "que se envia como cuerpo del reprogramar",
+        "niveles": [
+          {
+            "valor": "VALIDO",
+            "valido": true,
+            "motivo": "JSON con el inicio del nivel nuevoInicio de la fila"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "POST sin cuerpo",
+            "criterio": "clase invalida: solicitud ilegible"
+          },
+          {
+            "valor": "JSON_MALFORMADO",
+            "valido": false,
+            "motivo": "'{no-json'",
+            "criterio": "clase invalida: solicitud ilegible"
+          },
+          {
+            "valor": "JSON_VACIO",
+            "valido": true,
+            "motivo": "{} : JSON legitimo pero sin inicio (no es ilegible, es fuera de clase)",
+            "criterio": "valor limite: obligatorio ausente"
+          },
+          {
+            "valor": "JSON_NULO",
+            "valido": false,
+            "motivo": "literal null",
+            "criterio": "clase invalida: solicitud ilegible"
+          }
+        ]
+      },
+      {
+        "nombre": "estadoCita",
+        "descripcion": "estado de la cita apuntada por la ruta",
+        "setupPor": {
+          "PROGRAMADA": "SEM-CITA:PROGRAMADA",
+          "CONFIRMADA": "SEM-CITA:CONFIRMADA",
+          "CANCELADA": "SEM-CITA:CANCELADA",
+          "EXPIRADA": "SEM-CITA:EXPIRADA",
+          "REALIZADA": "SEM-CITA:REALIZADA"
+        },
+        "niveles": [
+          {
+            "valor": "PROGRAMADA",
+            "valido": true,
+            "motivo": "estado inicial: reprogramar es feliz"
+          },
+          {
+            "valor": "CONFIRMADA",
+            "valido": true,
+            "motivo": "no terminal: tambien se puede mover"
+          },
+          {
+            "valor": "CANCELADA",
+            "valido": true,
+            "motivo": "terminal: moverA la rechaza"
+          },
+          {
+            "valor": "EXPIRADA",
+            "valido": true,
+            "motivo": "terminal: moverA la rechaza"
+          },
+          {
+            "valor": "REALIZADA",
+            "valido": true,
+            "motivo": "terminal: moverA la rechaza"
+          },
+          {
+            "valor": "NO_ENCUENTRA",
+            "valido": true,
+            "motivo": "ruta con id api-cita-que-no-existe"
+          }
+        ]
+      },
+      {
+        "nombre": "nuevoInicio",
+        "descripcion": "inicio pedido en el cuerpo",
+        "setupPor": {
+          "AUT": "SEM-HUECO-DEST:LIBRE",
+          "OCUPADO_EXACTO": "SEM-HUECO-DEST:EXACTO",
+          "OCUPADO_SOLAPE": "SEM-HUECO-DEST:SOLAPE"
+        },
+        "niveles": [
+          {
+            "valor": "AUT",
+            "valido": true,
+            "motivo": "2026-11-13T13:00 dentro de franja y hueco libre",
+            "criterio": "clase valida tipica"
+          },
+          {
+            "valor": "OCUPADO_EXACTO",
+            "valido": true,
+            "motivo": "hueco hueso clavado en el nuevo inicio",
+            "criterio": "valor limite: solape minimo"
+          },
+          {
+            "valor": "OCUPADO_SOLAPE",
+            "valido": true,
+            "motivo": "hueco hueso 15 min despues",
+            "criterio": "valor limite: solape parcial"
+          },
+          {
+            "valor": "FUERA_FRANJA",
+            "valido": true,
+            "motivo": "2026-11-13T19:00: fuera de la franja",
+            "criterio": "valor limite: borde de franja fallando"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "cuerpo legitimo sin la clave inicio",
+            "criterio": "clase invalida: obligatorio ausente"
+          }
+        ]
+      }
+    ]
+  },
+  "tabla_C": {
+    "id": "C",
+    "nombre": "Huecos libres (GET /api/citas/huecos)",
+    "kind": "pairwise",
+    "csv": "tdop-cdu12-huecos.csv",
+    "puerta": "COMP: la pantalla de recepcion recibe el calendario de huecos prometido; SEG: un hueco sembrado como ocupado nunca aparece libre",
+    "solicitud": "GET /api/citas/huecos?profesionalId=&desde=&hasta=&duracionMinutos=",
+    "tipoTC": "feliz + error (TDOP)",
+    "noCombinaInvalidos": true,
+    "estadosBase": ["OK", "INVALIDOS", "ERROR_INTERNO", "FUERA_FRANJA"],
+    "codigosError": {
+      "INVALIDOS": "DATOS_INVALIDOS"
+    },
+    "setups": [
+      "SEM-HUECO-FIJO"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "factor": "rango",
+          "igual": "TEXTO_ILEGAL"
+        },
+        "estado": "ERROR_INTERNO",
+        "codigo": "ERROR_INTERNO",
+        "porque": "HALLAZGO: el TypeMismatch del @RequestParam LocalDate cae al consejo Exception generico (no hay handler propio como en D35)"
+      },
+      {
+        "si": {
+          "factor": "rango",
+          "igual": "AUSENTE"
+        },
+        "estado": "ERROR_INTERNO",
+        "codigo": "ERROR_INTERNO",
+        "porque": "HALLAZGO: MissingServletRequestParameterException de los @RequestParam obligatorios tampoco tiene consejo propio -> 500"
+      },
+      {
+        "si": {
+          "factor": "rango",
+          "igual": "INVERTIDO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "desde > hasta: regla de negocio del servicio (IAE -> 400), se comprueba antes de tocar la agenda"
+      },
+      {
+        "si": {
+          "factor": "profesionalId",
+          "igual": "VACIO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "profesional en blanco: es la primera guarda del servicio"
+      },
+      {
+        "si": {
+          "factor": "duracion",
+          "igual": "CERO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "duracionMinutos <= 0 la rechaza huecosLibres (no aplica el defecto del catalogo: aqui no hay solicitud)"
+      },
+      {
+        "si": {
+          "factor": "duracion",
+          "igual": "NEGATIVA"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "igual que CERO: debe ser positiva"
+      },
+      {
+        "si": {
+          "factor": "profesionalId",
+          "igual": "SIN_AGENDA"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "CDU13 lanza AgendaNoEncontrado y el servicio lo envuelve en FUERA_DE_FRANJA (D36)"
+      },
+      {
+        "si": {
+          "factor": "profesionalId",
+          "igual": "DESCONOCIDO"
+        },
+        "estado": "FUERA_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "el id no tiene agenda en CDU13: agenda falsa desconocida -> AgendaNoEncontrado -> FUERA_DE_FRANJA, igual que SIN_AGENDA"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "calendario de huecos en JSON (200); con ESPACIOS el servicio SI recorta profesionalId (huecosLibres llama a franjasDelProfesional con el id recortado)"
+      }
+    ],
+    "factores": [
+      {
+        "nombre": "profesionalId",
+        "descripcion": "parametro profesionalId de la query",
+        "setupPor": {
+          "VACIO": "BODY:VACIO",
+          "ESPACIOS": "BODY:ESPACIOS",
+          "DESCONOCIDO": "BODY:DESCONOCIDO"
+        },
+        "niveles": [
+          {
+            "valor": "MEDICO",
+            "valido": true,
+            "motivo": "api-medico: unica agenda sembrada"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "profesionalId= en blanco",
+            "criterio": "clase invalida: obligatorio en blanco"
+          },
+          {
+            "valor": "ESPACIOS",
+            "valido": true,
+            "motivo": "'  api-medico  ': huecosLibres SI recorta el id antes de pedir la agenda"
+          },
+          {
+            "valor": "SIN_AGENDA",
+            "valido": true,
+            "motivo": "api-sin-agenda: id conocido sin agenda en CDU13"
+          },
+          {
+            "valor": "DESCONOCIDO",
+            "valido": true,
+            "motivo": "api-profesional-que-no-existe: tambien sin agenda"
+          }
+        ]
+      },
+      {
+        "nombre": "rango",
+        "descripcion": "par desde..hasta de la query (ISO.DATE)",
+        "niveles": [
+          {
+            "valor": "COHERENTE",
+            "valido": true,
+            "motivo": "desde=2026-11-12 y hasta=2026-11-14",
+            "criterio": "clase valida tipica"
+          },
+          {
+            "valor": "IGUAL_DIA",
+            "valido": true,
+            "motivo": "desde == hasta == 2026-11-13",
+            "criterio": "valor limite: rango de un solo dia"
+          },
+          {
+            "valor": "INVERTIDO",
+            "valido": false,
+            "motivo": "desde=2026-11-14 y hasta=2026-11-12",
+            "criterio": "valor limite: desde justo despues de hasta"
+          },
+          {
+            "valor": "SOLO_FESTIVO",
+            "valido": true,
+            "motivo": "2026-11-10..2026-11-10: solo el festivo -> lista vacia",
+            "criterio": "valor limite: borde del calendario festivo"
+          },
+          {
+            "valor": "TEXTO_ILEGAL",
+            "valido": false,
+            "motivo": "desde=hola: ni siquiera convierte a LocalDate",
+            "criterio": "clase invalida: tipo de parametro imposible"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "no se envia hasta (parametro obligatorio)",
+            "criterio": "clase invalida: obligatorio ausente en la query"
+          }
+        ]
+      },
+      {
+        "nombre": "duracion",
+        "descripcion": "parametro opcional duracionMinutos de la query",
+        "niveles": [
+          {
+            "valor": "D30",
+            "valido": true,
+            "motivo": "duracionMinutos=30"
+          },
+          {
+            "valor": "D60",
+            "valido": true,
+            "motivo": "duracionMinutos=60: parte los huecos de la franja"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": true,
+            "motivo": "sin el parametro: usa el hueco entero de la franja",
+            "criterio": "valor limite: duracion por defecto del contrato"
+          },
+          {
+            "valor": "CERO",
+            "valido": false,
+            "motivo": "duracionMinutos=0",
+            "criterio": "valor limite: el minimo mas alla de lo permitido"
+          },
+          {
+            "valor": "NEGATIVA",
+            "valido": false,
+            "motivo": "duracionMinutos=-5",
+            "criterio": "clase invalida: negativa"
+          }
+        ]
+      }
+    ]
+  },
+  "tabla_D": {
+    "id": "D",
+    "nombre": "Listado de citas con filtros (GET /api/citas)",
+    "kind": "pairwise",
+    "csv": "tdop-cdu12-listado.csv",
+    "puerta": "COMP: el listado respeta los filtros del contrato (fecha, profesional, estado) y los fechas mal formadas se rechazan",
+    "solicitud": "GET /api/citas?desde=&hasta=&profesionalId=&estado=",
+    "tipoTC": "feliz + error (TDOP)",
+    "noCombinaInvalidos": true,
+    "estadosBase": ["OK", "INVALIDOS", "ERROR_INTERNO"],
+    "codigosError": {
+      "INVALIDOS": "DATOS_INVALIDOS"
+    },
+    "setups": [
+      "SEM-CITA:PROGRAMADA"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "factor": "rango",
+          "igual": "FECHA_CORTA"
+        },
+        "estado": "ERROR_INTERNO",
+        "codigo": "ERROR_INTERNO",
+        "porque": "HALLAZGO 2: '2026-11' no casa con el ISO.DATE_TIME del @RequestParam -> TypeMismatchException sin consejo propio, lo absorbe Exception -> 500"
+      },
+      {
+        "si": {
+          "factor": "rango",
+          "igual": "INVERTIDO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "desde > hasta: guardia del listado igual que en huecos"
+      },
+      {
+        "si": {
+          "factor": "estado",
+          "igual": "DESCONOCIDO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "estado fuera del enum: no se puede convertir"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "200 con la lista filtrada (puede ir vacia); un filtro profesionalId en blanco vale como sin filtro y ESPACIOS se recorta en el servicio"
+      }
+    ],
+    "factores": [
+      {
+        "nombre": "rango",
+        "descripcion": "par desde..hasta de la query (ISO.DATE_TIME)",
+        "niveles": [
+          {
+            "valor": "COHERENTE",
+            "valido": true,
+            "motivo": "desde=2026-11-12T00:00 hasta=2026-11-14T23:59",
+            "criterio": "clase valida tipica"
+          },
+          {
+            "valor": "IGUAL_DIA",
+            "valido": true,
+            "motivo": "desde=2026-11-13T00:00 hasta=2026-11-13T23:59",
+            "criterio": "valor limite: un solo dia"
+          },
+          {
+            "valor": "INVERTIDO",
+            "valido": false,
+            "motivo": "desde=2026-11-14T00:00 hasta=2026-11-12T00:00",
+            "criterio": "valor limite: rango invertido"
+          },
+          {
+            "valor": "FECHA_CORTA",
+            "valido": false,
+            "motivo": "desde=2026-11 (truncada)",
+            "criterio": "clase invalida: formato imposible"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": true,
+            "motivo": "sin filtros de fecha: todos los dias",
+            "criterio": "valor limite: sin filtro"
+          }
+        ]
+      },
+      {
+        "nombre": "estado",
+        "descripcion": "parametro estado de la query",
+        "setupPor": {
+          "DESCONOCIDO": "BODY:DESCONOCIDO"
+        },
+        "niveles": [
+          {
+            "valor": "AUSENTE",
+            "valido": true,
+            "motivo": "sin filtro de estado"
+          },
+          {
+            "valor": "PROGRAMADA",
+            "valido": true,
+            "motivo": "estado programada (minusculas en la query)"
+          },
+          {
+            "valor": "CONFIRMADA",
+            "valido": true,
+            "motivo": "no hay citas confirmadas sembradas -> lista vacia legitima"
+          },
+          {
+            "valor": "DESCONOCIDO",
+            "valido": false,
+            "motivo": "estado=volando: fuera del enum",
+            "criterio": "clase invalida: valor imposible"
+          }
+        ]
+      },
+      {
+        "nombre": "profFiltro",
+        "descripcion": "parametro profesionalId del filtro",
+        "setupPor": {
+          "VACIO": "BODY:VACIO",
+          "ESPACIOS": "BODY:ESPACIOS",
+          "DESCONOCIDO": "BODY:DESCONOCIDO"
+        },
+        "niveles": [
+          {
+            "valor": "API_MEDICO",
+            "valido": true,
+            "motivo": "filtra por la agenda con citas"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": true,
+            "motivo": "sin filtro de profesional",
+            "criterio": "valor limite: sin filtro"
+          },
+          {
+            "valor": "VACIO",
+            "valido": true,
+            "motivo": "profesionalId= en blanco: listar lo trata como sin filtro",
+            "criterio": "valor limite: vacio equivale a sin filtro (no hay guarda que lo rechace)"
+          },
+          {
+            "valor": "ESPACIOS",
+            "valido": true,
+            "motivo": "'  api-medico  ': listar recorta el filtro antes de ir al repositorio"
+          },
+          {
+            "valor": "DESCONOCIDO",
+            "valido": true,
+            "motivo": "profesional sin citas -> lista vacia"
+          }
+        ]
+      }
+    ]
+  },
+  "tabla_E": {
+    "id": "E",
+    "nombre": "Operaciones de estado de la cita (confirmar, realizar, reprogramar, cancelar, detalle, lote de expiracion)",
+    "kind": "filas",
+    "csv": "tdop-cdu12-operaciones.csv",
+    "puerta": "SEG integridad: ninguna operacion permite salir de un estado terminal, el plazo de cancelacion manda sobre el hueco pero no sobre la transicion (D36), y el lote de vencidas solo toca citas activas",
+    "solicitud": "POST /api/citas/{id}/confirmar|realizar|reprogramar|cancelar | GET /api/citas/{id} | POST /api/citas/expirar-vencidas",
+    "tipoTC": "feliz + error (TDOP: enumeracion operacion x estado)",
+    "codigosError": {
+      "NO_ENCONTRADA": "CITA_NO_ENCONTRADA"
+    },
+    "columnas": [
+      "id",
+      "operacion",
+      "estadoCita",
+      "plazo",
+      "setup",
+      "esperadoStatus",
+      "esperadoCodigo",
+      "nota"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "invalido": true
+        },
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "la enumeracion no combina factores: cada fila lleva el esperado escrito a mano"
+      },
+      {
+        "si": {},
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "cada fila fija su esperado"
+      }
+    ],
+    "filas": [
+      {
+        "operacion": "CONFIRMAR",
+        "estadoCita": "PROGRAMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "transicion feliz programada -> confirmada"
+      },
+      {
+        "operacion": "CONFIRMAR",
+        "estadoCita": "CONFIRMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CONFIRMADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "confirmar solo admite programada: no es idempotente"
+      },
+      {
+        "operacion": "CONFIRMAR",
+        "estadoCita": "CANCELADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CANCELADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "estado terminal"
+      },
+      {
+        "operacion": "CONFIRMAR",
+        "estadoCita": "EXPIRADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:EXPIRADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "estado terminal"
+      },
+      {
+        "operacion": "CONFIRMAR",
+        "estadoCita": "REALIZADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:REALIZADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "estado terminal"
+      },
+      {
+        "operacion": "CONFIRMAR",
+        "estadoCita": "NO_ENCUENTRA",
+        "plazo": "-",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "CITA_NO_ENCONTRADA",
+        "nota": "el id de la ruta no existe"
+      },
+      {
+        "operacion": "REALIZAR",
+        "estadoCita": "PROGRAMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "realizar admite programada y confirmada"
+      },
+      {
+        "operacion": "REALIZAR",
+        "estadoCita": "CONFIRMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CONFIRMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "transicion feliz"
+      },
+      {
+        "operacion": "REALIZAR",
+        "estadoCita": "CANCELADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CANCELADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "no se puede realizar una cita cancelada"
+      },
+      {
+        "operacion": "REALIZAR",
+        "estadoCita": "EXPIRADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:EXPIRADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "estado terminal"
+      },
+      {
+        "operacion": "REALIZAR",
+        "estadoCita": "REALIZADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:REALIZADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "realizar no es idempotente"
+      },
+      {
+        "operacion": "REALIZAR",
+        "estadoCita": "NO_ENCUENTRA",
+        "plazo": "-",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "CITA_NO_ENCONTRADA",
+        "nota": "id inexistente"
+      },
+      {
+        "operacion": "REPROGRAMAR",
+        "estadoCita": "PROGRAMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "cuerpo con inicio 2026-11-13T13:00 libre y en franja"
+      },
+      {
+        "operacion": "REPROGRAMAR",
+        "estadoCita": "CONFIRMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CONFIRMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "no terminal: tambien se mueve"
+      },
+      {
+        "operacion": "REPROGRAMAR",
+        "estadoCita": "CANCELADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CANCELADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "moverA rechaza el terminal antes de mirar franja y hueco"
+      },
+      {
+        "operacion": "REPROGRAMAR",
+        "estadoCita": "EXPIRADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:EXPIRADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "terminal"
+      },
+      {
+        "operacion": "REPROGRAMAR",
+        "estadoCita": "REALIZADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:REALIZADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "terminal"
+      },
+      {
+        "operacion": "REPROGRAMAR",
+        "estadoCita": "NO_ENCUENTRA",
+        "plazo": "-",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "CITA_NO_ENCONTRADA",
+        "nota": "cuerpo valido pero id inexistente"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "PROGRAMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "cuerpo {motivo:...}: cancelacion libre fuera de plazo"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "CONFIRMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CONFIRMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "cancelar admite programada y confirmada"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "CANCELADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:CANCELADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "cancelar no es idempotente"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "EXPIRADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:EXPIRADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "terminal"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "REALIZADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:REALIZADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "terminal"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "NO_ENCUENTRA",
+        "plazo": "-",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "CITA_NO_ENCONTRADA",
+        "nota": "el motivo valido no evita el 404"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "PROGRAMADA",
+        "plazo": "CERCANO",
+        "setup": "SEM-CITA-CERCANO:PROGRAMADA",
+        "esperadoStatus": "PLAZO",
+        "esperadoCodigo": "CONFLICTO_PLAZO_CANCELACION",
+        "nota": "inicio 2026-11-11T09:00: el reloj 2026-11-11T08:00 pasa del limite inicio-24h"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "CONFIRMADA",
+        "plazo": "CERCANO",
+        "setup": "SEM-CITA-CERCANO:CONFIRMADA",
+        "esperadoStatus": "PLAZO",
+        "esperadoCodigo": "CONFLICTO_PLAZO_CANCELACION",
+        "nota": "el plazo se exige tras cancelar en el dominio (cita ya cancelada en memoria pero la transaccion revierte)"
+      },
+      {
+        "operacion": "CANCELAR",
+        "estadoCita": "CANCELADA",
+        "plazo": "CERCANO",
+        "setup": "SEM-CITA-CERCANO:CANCELADA",
+        "esperadoStatus": "TRANSICION",
+        "esperadoCodigo": "CONFLICTO_TRANSICION_INVALIDA",
+        "nota": "D36: en cancelar gana la TRANSICION sobre el PLAZO"
+      },
+      {
+        "operacion": "DETALLE",
+        "estadoCita": "PROGRAMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "GET /api/citas/{id} con cuerpo CitaDTO"
+      },
+      {
+        "operacion": "DETALLE",
+        "estadoCita": "NO_ENCUENTRA",
+        "plazo": "-",
+        "setup": "NINGUNO",
+        "esperadoStatus": "NO_ENCONTRADA",
+        "esperadoCodigo": "CITA_NO_ENCONTRADA",
+        "nota": "404 con cuerpo ApiError"
+      },
+      {
+        "operacion": "EXPIRAR_LOTE",
+        "estadoCita": "PROGRAMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA-VENCIDA:PROGRAMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "cuerpo {corte:2026-11-13T00:00} y fin 2026-11-12T09:30 antes del corte: se expira y libera el hueco"
+      },
+      {
+        "operacion": "EXPIRAR_LOTE",
+        "estadoCita": "CONFIRMADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA-VENCIDA:CONFIRMADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "confirmada tambien es activa: entra en el lote"
+      },
+      {
+        "operacion": "EXPIRAR_LOTE",
+        "estadoCita": "CANCELADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA-VENCIDA:CANCELADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "no esta en ESTADOS_ACTIVOS: lote vacio 200"
+      },
+      {
+        "operacion": "EXPIRAR_LOTE",
+        "estadoCita": "EXPIRADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA-VENCIDA:EXPIRADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "terminal: no vuelve a expirarse"
+      },
+      {
+        "operacion": "EXPIRAR_LOTE",
+        "estadoCita": "REALIZADA",
+        "plazo": "LEJOS",
+        "setup": "SEM-CITA-VENCIDA:REALIZADA",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "realizada no es activa: lote vacio"
+      }
+    ]
+  },
+  "tabla_F": {
+    "id": "F",
+    "nombre": "Conjetura de errores y rincones del contrato",
+    "kind": "conjetura",
+    "csv": "tdop-cdu12-conjetura.csv",
+    "puerta": "AF rincones: cuerpos degenerados, tipos imposibles, rutas sin mapear y asimetrias leidas del codigo; el paso rojo sobre la rama confirma o corrige cada esperado",
+    "solicitud": "varias (ver columna operacion y rutaExtra)",
+    "tipoTC": "error (conjetura)",
+    "codigosError": {
+      "RUTA_INEXISTENTE": "-"
+    },
+    "columnas": [
+      "id",
+      "operacion",
+      "cuerpo",
+      "setup",
+      "rutaExtra",
+      "esperadoStatus",
+      "esperadoCodigo",
+      "nota"
+    ],
+    "reglas": [
+      {
+        "si": {
+          "invalido": true
+        },
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "la conjetura no combina factores: cada fila lleva el esperado escrito a mano"
+      },
+      {
+        "si": {},
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "cada fila de conjetura fija su esperado"
+      }
+    ],
+    "filas": [
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "VACIO",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "SOLICITUD_MALFORMADA",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "nota": "@RequestBody obligatorio sin cuerpo: HttpMessageNotReadable con consejo propio (no es el 415/400 sin cuerpo de otras CDU)"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "JSON_NULO",
+        "setup": "SEM-SOL:CREADA",
+        "rutaExtra": "-",
+        "esperadoStatus": "SOLICITUD_MALFORMADA",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "nota": "literal null: Jackson materializa null y el consejo cuerpoIlegible responde 400"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "JSON_SIN_DURACION",
+        "setup": "SEM-SOL:CREADA",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "nota": "int primitivo sin clave = 0, y el servicio usa el defecto del catalogo (30 min para api-prueba): 201 (HALLAZGO 8)"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "JSON_DUR_CERO",
+        "setup": "SEM-SOL:CREADA",
+        "rutaExtra": "-",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "nota": "duracionMinutos:0 explicito cae al mismo defecto del catalogo: 201"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "JSON_DUR_NEGATIVA",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "INVALIDOS",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "nota": "-5 pasa el record pero la guarda duracion<0 del servicio no (borde bajo)"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "JSON_SIN_SOL",
+        "setup": "NINGUNO",
+        "rutaExtra": "-",
+        "esperadoStatus": "INVALIDOS",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "nota": "sin solicitud no hay defecto de catalogo que aplicar: duracion 0 sin fuente -> 400"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "JSON_PROF_ESPACIOS",
+        "setup": "NINGUNO",
+        "rutaExtra": "inicio 2026-11-13T12:00",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "nota": "leido del dominio: Cita.nueva SI recorta profesionalId, asi que '  api-medico  ' encuentra agenda y la alta es valida (misma clase que huecosLibres, sin asimetria)"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "JSON_SOL_ESPACIOS",
+        "setup": "NINGUNO",
+        "rutaExtra": "inicio 2026-11-13T12:00",
+        "esperadoStatus": "CREADO",
+        "esperadoCodigo": "-",
+        "nota": "HALLAZGO 4: solicitudId ' ' se convierte en null: la cita se crea sin solicitud y CDU06 no se consulta"
+      },
+      {
+        "operacion": "REPROGRAMAR",
+        "cuerpo": "PROPIO_HUECO",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "rutaExtra": "inicio = el actual de la cita",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
+        "nota": "exigeHuecoLibre excluye la cita propia: moverse al mismo hueco es legal"
+      },
+      {
+        "operacion": "CANCELAR",
+        "cuerpo": "JSON_MOTIVO_VACIO",
+        "setup": "NINGUNO",
+        "rutaExtra": "id inexistente",
+        "esperadoStatus": "INVALIDOS",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "nota": "el motivo en blanco se exige ANTES de buscar la cita: 400 gana a 404"
+      },
+      {
+        "operacion": "AGENDAR",
+        "cuerpo": "TEXT_PLANO",
+        "setup": "NINGUNO",
+        "rutaExtra": "Content-Type text/plain",
+        "esperadoStatus": "ERROR_INTERNO",
+        "esperadoCodigo": "ERROR_INTERNO",
+        "nota": "HALLAZGO 1 predicho: no hay consejo HttpMediaTypeNotSupportedException en CDU12 -> lo absorbe Exception y devuelve 500 (rojo confirma)"
+      },
+      {
+        "operacion": "AUDITORIA",
+        "cuerpo": "NINGUNO",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "rutaExtra": "GET /api/citas/{id}/auditoria",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoCodigo": "-",
+        "nota": "HALLAZGO 6: no hay subrecurso de historial (TC12-05 sin endpoint): 404 de Spring sin cuerpo ApiError; si cayera al consejo generico seria 500 ERROR_INTERNO"
+      },
+      {
+        "operacion": "BAJA",
+        "cuerpo": "NINGUNO",
+        "setup": "SEM-CITA:PROGRAMADA",
+        "rutaExtra": "DELETE /api/citas/{id}",
+        "esperadoStatus": "METODO_NO_PERMITIDO",
+        "esperadoCodigo": "-",
+        "nota": "no hay DELETE de citas, pero /api/citas/{id} si esta mapeado para GET: Spring resuelve 405 antes de entrar al handler, asi que el consejo Exception no lo ve y el cuerpo no es ApiError (HALLAZGO 6 confirmado por la rojo)"
+      }
+    ]
+  }
+}
