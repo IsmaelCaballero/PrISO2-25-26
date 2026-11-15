@@ -643,3 +643,161 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
 - **Siguiente bloque:** **D34** (MySQL + Docker + DAO + `AgenteMySQL`, con issue que hace falta reabrir o abrir)
   y **Iter5 · CDU12 citas (CFG-05)**, ambos desde `develop` = `3601fd6`. Quedan además los TC humanos de
   CDU17/CDU13/CDU06 y extender el método D33 a Iter2 e Iter3.
+
+
+> **⚠ Nota sobre los Prompts 17 a 22 (11/11 - 15/11/2026):** el 15/11 un reinicio del equipo vació el
+> almacenamiento local de OpenCode (`%USERPROFILE%\.local\share\opencode\storage`) y se perdió el historial de
+> las sesiones 18 a 22, así que **el texto literal de estos prompts ya no existe**. El bloque está
+> **reconstruido** con la evidencia del repositorio (`git log`, PRs, issues, tags, `STATUS.md`, `TASADEFECTOS.md`
+> y `DECISIONS.md`): el **qué** y el **cómo** están respaldados por commits; la **redacción** del encargo de
+> Ismael es aproximada. Queda en la memoria del proyecto la regla que salió de ahí: **nada se queda sin subir**
+> y el registro del proyecto son `STATUS.md` + `PROMPTS.md`, no la sesión de la herramienta.
+
+### Prompt 17 — Implementar por fin la D34: MySQL en Docker + Flyway dual + capa DAO/Agente [✔ ejecutado]
+
+> Prompt lanzado por Ismael (11/11/2026, sesión 18, **texto reconstruido**): la D34 llevaba aceptada desde el
+> 09/11 sin una línea de código; implementarla ya, con **Docker** y Testcontainers, y en una rama propia para no
+> mezclarla con el CDU12. La issue **#34** se reabrió para que el trabajo tuviera ancla.
+
+- Resultado (11/11/2026), rama `feature/iter05-persistencia-mysql` desde `develop` = `3601fd6`:
+  - `b15d927` **`docker/`** con **`mysql:8.4` en el host 3307** + **phpMyAdmin en 8081** + volumen
+    `iso2-mysql-datos`; base `iso2` con usuario **`gestoroperaciones` solo DML** y `iso2_flyway` con **DDL**
+    (usuarios separados); `64e92eb` **Flyway dual** `db/migration/h2/` + `db/migration/mysql/` por perfil, con
+    el perfil `mysql` y sus variables de entorno como válvulas de escape; `ae40ad7` **el diseño antes que el
+    código** (D31); `bba56f8` capa nueva en `iso2-server-app` con **patrón DAO** y **patrón Agente**
+    (`AgenteH2`/`AgenteMySQL`) — JPA sigue siendo el acceso primario del dominio, decidió Ismael — más la
+    puerta **Testcontainers contra `mysql:8.4` real** (3 tests).
+  - **Medido:** reactor verde con **356 tests, 0 saltados** con JaCoCo y Javadoc estricto.
+  - **PR #41 → `develop`, fusionado por Ismael** (merge **`d4749e3`**, 11/11 11:06) y **#34 cerrada a mano**
+    (D29). Docs de cierre en `a0eaea4`.
+
+### Prompt 18 — Abrir Iter5 · CDU12 citas (CFG-05) con el flujo diseño-primero [✔ ejecutado]
+
+> Prompt lanzado por Ismael (11/11/2026, sesión 19, **texto reconstruido**): arrancar el CDU12 desde `develop`
+> ya con la D34 dentro, empezando por los diagramas, y decidir en el modelo lo delicado (hueco, estado de la
+> cita, relación con la solicitud). Cada commit con `Ref: #40`.
+
+- Resultado (11/11/2026), rama `feature/iter05-cdu12-citas`:
+  - **Primero el modelo** (`a7b88e8`): los 4 `.puml` + `.png` de `docs/modelo/iter05/` antes de escribir código
+    (D31); `0a58892` re-renderiza el PNG de CDU06 que PlantUML recortaba en silencio (de ahí el
+    `-DPLANTUML_LIMIT_SIZE=16384` fijo).
+  - **Contratos y versiones** (`107e1d4`): `CitaFacade` en **1.1.0** con estado y hueco, estado **`CITADA`** en
+    `iso2-solicitudes`, migraciones **`V1.5.0` en las dos carpetas** (h2 y mysql, regla D34 dual), apps a
+    **0.1.5-SNAPSHOT** y cota nueva **`jacoco.line.min=0.80`** en `iso2-citas`.
+  - **Refino del modelo detectado al programar** (`3aee742`): sin agenda → `FUERA_DE_FRANJA` y solicitud apta
+    solo en `creada`.
+  - **Implementación** (`99696e5`): dominio JPA `cita`/`cita_hueco`/`cita_auditoria`, `CitaServicio` con **hueco
+    anti-concurrencia** y **auditoría encadenada**, máquina de estados, `CitaControlador` + manejador de errores.
+  - **Comprobado ejecutando:** Flyway aplica las 5 migraciones con `V1.5.0`, el jar arranca, `POST /api/auth/login`
+    devuelve token y `GET /api/citas` responde **401 `AUTENTICACION_REQUERIDA`** (el RBAC de citas aún no estaba
+    cableado: siguiente trabajo, no un fallo).
+  - **D36 propuesta y registrada** (`e44f7c1`, `7abea47`): cómo se cierra el duelo de concurrencia y qué códigos
+    de error salen; **Ismael la dio el visto bueno el 14/11** (`9dad271`).
+  - **Dos incidencias del día:** el **issue #40 amaneció cerrado** (10:06 UTC, sin PR enlazada) a mitad de
+    iteración → **reabierto con el visto bueno de Ismael** y comentario enlazando la PR #42; y la CI del push
+    `e44f7c1` en rojo **solo** por la puerta JaCoCo de `iso2-citas` (`0.00` de 0.80) con el módulo aún sin tests
+    → **rojo planificado**, no un fallo.
+
+### Prompt 19 — Medir la tasa de defectos por iteración y convertirla en regla [✔ ejecutado]
+
+> Prompt lanzado por Ismael (11/11/2026, sesión 20, **texto reconstruido**): hasta ahora los fallos del proceso
+> estaban repartidos por `STATUS.md` sin poder contarse; abrir un libro de defectos medible, decidir la decisión
+> nueva y dejar la regla escrita.
+
+- Resultado (11/11/2026), commit `a276e9c`:
+  - **`TASADEFECTOS.md`** en la raíz: libro de **13 defectos** con su evidencia (commit/merge/registro de sesión),
+    tabla por iteración con el esfuerzo medido como `git rev-list --count` entre etiquetas (**101 commits = 94 en
+    `develop` + 7 en la rama de Iter5**) y recetas de recálculo en PowerShell.
+  - **D37** nueva en `DECISIONS.md` (aceptada por Ismael al pedirla): **4 familias** — F1 proceso, F2 entorno,
+    F3 contrato y **F4 código, que es la única que mide la valía del modelo** —, regla de exclusión de lo que
+    pilla el gate local antes de pushear, y umbrales para pedir un modelo más potente (> 2 F4 por familia de CDU,
+    1 decisión de diseño que obligue a reescribir código commiteado, o 1 falso verde en CI).
+  - **Regla de registro:** en cada cierre de CFG se actualiza `TASADEFECTOS.md` y el registro de sesión de
+    `STATUS.md` lleva la línea con los 6 contadores (`commits · F1 · F2 · F3 · F4 · total (fugados)`), plantilla
+    en §7 de ese fichero. **Cifra de partida: 12,9 defectos por 100 commits, de los que solo 2,0 son de código.**
+
+### Prompt 20 — Terminar el código de la Iter5: pruebas del módulo, RBAC, cliente y puerta JaCoCo [✔ ejecutado]
+
+> Prompt lanzado por Ismael (14/11/2026, sesiones 20-21, **texto reconstruido**): rematar CFG-05 según el orden
+> que quedó anotado el 11/11 — pruebas del módulo hasta pasar la cota, permisos y contrato HTTP, cliente JavaFX,
+> y luego la matriz D33.
+
+- Resultado (11→15/11/2026), commits `4b162cb`→`b912554` sobre la misma rama:
+  - **`4b162cb`** suite completa del CDU12: **65 pruebas** (servicio, concurrencia real de dos hilos sobre el
+    mismo hueco, máquina de estados, controlador, arquitectura) y **puerta JaCoCo de 0,80 superada**.
+  - **`8c4a97c`** RBAC **`cita:leer`/`cita:escribir`** en `Permiso`/`MatrizPermisos`/`ConfigSeguridad` +
+    `CitasApiTest` en `iso2-server-app` (matriz de códigos D35 en la puerta HTTP).
+  - **`9c081e8`** cliente JavaFX de citas: `ApiClienteCitas`, `VistaGestionCitas`, `VistaConsultaCitas` y sus
+    predicates en `NavegacionPorRol`, con `VERSION` a **0.1.5-SNAPSHOT**.
+  - **`b912554`** (15/11 04:04) **matriz TDOP de CDU12: 172 filas generadas con `tools/pairwise.py`** → ver
+    Prompt 21.
+  - **Ismael fusionó el PR #42 el 14/11 a las 22:25 (merge `08a7ed8`)** llevándose los 12 commits de código y
+    **cerró #40 a mano** (D29). La matriz, pusheada después del merge, quedó fuera de `develop` y viajó en un
+    **PR de cierre aparte** — el mismo patrón de la Iter4 (PR #31 de código + PR #32 de docs).
+
+### Prompt 21 — Cerrar CFG-05: método D33 sobre CDU12, wiki y revalidación D37 [✔ ejecutado]
+
+> Prompt lanzado por Ismael (15/11/2026, sesión 21, **texto reconstruido**): cerrar Iter5 aplicando el mismo
+> método TDOP de la Iter1 al CDU12, publicar la wiki y actualizar el libro de defectos.
+
+- Resultado (15/11/2026):
+  - **D33 sobre CDU12:** spec de seis tablas en `docs/test/iter05/tdop-cdu12-espec.json` → `python
+    tools/pairwise.py` → **172 casos** en los CSVs de `iso2-citas/src/test/resources/tdop/` →
+    **`Cdu12MatrizTdopTest` 172/172 en verde** (A38 alta · B31 reprogramación · C29 huecos · D27 listado ·
+    E34 estado · F13 conjetura) → evidencia `docs/test/iter05/tdop-cdu12.md` y bloque gestionado proyectado
+    **tal cual** a `docs/tc/cdu12-tc-humanos.md` con `tools/tc_plantillas.py`. Antes hicieron falta **dos
+    ajustes genéricos** en la herramienta: derivar el paquete `tdop` de la spec y admitir un mapa `operaciones`
+    por CDU. **Récord D33: CDU16 115 + CDU12 172 = 287 casos pairwise ejecutados.**
+  - **Wiki `Iter5-CDU12-citas.md` publicada** en `master` de la wiki (merge **`0809425`**: página + 4 PNG
+    `iter05-cdu12-*` + fila en `Home.md`, D30) nombrando la **clase probada** `Cdu12MatrizTdopTest`.
+  - **Revalidación D37:** corte `b912554` → **Iter5 cierra sin DEF nuevos** (no hay DEF-14: el modelo ya fijaba
+    `reprogramar` como `POST`, así que no hubo desviación de contrato); el único defecto del tramo es el F2 ya
+    fugado **DEF-13**. Serie al corte: **107 commits, 13 defectos, 12,1 por 100, solo 1,9 de código**.
+  - **Puerta completa:** `mvn -B -ntp clean verify` con Docker Engine arriba = **BUILD SUCCESS, 637 tests,
+    0 saltados**, los 3 Testcontainers de `mysql:8.4` corriendo de verdad.
+  - **PR de cierre → PR #43, fusionado por Ismael (merge `cbb1901`, 15/11 08:52)**, que es hoy el **tip de
+    `develop`** y lleva `b912554` + `TASADEFECTOS.md` + `STATUS.md`.
+
+### Prompt 22 — Iter6 · CDU19 integración (CFG-06): modelo, módulo spike y pruebas [✔ ejecutado, con recovery]
+
+> Prompt lanzado por Ismael (15/11/2026, sesión 21 → **reanudado en la sesión 22 tras el apagón del equipo**,
+> **texto reconstruido**): abrir la última iteración de Elaboración con el **spike de viabilidad** del SSO y de la
+> sincronización de historias clínicas sobre sistemas externos, **sin tocar los CDU del dominio** y sin
+> persistencia. La issue **#44** es el ancla y lleva el DoD.
+
+- Resultado (15/11/2026), rama `feature/iter06-cdu19-integracion` desde `develop` = `cbb1901`, commits
+  `db075c0..f5411c1` con `Ref: #44`:
+  - **`db075c0`** modelo PlantUML cerrado **antes del código** (D31): `docs/modelo/iter06/` con casos de uso,
+    análisis, clases de diseño y secuencia, `.puml` + `.png`.
+  - **`687c624`** contracts: puerto **`InteropFacade` en 1.1.0** con SSO, historia externa e idempotencia y ping
+    de sistemas; **el baseline 1.0.0 queda congelado** (lo blindó `ContratoBaselineTest` en Iter4 y sigue verde).
+  - **`7a03e0c`** módulo **`iso2-integracion` 1.1.0-SNAPSHOT**: adaptadores **simulados** de SSO, historia clínica
+    y RIS/PACS, DTOs (`SesionSsoDTO`, `HistoriaSincronizadaDTO`, `EstadoSistemaDTO`, `EslabonAuditoriaDTO`),
+    **auditoría encadenada en memoria** y **sin Flyway** — el spike es deliberadamente sin persistencia, así que
+    el slot `V1.6.0__…` queda libre.
+  - **`9ca712f`** refino del diseño detectado al escribir el código (regla de `9ca712f` sobre la secuencia) y su
+    re-render.
+  - **`a22e654`** RBAC **`INTEGRACION_LEER`/`INTEGRACION_ESCRIBIR`** + `IntegracionApiTest` + salto de tren de
+    release: apps **0.2.0-SNAPSHOT** y modelo `iso2.version`/`common` en **1.1.0**. Es la iteración que trae el
+    hito **`v0.2.0-alpha`** (ALFA-1 / **R1, 20/11**).
+  - **`f5411c1`** **77 pruebas del CDU19** en 9 clases (`AdaptadorSimuladoTest` 15, `IntegracionServicioTest` 20,
+    `IntegracionControladorTest` 13, `SimulacionControladorTest` 8, `ArquitecturaIntegracionTest` 6,
+    `AuditoriaIntegracionTest` 6, `SetupSimulacionTest` 4, `RegistroSimulacionTest` 4, `ContratoBaselineTest` 1)
+    y arreglo del **`@ConfigurationProperties` que faltaba** en `IntegracionProperties` (el contexto del
+    `server-app` moría al arrancar). **Este es el único defecto F4 del tramo de Iter6** y va a
+    `TASADEFECTOS.md` en la revalidación D37 del cierre.
+  - **Medido sobre `f5411c1`:** `mvn -B -ntp test` en el reactor = **BUILD SUCCESS, 713 tests, 0 fallos,
+    0 omitidos**; JaCoCo de `iso2-integracion` **88,2 % de líneas** (cota del módulo `0.70`, puerta de CFG-06
+    ≥ 60 %).
+  - **Suspendido y reanudado por dos incidencias (15/11):** el reinicio del equipo vació el almacenamiento local
+    de OpenCode (perdido el historial, no el trabajo) y entre las 11:29 y las 11:49 trabajó en paralelo otra
+    sesión sobre el mismo árbol y la misma rama. No hubo conflicto de `git` y su trabajo quedó contenido en
+    `f5411c1`, que la sesión 22 **verificó ejecutando** en lugar de reescribir. Cerrada la otra sesión, **desde
+    las 11:49 hay un solo agente**; la regla práctica es **una rama y un árbol por sesión**.
+  - **Hecho por esta sesión 22:** comprobar que Ismael ya había fusionado el PR #43 y cerrado #40, poner el
+    **tag anotado `cfg-iter05`** (objeto `005476e`) sobre `cbb1901` siguiendo la receta de
+    `docs/mapa-configuraciones.md`, y dejar este sync documental. **Queda la parte b del DoD:** `docs/test/iter06/`
+    con la spec TDOP y los CSV de `tools/pairwise.py` + **`Cdu19MatrizTdopTest`** que los lea, proyección a
+    `docs/tc/cdu19-tc-humanos.md`, **informe de spike** `docs/informes/spike-cdu19.md`, wiki
+    `Iter6-CDU19-integracion` y PR a `develop` (lo fusiona y cierra #44 Ismael, D29); sobre esa fusión, el tag
+    **`cfg-iter06`** y el hito **`v0.2.0-alpha`**, que se publica materializando **`release/R1` → `main`** (D30).
