@@ -7,6 +7,7 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Configuracion externa del spike CDU19 bajo el prefijo {@code iso2.integracion}:
@@ -26,6 +27,7 @@ import java.util.Map;
  * @param sistemas   repas por sistema (clave en minusculas: sso, hce, ris, pacs)
  * @since 1.1.0 (CFG-06, CDU19)
  */
+@ConfigurationProperties(prefix = "iso2.integracion")
 public record IntegracionProperties(String modo, Long latenciaMs, Long timeoutMs,
                                     Integer reintentos, Map<String, SistemaOverride> sistemas) {
 
