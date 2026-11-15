@@ -838,7 +838,7 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   para el trabajo puramente aditivo de Iter7 (diagramas `docs/modelo/iter07/` y spec TDOP `docs/test/iter07/`),
   que no roza ningún punto de conflicto ni `~/.m2`.
 
-### Prompt 23 — Iter6 · CDU19 parte b: matriz TDOP verde, TC humanos, informe de spike y cierre de sesión [✔ ejecutado]
+### Prompt 23 — Iter6 · CDU19 parte b: matriz TDOP verde, TC humanos, informe de spike, wiki y cierre de sesión [✔ ejecutado]
 
 > Prompt lanzado por Ismael (15/11/2026, tarde, **texto resumido**): continuar **en solitario** y cerrar la parte b
 > del DoD de la **#44** — «sigue tú a partir de ahora, y arregla lo que sea necesario para asegurar la integridad
@@ -883,8 +883,19 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
 - **Regla de trabajo nueva de esta sesión**: **escribir → verificar en disco → `git add` → commit → push sin
   demora**, y guardar las herramientas de recuento fuera del árbol (`reactor_verify.log`, `reactor_tally.py`,
   `cobertura2.py`, `jacoco_integracion.py` en el temp), porque **solo sobrevive lo commiteado y pusheado**.
+- **Wiki publicada (D32)**: página nueva **`Iter6-CDU19-integracion`** en el repo `PrISO2-25-26.wiki` (rama `master`,
+  merge **`9b7f513`**, 6 ficheros y +204 líneas): componentes y versiones, los 4 diagramas con sus PNG en
+  `images/iter06-cdu19-*`, la tabla **API/RBAC real** de los 7 endpoints (solo `ADMINISTRADOR`), las clases enlazadas
+  a Javadoc **o al fuente** mientras el #45 no esté fusionado —las fichas de `iso2-integracion` aún dan 404 en
+  `develop`—, y la sección **Testing** con la **clase probada `Cdu19MatrizTdopTest`** (126 casos), los 203 del módulo,
+  el **96,5 % de líneas / 78,4 % de ramas** medidos con `verify`, el reactor de 839, las puertas, los hallazgos H1/H2
+  y las deudas D-01..D-07. `Home.md` gana la fila de Iter6 y la nota de los README llega hasta `docs/modelo/iter06`.
+  Antes de escribir hubo que `git fetch` + `git merge --ff-only origin/master`: el clon del temp iba **5 commits por
+  detrás** y el wipe se había llevado los 12 PNG de `images/iter01-*`…`iter03-*`; el `merge` los recuperó (apartado
+  **Incidencia 3** de `STATUS.md`).
 - **Commits de la sesión, todos subidos**: `c104d78` (matriz verde) → `ec7f228` (evidencia TDOP + TC humanos) →
-  `86f68ff` (fix de docs/arranque) → `2388b7e` (informe del spike) → `a470584` (cierre de este registro). **PR
+  `86f68ff` (fix de docs/arranque) → `2388b7e` (informe del spike) → `a470584` (cierre de este registro) →
+  `e1d418c` (sync del PR #45) → **el docs de la wiki**, que cierra la parte b. **PR
   borrador a `develop`: #45** *(91 ficheros, `Ref: #44`, **sin `Closes`**)*. **Queda de Ismael**: ejecutar los TC humanos de
   CDU19 (D28), fusionar el PR y cerrar **#44** (D29), poner el tag `cfg-iter06` sobre la fusión y materializar
   `release/R1` → `main` con `v0.2.0-alpha` (D30).
