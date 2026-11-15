@@ -8,8 +8,8 @@ import java.time.Instant;
  * o alterar un registro posterior rompe {@link AuditoriaIntegracion#cadenaIntegra()}.
  *
  * @param secuencia    numero de orden dentro de la cadena
- * @param accion       accion auditada (LOGIN_SSO, SINCRONIZAR_HISTORIA, IMPORTAR_ESTUDIO,
- *                     SIMULACION...)
+ * @param accion       accion auditada (SSO_LOGIN, HCE_SINCRONIZAR, RIS_IMPORTAR o
+ *                     SIMULACION: el ping de monitorizacion no se registra)
  * @param sistema      sistema externo afectado (sso, hce, ris, pacs o {@code -})
  * @param resultado    OK o el codigo de fallo (CREDENCIALES_INVALIDAS, CAIDO...)
  * @param actor        usuario que provoco la accion

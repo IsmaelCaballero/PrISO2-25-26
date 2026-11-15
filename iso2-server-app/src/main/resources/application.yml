@@ -35,7 +35,8 @@ iso2:
   # CDU19 (Iter6/CFG-06, spike): politica inicial de los sistemas externos simulados.
   # Son solo el punto de partida del arranque: durante la ejecucion se cambian en
   # caliente por POST /api/integracion/simulacion (solo ADMINISTRADOR). Opciones de
-  # modo: NORMAL, LENTO_SIN_TIMEOUT, LENTO_TIMEOUT, CAIDO.
+  # modo: NORMAL, LENTO, LENTO_TIMEOUT, CAIDO (el enum ModoSimulacion; un valor
+  # distinto hace fallar el arranque).
   integracion:
     modo: NORMAL
     latencia-ms: 20
