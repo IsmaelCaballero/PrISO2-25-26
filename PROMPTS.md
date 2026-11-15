@@ -884,7 +884,7 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   demora**, y guardar las herramientas de recuento fuera del árbol (`reactor_verify.log`, `reactor_tally.py`,
   `cobertura2.py`, `jacoco_integracion.py` en el temp), porque **solo sobrevive lo commiteado y pusheado**.
 - **Commits de la sesión, todos subidos**: `c104d78` (matriz verde) → `ec7f228` (evidencia TDOP + TC humanos) →
-  `86f68ff` (fix de docs/arranque) → `2388b7e` (informe del spike). **PR borrador a `develop`: #___** *(se anota en
-  el commit de cierre; base `develop`, `Ref: #44`, sin `Closes`)*. **Queda de Ismael**: ejecutar los TC humanos de
+  `86f68ff` (fix de docs/arranque) → `2388b7e` (informe del spike) → `a470584` (cierre de este registro). **PR
+  borrador a `develop`: #45** *(91 ficheros, `Ref: #44`, **sin `Closes`**)*. **Queda de Ismael**: ejecutar los TC humanos de
   CDU19 (D28), fusionar el PR y cerrar **#44** (D29), poner el tag `cfg-iter06` sobre la fusión y materializar
   `release/R1` → `main` con `v0.2.0-alpha` (D30).
