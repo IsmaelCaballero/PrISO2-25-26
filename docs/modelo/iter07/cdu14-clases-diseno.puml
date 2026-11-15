@@ -1,0 +1,376 @@
+@startuml cdu14-clases-diseno
+' CDU14 (Iter7) - Clases de diseno: iso2-citas 1.2.0 + contrato comun 1.1.0 + ripple server 0.3.0
+' Autor: agente (diseno previo al codigo, issue #47) - fuentes PlantUML (D31)
+title CDU14 - Clases de diseno previstas (iso2-citas 1.2.0-SNAPSHOT, apps 0.3.0-SNAPSHOT)
+
+skinparam classAttributeIconSize 0
+
+package "iso2-common 1.1.0 (contrato: baseline congelado + extension MINOR CDU14)" {
+  interface ListaEsperaFacade {
+    + darDeAlta(AltaEsperaDTO) : EntradaEsperaDTO
+    + cola(String pruebaCodigo, String profesionalId,
+    String estado) : List~EntradaEsperaDTO~
+    + detalle(String esperaId) : EntradaEsperaDTO
+    + cambiarPrioridad(String esperaId, String prioridad,
+    String motivo) : EntradaEsperaDTO
+    + retirar(String esperaId, String motivo) : EntradaEsperaDTO
+    + asignarDesdeCola(String esperaId, LocalDateTime inicio,
+    Integer duracionMinutos) : AsignacionResultadoDTO
+    + verificarAuditoria() : VerificacionAuditoriaDTO
+    ..
+    Baseline de CDU14, aditivo: el contrato de
+    CitaFacade (CDU12) NO se toca
+  }
+  class AltaEsperaDTO <<record, nuevo>> {
+    + solicitudId : String (nullable: alta directa)
+    + pacienteId : String (obligatorio)
+    + pruebaCodigo : String (obligatorio)
+    + profesionalId : String (nullable)
+    + prioridad : String (URGENTE / ALTA / NORMAL / BAJA)
+    + fechaSolicitud : Instant (null = ahora)
+    ..
+    constructor compacto: pacienteId y pruebaCodigo
+    no vacios, prioridad entendible (Prioridad.desdeNombre)
+  }
+  class EntradaEsperaDTO <<record, nuevo>> {
+    + esperaId : String
+    + solicitudId : String (nullable)
+    + pacienteId : String
+    + pruebaCodigo : String
+    + profesionalId : String (nullable)
+    + prioridad : String
+    + fechaSolicitud : Instant
+    + estado : String (activa / asignada / retirada)
+    + citaId : String (nullable)
+    + motivoFin : String (nullable)
+    ..
+    + posicion : int (1-based, CALCULADA)
+    + total : long (entradas del filtro aplicado)
+    (la posicion no se guarda en la base de datos:
+    se halla ordenando con porOrdenDeEspera y
+    contando la fila que ocupa)
+  }
+  class ReubicacionDTO <<record, nuevo>> {
+    + prioridad : String
+    + motivo : String (obligatorio)
+  }
+  class AsignacionEsperaDTO <<record, nuevo>> {
+    + inicio : LocalDateTime
+    + duracionMinutos : Integer (null = la del catalogo)
+  }
+  class RetiradaEsperaDTO <<record, nuevo>> {
+    + motivo : String (obligatorio)
+  }
+  class AsignacionResultadoDTO <<record, nuevo>> {
+    + cita : CitaDTO (CDU12)
+    + esperaId : String
+    + posicionEnCola : int (la que ocupaba)
+    + totalEnCola : long
+  }
+  class VerificacionAuditoriaDTO <<record, nuevo>> {
+    + integracion : String (CADENA_INTEGRAL / CADENA_MANIPULADA)
+    + totalAsientos : long
+    + hashUltimo : String
+  }
+  class ListaEsperaException <<RuntimeException, nuevo>> {
+    (404 LISTA_ESPERA_NO_ENCONTRADA)
+  }
+  class ListaEsperaConflictException <<RuntimeException, nuevo>> {
+    + codigo() : String
+  }
+  enum "ListaEsperaConflictException.Codigo" as CodConf {
+    CONFLICTO_ALTA_DUPLICADA
+    CONFLICTO_REUBICACION_REDUNDANTE
+    CONFLICTO_ENTRADA_NO_ACTIVA
+  }
+  enum Prioridad <<CDU06, ya existe>> #D9D9D9 {
+    URGENTE; ALTA; NORMAL; BAJA
+    + peso() : int
+    {static} + desdeNombre(String) : Prioridad
+  }
+  interface CitaFacade <<CDU12, ya existe>> #D9D9D9 {
+    + agendar(CitaNuevaDTO) : CitaDTO
+    + registrar(...) : CitaDTO
+    (se reutiliza para crear la cita desde la cola;
+    sus codigos 409 viajan tal cual)
+  }
+  class ApiError <<record, ya existe>> #D9D9D9 {
+    + codigo : String
+    + mensaje : String
+  }
+}
+
+package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
+  package dominio {
+    class ListaEspera <<JPA, lista_espera, nuevo>> {
+      - id : Long
+      - esperaId : String (UUID, unico)
+      - solicitudId : String (nullable)
+      - pacienteId : String
+      - pruebaCodigo : String
+      - profesionalId : String (nullable)
+      - prioridad : Prioridad
+      - fechaSolicitud : Instant (inmutable tras el alta)
+      - estado : Estado
+      - citaId : String (nullable)
+      - motivoFin : String (nullable)
+      - claveDuplicada : String (UNIQUE parcial)
+      + nueva(...) : ListaEspera (estado ACTIVA)
+      + cambiarPrioridad(Prioridad nueva) : Prioridad
+      (devuelve la prioridad anterior; no cambia
+      fechaSolicitud)
+      + retirar(String motivo) : void
+      + asignarA(String citaId) : void
+      + estaActiva() : boolean
+      + esMismaUbicacionQue(Prioridad p) : boolean
+      {static} + porOrdenDeEspera() : Comparator~ListaEspera~
+      ..
+      claveDuplicada = pacienteId + "|" + pruebaCodigo
+      mientras esta ACTIVA y pasa a NULL al retirar o
+      asignar (UNIQUE solo permite una fila no nula,
+      la misma regla ya probada en CDU12/CDU13/CDU16)
+    }
+    enum "ListaEspera.Estado" as Estado {
+      ACTIVA; ASIGNADA; RETIRADA
+      + esTerminal() : boolean
+    }
+    enum "AuditoriaEspera.Accion" as AccionAud {
+      ALTA; REUBICACION; ASIGNACION; RETIRADA
+    }
+    class AuditoriaEspera <<JPA, espera_auditoria, nuevo>> {
+      - id : Long
+      - accion : Accion
+      - esperaId : String
+      - antes : String (prioridad o estado previo)
+      - despues : String (prioridad o estado nuevo)
+      - usuario : String (claim JWT o "sistema")
+      - motivo : String
+      - instante : Instant
+      - hashAnterior : String
+      - hash : String (SHA-256 hex encadenado)
+      {static} + hashDe(accion, esperaId, antes, despues,
+      usuario, motivo, instante, hashAnterior) : String
+      + cadenaIntegra() : boolean ({static})
+      ..
+      canon: accion | esperaId | antes->despues |
+      usuario | motivo | instante | hashAnterior
+      el primer eslabon firma con un hashAnterior de
+      64 ceros (criterio de la iteracion 7; CDU12 usa
+      el literal GENESIS con hashAnterior null y el
+      issue #47 habla de GENESIS: se cierra al
+      programar y se refleja en este .puml). La
+      cadena de la cola es independiente de la de
+      cita_auditoria
+    }
+  }
+  package repositorio {
+    interface ListaEsperaRepositorio <<nuevo>> extends JpaRepository {
+      + findByEsperaId(String) : Optional~ListaEspera~
+      + findByClaveDuplicada(String) : Optional~ListaEspera~
+      + findByPacienteIdAndPruebaCodigoAndEstado(
+      String, String, Estado) : Optional~ListaEspera~
+      + cola(String pruebaCodigo, String profesionalId,
+      Estado estado) : List~ListaEspera~
+      (@Query con filtros nullables y
+      ORDER BY prioridad DESC, fecha_solicitud ASC,
+      espera_id ASC: el mismo orden que
+      porOrdenDeEspera, para que la posicion
+      calculada coincida con la fila que pinta la web)
+      + contarActivas(String pruebaCodigo) : long
+    }
+    interface AuditoriaEsperaRepositorio <<nuevo>> extends JpaRepository {
+      + findTopByOrderByIdDesc() : Optional~AuditoriaEspera~
+      + findAllByOrderByIdAsc() : List~AuditoriaEspera~
+      + findByEsperaIdOrderByIdAsc(String) : List~AuditoriaEspera~
+    }
+  }
+  package servicio {
+    class ListaEsperaServicio <<@Service, implements ListaEsperaFacade, nuevo>> {
+      + darDeAlta(...) : EntradaEsperaDTO
+      + cola(...) / detalle(...) : cola ordenada
+      + cambiarPrioridad(String esperaId, String prioridad,
+      String motivo, String usuario) : EntradaEsperaDTO
+      + retirar(...) : EntradaEsperaDTO
+      + asignarDesdeCola(String esperaId, LocalDateTime inicio,
+      Integer duracionMinutos) : AsignacionResultadoDTO
+      + verificarAuditoria() : VerificacionAuditoriaDTO
+      ..
+      Reglas: duplicado por claveDuplicada (409
+      CONFLICTO_ALTA_DUPLICADA, y si la base de datos
+      la rechaza por UNIQUE tambien), entrada no
+      ACTIVA (409 CONFLICTO_ENTRADA_NO_ACTIVA),
+      reubicacion que no mueve la posicion (409
+      CONFLICTO_REUBICACION_REDUNDANTE), motivo
+      obligatorio, prueba existente (404
+      PRUEBA_NO_ENCONTRADA).
+      La posicion de la cola se calcula ordenando en
+      memoria con ListaEspera.porOrdenDeEspera() y
+      contando; nunca se persiste.
+      Todo el cambio de estado va en UNA transaccion
+      (lista_espera + espera_auditoria), y la
+      asignacion anade la cita y su hueco de CDU12
+      en la misma transaccion.
+      Reloj inyectable para fechaSolicitud e instante
+      de los asientos
+    }
+  }
+  package web {
+    class ListaEsperaControlador <<@RestController, nuevo>> {
+      + POST /api/listas-espera : darDeAlta (201)
+      + GET /api/listas-espera?pruebaCodigo&profesionalId&estado : cola
+      + GET /api/listas-espera/{esperaId} : detalle
+      + POST /api/listas-espera/{esperaId}/prioridad : cambiarPrioridad
+      + POST /api/listas-espera/{esperaId}/asignar : asignarDesdeCola
+      + POST /api/listas-espera/{esperaId}/retirar : retirar (motivo)
+      + GET /api/listas-espera/auditoria-verificable : verificarAuditoria
+      ..
+      Sin PUT / PATCH: la prioridad y el estado solo
+      cambian por las acciones de la cola
+    }
+    class ListaEsperaManejadorErrores <<@RestControllerAdvice, nuevo>> {
+      ListaEsperaException -> 404 LISTA_ESPERA_NO_ENCONTRADA
+      ListaEsperaConflictException -> 409 CONFLICTO_ALTA_DUPLICADA /
+      CONFLICTO_REUBICACION_REDUNDANTE / CONFLICTO_ENTRADA_NO_ACTIVA
+      CitaNoEncontradaException -> 404 CITA_NO_ENCONTRADA (heredado)
+      CitaConflictoException -> 409 CONFLICTO_HUECO_OCUPADO /
+      CONFLICTO_FUERA_DE_FRANJA / CONFLICTO_SOLICITUD_NO_APTA (heredado)
+      IllegalArgument / JsonInvalido -> 400 DATOS_INVALIDOS
+      Resto -> 500 ERROR_INTERNO
+    }
+  }
+}
+
+package "CDU12 (iso2-citas 1.1.0 -> 1.2.0, se reutiliza sin tocar)" #DDDDDD {
+  class "CitaServicio\n<<@Service, CitaFacade>>" as CITSERV {
+    + registrar(...) : CitaDTO
+    (busca el hueco en las agendas CDU13 y abre la
+    transaccion con su rollback y su auditoria
+    propia en cita_auditoria)
+  }
+  class "CitaHueco\n<<JPA, cita_hueco>>" as HUECO {
+    UNIQUE (profesional_id, inicio)
+    (la puerta dura que impide que dos peticiones
+    creen dos citas sobre el mismo hueco)
+  }
+  class "AuditoriaCitas\n<<JPA, cita_auditoria>>" as CITAUD {
+    (cadena propia de CDU12, no se mezcla con
+    espera_auditoria)
+  }
+}
+
+package "iso2-server-app 0.3.0" {
+  class ConfigSeguridad <<@Configuration, +reglas>> {
+    + filtroHttp(HttpSecurity, JwtUtils)
+    ..
+    GET /api/listas-espera/**: hasAnyRole(ADMINISTRADOR,
+    MEDICO, RECEPCIONISTA)
+    POST /api/listas-espera y
+    POST /api/listas-espera/{id}/{prioridad|asignar|retirar}:
+    hasAnyRole(ADMINISTRADOR, RECEPCIONISTA)
+    (MEDICO lee la cola, no la mueve)
+  }
+  class "Flyway V1.6.0 (migracion SQL, h2 y mysql)" as FLY {
+    tabla lista_espera: uk espera_id +
+    uk_lista_espera_clave_duplicada (null admitido)
+    + indices (prueba_codigo, estado), (profesional_id, estado)
+    tabla espera_auditoria (hash encadenado)
+    + indice espera_auditoria_espera_id
+    sin CHECK en estado por coherencia con V1.5.0
+    semilla demo: entradas de cola (URGENTE y NORMAL
+    desempatadas, una asignada y una retirada)
+  }
+}
+
+package "iso2-seguridad 1.1.0 (RBAC ampliado en CDU14)" {
+  enum Permiso {
+    ...catalogo/agenda/usuario/solicitud/cita...
+    LISTA_ESPERA_LEER; LISTA_ESPERA_ESCRIBIR (nuevos)
+    + codigo() : String
+  }
+  class MatrizPermisos <<final>> {
+    {static} + tienePermiso(Rol, Permiso) : boolean
+    ..
+    RECEPCIONISTA: listaespera:leer + listaespera:escribir
+    MEDICO: listaespera:leer
+    ADMINISTRADOR: todo (allOf)
+    CELADOR y TECNICO: sin permisos de cola
+  }
+}
+
+package "iso2-client-app 0.3.0 (sin vista en esta iteracion)" #F5F5F5 {
+  class "VistaListaEspera\n(diferida a la siguiente iteracion)" as VISTA {
+    fuera de alcance: se modela la API y el dominio;
+    la vista Vaadin/JavaFX de la cola se hara cuando
+    el contrato lleve una version estable
+  }
+}
+
+ListaEsperaServicio ..|> ListaEsperaFacade : implementa
+ListaEsperaServicio ..> ListaEsperaRepositorio
+ListaEsperaServicio ..> AuditoriaEsperaRepositorio
+ListaEsperaServicio ..> ListaEspera : reglas en el dominio
+ListaEsperaServicio ..> AuditoriaEspera : asienta cada movimiento
+ListaEsperaServicio ..> CitaFacade : reutiliza registrar (CDU12)
+ListaEsperaServicio ..> Prioridad : valida y ordena
+ListaEsperaServicio ..> ListaEsperaException : lanza
+ListaEsperaServicio ..> ListaEsperaConflictException : lanza
+ListaEsperaConflictException --> CodConf
+ListaEspera --> Estado
+ListaEspera --> Prioridad
+AuditoriaEspera --> AccionAud
+AuditoriaEspera ..> ListaEspera : un eslabon por\nmovimiento
+ListaEspera --> FLY : tabla lista_espera
+AuditoriaEspera --> FLY : tabla espera_auditoria
+CITSERV ..> HUECO : ocupa el hueco
+CITSERV ..> CITAUD : auditoria de CDU12
+ListaEsperaControlador --> ListaEsperaFacade
+ListaEsperaControlador ..> AltaEsperaDTO : entrada
+ListaEsperaControlador ..> EntradaEsperaDTO : salida
+ListaEsperaControlador ..> AsignacionResultadoDTO : salida
+ListaEsperaControlador ..> ReubicacionDTO : prioridad
+ListaEsperaControlador ..> RetiradaEsperaDTO : retirada
+ListaEsperaControlador ..> AsignacionEsperaDTO : asignar
+ListaEsperaManejadorErrores ..> ApiError : 404/409/400/500 JSON
+AuditoriaEspera ..> CitaFacade : la asignacion crea cita
+ConfigSeguridad ..> MatrizPermisos : reglas derivadas
+ConfigSeguridad ..> Permiso : listaespera:leer / escribir
+VISTA ..> ListaEsperaFacade : solo lectura (futuro)
+
+note right of ListaEsperaServicio
+  El dominio gobierna el orden y los estados; el
+  servicio orquesta el alta, la reubicacion y la
+  asignacion contra CDU12. ArchUnit: web no accede
+  a repositorios, dominio sin Spring. JaCoCo: el
+  modulo iso2-citas sigue exigiendo 0.80 de linea
+  (la cola nueva no puede bajar el umbral).
+end note
+
+note bottom of ListaEspera
+  Por que el orden es determinista (el punto del
+  CDU14): prioridad DESC deja empatadas las entradas
+  de la misma prioridad, fechaSolicitud ASC puede
+  empatar si dos altas comparten instante, y ahi
+  entra esperaId ASC como tercer criterio. Con los
+  tres, la cola es un orden total: dos lecturas
+  identicas y TC reproducibles. La posicion es
+  derivada (1-based sobre la lista ordenada del
+  filtro activo), de ahi que no haya columna
+  "posicion" ni "orden_en_cola".
+end note
+
+note bottom of AuditoriaEspera
+  Pruebas que sujetan el diseno: ListaEsperaOrdenTest
+  (la cola sale igual en dos lecturas y en los tres
+  niveles de empate), ListaEsperaDuplicadosTest y
+  AltaColaConcurrenciaTest (dos hilos al mismo
+  paciente/prueba -> un alta, la otra 409),
+  AsignarColaConcurrenciaTest (dos hilos al mismo
+  hueco -> 1 cita + 1 409 y un solo hueco ocupado),
+  ReubicacionRedundanteTest (el doble clic no escribe
+  segundo eslabon), RetirarColaTest, AuditoriaEsperaTest
+  (cadena verificable e independiente de cita_auditoria),
+  ListaEsperaControladorTest (MockMvc) y
+  ArquitecturaCitasTest (ArchUnit).
+end note
+
+@enduml

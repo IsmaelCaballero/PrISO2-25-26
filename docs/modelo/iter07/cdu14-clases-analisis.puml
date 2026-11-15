@@ -1,0 +1,138 @@
+@startuml cdu14-clases-analisis
+' CDU14 (Iter7) - Clases de analisis: conceptos del dominio de la lista de espera
+' Autor: agente (diseno previo al codigo, issue #47) - fuentes PlantUML (D31)
+title CDU14 - Clases de analisis (conceptos del dominio, sin infraestructura)
+
+skinparam classAttributeIconSize 0
+
+class ListaEspera <<concepto nuevo>> #99FF99 {
+  - paciente : Paciente
+  - prueba : Prueba
+  - profesional preferido : Profesional (opcional)
+  - prioridad : Prioridad
+  - fechaSolicitud : Instant (no cambia)
+  - estado : ACTIVA | ASIGNADA | RETIRADA
+  - cita : Cita (solo si fue asignada)
+  - motivoFin : String (obligatorio al retirar)
+  ..
+  + estaActiva() : boolean
+  + esDuplicadoDe(otra : ListaEspera) : boolean
+  (dos activas del mismo paciente y la misma
+  prueba son la misma entrada de cola)
+  {static} + porOrdenDeEspera() : Orden
+  (criterio de orden total de la cola)
+}
+
+class AuditoriaEspera <<concepto nuevo>> #99FF99 {
+  - accion : ALTA | REUBICACION | ASIGNACION | RETIRADA
+  - sobre : ListaEspera
+  - antes : String (prioridad o estado previo)
+  - despues : String (prioridad o estado nuevo)
+  - usuario : String
+  - motivo : String (obligatorio en retirada y reubicacion)
+  - instante : Instant
+  - asientoAnterior : AuditoriaEspera (null en el primero)
+  ..
+  + enlazaCon(anterior : AuditoriaEspera) : void
+  + cadenaIntegra() : boolean
+  (mismo canon hash-chain que CDU12, pero cadena
+  propia: no comparte asientos con la auditoria
+  de citas)
+}
+
+class Paciente <<concepto, ya existe>> #D9D9D9 {
+  - id : String
+  - nombre : String
+}
+
+class Prueba <<concepto, ya existe (CDU16)>> #D9D9D9 {
+  - codigo : String
+  - requiereCita : boolean
+  - duracionMinutos : int
+}
+
+class Profesional <<concepto, ya existe (CDU12/CDU13)>> #D9D9D9 {
+  - id : String
+  - rol : Rol
+}
+
+class Solicitud <<concepto, ya existe (CDU06)>> #D9D9D9 {
+  - id : String
+  - estado : Solicitud.Estado
+}
+
+class Cita <<concepto, ya existe (CDU12)>> #D9D9D9 {
+  - id : String
+  - inicio : Instant
+  - duracion : int
+  - estado : Cita.Estado
+}
+
+class HuecoDisponible <<concepto, ya existe (CDU12/CDU13)>> #D9D9D9 {
+  - profesional : Profesional
+  - inicio : Instant
+  - fin : Instant
+}
+
+class Prioridad <<concepto, ya existe (CDU17/common)>> #D9D9D9 {
+  URGENTE > ALTA > NORMAL > BAJA
+  + peso() : int (mayor peso = antes en la cola)
+}
+
+class "Criterio de orden de la cola" as Orden <<regla de dominio>> #99FF99 {
+  1. prioridad, de mayor a menor
+  2. fechaSolicitud, mas antigua primero
+  3. identificador de la entrada, ascendente
+  ..
+  Es un orden total: dos lecturas del mismo
+  instante devuelven exactamente la misma
+  secuencia y la misma posicion para cada
+  entrada.
+}
+
+ListaEspera "1" --> "1" Paciente : el paciente\nespera
+ListaEspera "1" --> "1" Prueba : espera esta\nprueba
+ListaEspera "1" --> "0..1" Profesional : preferencia\nde profesional
+ListaEspera "0..1" --> "0..1" Solicitud : nace de\n(puede ser de alta directa)
+ListaEspera "1" --> "1" Prioridad : decide su\nlugar en la cola
+ListaEspera --> Orden : se ordena\nsegun
+ListaEspera "1" --> "0..1" Cita : se materializa\nen una cita
+Cita "1" --> "1" HuecoDisponible : ocupa
+AuditoriaEspera "muchos" --> "1" ListaEspera : deja constancia\nde cada movimiento
+AuditoriaEspera "0..1" --> "0..1" AuditoriaEspera : enlaza el\nasiento anterior
+AuditoriaEspera "muchos" --> "0..1" Cita : la asignacion\ncrea cita
+Prioridad --> Orden : peso\ndescendente
+
+note bottom of ListaEspera
+  Reglas que definen el CDU14 (alto riesgo, RF12):
+  - Duplicidad: un paciente no puede tener dos
+    entradas ACTIVAS para la misma prueba; el
+    segundo alta se rechaza, no se crea una
+    segunda entrada.
+  - Redundancia: una reubicacion que deja la
+    entrada en la misma posicion se rechaza.
+  - Una entrada ya ASIGNADA o RETIRADA no vuelve
+    a la cola.
+  - Un hueco libre solo puede generar UNA cita.
+  - La retirada y la reubicacion exigen motivo.
+end note
+
+note bottom of Orden
+  Sin tercer criterio de desempate, dos entradas
+  con la misma prioridad y el mismo instante de
+  solicitud quedarian en orden indeterminado:
+  la posicion que ve el usuario cambiaria entre
+  lecturas y no habria forma de reproducir un TC
+  de reubicacion. El desempate por identificador
+  cierra el orden.
+end note
+
+note right of AuditoriaEspera
+  Cada accion (alta, reubicacion, asignacion,
+  retirada) deja un asiento encadenado sobre la
+  propia cola, para poder responder despues de
+  quien movio a un paciente y por que, sin
+  mezclar esa trazabilidad con la de las citas.
+end note
+
+@enduml
