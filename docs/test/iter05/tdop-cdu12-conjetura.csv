@@ -1,0 +1,14 @@
+id;operacion;cuerpo;setup;rutaExtra;esperadoStatus;esperadoCodigo;nota
+TC12-F01;AGENDAR;VACIO;NINGUNO;-;SOLICITUD_MALFORMADA;DATOS_INVALIDOS;@RequestBody obligatorio sin cuerpo: HttpMessageNotReadable con consejo propio (no es el 415/400 sin cuerpo de otras CDU)
+TC12-F02;AGENDAR;JSON_NULO;SEM-SOL:CREADA;-;SOLICITUD_MALFORMADA;DATOS_INVALIDOS;literal null: Jackson materializa null y el consejo cuerpoIlegible responde 400
+TC12-F03;AGENDAR;JSON_SIN_DURACION;SEM-SOL:CREADA;-;CREADO;-;int primitivo sin clave = 0, y el servicio usa el defecto del catalogo (30 min para api-prueba): 201 (HALLAZGO 8)
+TC12-F04;AGENDAR;JSON_DUR_CERO;SEM-SOL:CREADA;-;CREADO;-;duracionMinutos:0 explicito cae al mismo defecto del catalogo: 201
+TC12-F05;AGENDAR;JSON_DUR_NEGATIVA;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;-5 pasa el record pero la guarda duracion<0 del servicio no (borde bajo)
+TC12-F06;AGENDAR;JSON_SIN_SOL;NINGUNO;-;INVALIDOS;DATOS_INVALIDOS;sin solicitud no hay defecto de catalogo que aplicar: duracion 0 sin fuente -> 400
+TC12-F07;AGENDAR;JSON_PROF_ESPACIOS;NINGUNO;inicio 2026-11-13T12:00;CREADO;-;leido del dominio: Cita.nueva SI recorta profesionalId, asi que '  api-medico  ' encuentra agenda y la alta es valida (misma clase que huecosLibres, sin asimetria)
+TC12-F08;AGENDAR;JSON_SOL_ESPACIOS;NINGUNO;inicio 2026-11-13T12:00;CREADO;-;HALLAZGO 4: solicitudId ' ' se convierte en null: la cita se crea sin solicitud y CDU06 no se consulta
+TC12-F09;REPROGRAMAR;PROPIO_HUECO;SEM-CITA:PROGRAMADA;inicio = el actual de la cita;OK;-;exigeHuecoLibre excluye la cita propia: moverse al mismo hueco es legal
+TC12-F10;CANCELAR;JSON_MOTIVO_VACIO;NINGUNO;id inexistente;INVALIDOS;DATOS_INVALIDOS;el motivo en blanco se exige ANTES de buscar la cita: 400 gana a 404
+TC12-F11;AGENDAR;TEXT_PLANO;NINGUNO;Content-Type text/plain;ERROR_INTERNO;ERROR_INTERNO;HALLAZGO 1 predicho: no hay consejo HttpMediaTypeNotSupportedException en CDU12 -> lo absorbe Exception y devuelve 500 (rojo confirma)
+TC12-F12;AUDITORIA;NINGUNO;SEM-CITA:PROGRAMADA;GET /api/citas/{id}/auditoria;RUTA_INEXISTENTE;-;HALLAZGO 6: no hay subrecurso de historial (TC12-05 sin endpoint): 404 de Spring sin cuerpo ApiError, si cayera al consejo generico seria 500 ERROR_INTERNO
+TC12-F13;BAJA;NINGUNO;SEM-CITA:PROGRAMADA;DELETE /api/citas/{id};METODO_NO_PERMITIDO;-;no hay DELETE de citas, pero /api/citas/{id} si esta mapeado para GET: Spring resuelve 405 antes de entrar al handler, asi que el consejo Exception no lo ve y el cuerpo no es ApiError (HALLAZGO 6 confirmado por la rojo)

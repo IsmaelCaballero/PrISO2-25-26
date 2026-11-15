@@ -5,7 +5,10 @@ son, para decidir con datos si el modelo cuantizado en uso (Qwen3.8-Flash-Next `
 que pasar a uno mas potente en ciertos trabajos. Regla de registro: decision **D37** en `DECISIONS.md`; el
 contador por cierre va tambien en el registro de sesion de `STATUS.md`.*
 
-Corte de datos: **11/11/2026, `develop` = `6feabdf` + rama `feature/iter05-cdu12-citas` (`7abea47`) sin fusionar**.
+Corte de datos: **15/11/2026, rama `feature/iter05-cdu12-citas` (`b912554`, 13 commits) con todas las puertas
+tecnicas en verde; el PR #42 ya fusionado por Ismael (merge `08a7ed8`, 14/11, 12 commits de codigo) y #40
+cerrada a mano, quedando la matriz TDOP + estos docs en el PR de cierre**. Este corte sustituye al del
+11/11/2026, que era de mitad de tramo (`7abea47`).
 
 ## 1. Que es un defecto y como se cuenta
 
@@ -28,7 +31,7 @@ commitearlo (duplicaba versiones al escanear Flyway 11 ambas subcarpetas), las d
 `7abea47`/`e44f7c1` (puerta JaCoCo 0.00 < 0.80 de un modulo aun sin tests: es un hito del plan, no un defecto).
 Por eso las cifras por debajo estan sesgadas a mano: miden defectos que **escaparon** del auto-chequeo del agente.
 
-## 2. Libro de defectos (11/11/2026)
+## 2. Libro de defectos (11/11/2026; sin nuevos en el cierre de Iter5, 15/11/2026)
 
 | ID | Epoca | Familia | Defecto | Evidencia | Fugado? |
 |---|---|---|---|---|---|
@@ -49,6 +52,13 @@ Por eso las cifras por debajo estan sesgadas a mano: miden defectos que **escapa
 Unidad de conteo: **familia de hueco**, no caso de prueba. Los 16 fallos del rojo D33 de Iter1 son 1 defecto
 F4 (DEF-05) + 2 F3 (DEF-03/04), no 16 defectos.
 
+**Cierre de Iter5 (15/11/2026): no se anade ningun DEF nuevo.** Dos cosas se rozaron y se quedaron por debajo de
+la regla de exclusion de la seccion 1: el arranque en falso de la generacion TDOP (`mvn_tdop3`, resuelto en local
+antes de pushear, sin rastro en git ni en CI) y el supuesto desvio de contrato del `PATCH /api/citas/{id}` de
+reprogramacion, que al mirar el modelo de CDU12 (`docs/modelo/iter05/cdu12-secuencia.puml`) resulto no ser desvio:
+la propia nota del modelo deja escrito que no existen endpoints PUT/PATCH de citas y la ruta real es
+`POST /api/citas/{id}/reprogramar`. No hay DEF-14: el contrato no se rompio.
+
 ## 3. Tabla por iteracion
 
 Commits del tramo = `git rev-list --count` entre etiquetas (el tramo posterior a `cfg-iter04` mezcla la
@@ -62,20 +72,34 @@ aplicacion de D33 a Iter1, los TC humanos y la D34; se agrupa como tramo inter-i
 | Iter3 · CDU13 agendas | `cfg-iter02..cfg-iter03` | 11 | 2 | 0 | 0 | 1 | 3 | 2 | 27,3 |
 | Iter4 · CDU06 solicitudes | `cfg-iter03..cfg-iter04` | 20 | 1 | 1 | 0 | 0 | 2 | 2 | 10,0 |
 | Tramo D33-Iter1 + TC + D34 | `cfg-iter04..6feabdf` | 21 | 1 | 1 | 0 | 0 | 2 | 2 | 9,5 |
-| Iter5 · CDU12 citas (en curso) | rama `7abea47` | 7 | 0 | 1 | 0 | 0 | 1 | 1 | 14,3 |
-| **Total** | | **101** | **6** | **3** | **2** | **2** | **13** | **11** | **12,9** |
+| Iter5 · CDU12 citas | rama `6feabdf..b912554` | 13 | 0 | 1 | 0 | 0 | 1 | 1 | 7,7 |
+| **Total** | | **107** | **6** | **3** | **2** | **2** | **13** | **11** | **12,1** |
 
 Nota: DEF-03/04/05 son codigo de Iter1 (tramo 10 commits) aunque se descubrieron al aplicar D33 en el tramo
-inter-iteraciones; se imputan al tramo de origen porque es el codigo que los contiene.
+inter-iteraciones; se imputan al tramo de origen porque es el codigo que los contiene. La fila de Iter5 cuenta
+los 13 commits de la rama `feature/iter05-cdu12-citas` (`6feabdf..b912554`): 12 de ellos ya estan en `develop`
+por la fusion del PR #42 (merge `08a7ed8`, 14/11) y solo `b912554` (matriz TDOP) mas este commit de docs suben
+en el PR de cierre; el tag `cfg-iter05` ira sobre la fusion de ese PR de cierre y ahi se revalida la cuenta,
+que no deberia cambiar.
 
 ## 4. Metricas de apoyo (para el denominador)
 
-- **CI:** 66 ejecuciones, 64 en verde, 2 fallidas; las dos en `feature/iter05-cdu12-citas` y ambas la puerta
-  JaCoCo planificada (modulo sin tests). Cero compilaciones y cero tests rotados llegaron a CI: la barrera
-  local (`mvn -B -ntp clean verify` antes de pushear) funciona.
-- **Pruebas:** 356 tests en el reactor completo (`clean verify` del cierre de D34, 0 saltados). Por modulos en
-  local: catalogo 139, seguridad 36, solicitudes 27, agendas 20, common 2, citas 1 (Tests run, `surefire-reports`).
-- **Tamano:** 9.277 lineas Java de `src/main` y 4.869 de `src/test` (ratio 0,52).
+- **CI:** 72 ejecuciones, 69 en verde y 3 fallidas; las tres en `feature/iter05-cdu12-citas` y las tres la puerta
+  JaCoCo planificada (modulo `iso2-citas` todavia sin tests: `e44f7c1`, `7abea47`, `a276e9c`). El check
+  `construir` quedo **en verde** en la rama desde `4b162cb` (suite CDU12) y verde tambien en el PR de cierre
+  con la matriz TDOP dentro. Cero compilaciones y cero tests
+  rotados llegaron a CI: la barrera local (`mvn -B -ntp clean verify` antes de pushear) funciona.
+- **Pruebas:** **637 tests** en el reactor completo (`mvn -B -ntp clean verify` del 15/11/2026, **0 saltados**,
+  Docker Engine 29.8.0 levantado para los 3 Testcontainers de MySQL; BUILD SUCCESS). Por modulos: **citas 238**
+  (dentro `Cdu12MatrizTdopTest` **172**), catalogo 139, server-app 90 (`CitasApiTest` 18 + 3 Testcontainers),
+  client-app 80 (`ApiClienteCitasTest` 13), seguridad 36, solicitudes 27, agendas 20, common 2 y 5 baseline de 1.
+- **Cobertura JaCoCo (linea) tras Iter5:** citas **95,8 %** (puerta 0,80 superada), server-app 88,3 %,
+  client-app 95,8 %, solicitudes 88,0 %, catalogo 97,5 %, seguridad 96,0 %, agendas 81,8 %.
+- **Metodo D33 ya aplicado en dos CDU:** CDU16 (matriz de **115** casos) y CDU12 (matriz de **172** casos:
+  A38 + B31 + C29 + D27 + E34 + F13), ambos generados desde su spec JSON con `tools/pairwise.py` y proyectados
+  a la plantilla de TC humanos con `tools/tc_plantillas.py`.
+- **Tamano:** 10.046 lineas Java de `src/main` y 7.364 de `src/test` (ratio 0,73). Iter5 aporta las 5 matrices
+  TDOP y sube el peso de test sobre todo el reactor.
 - **Conjetura de errores (D33) cumplida en Iter1:** el rojo de la matriz encontro en 16 casos de 115 lo que
   los 24/24 tests originales de Iter1 no encontraron. El rojo vale; por eso se mide por familias, no por casos.
 
@@ -96,20 +120,29 @@ Get-ChildItem -Recurse -Filter surefire-reports -Directory | ForEach-Object {
     if ($m) { $n += [int]$m.Matches[0].Groups[1].Value } }; "$($_.Parent.Parent.Name): $n" }
 ```
 
-## 6. Que dice la serie (veredicto del 11/11/2026)
+## 6. Que dice la serie (veredicto del 11/11/2026, revalidado en el cierre de Iter5 el 15/11/2026)
 
 1. **El 46 % de los defectos (6/13) son F1 de proceso**, no de codigo: fusiones fuera de `main`/`develop`,
    issues cerradas sin artefacto, CSVs de version desalineados. Eso no lo arregla un modelo mas caro; lo
    arreglan las reglas (D29, D30) y su comprobacion. Desde D30 no ha vuelto un F1 de fusiones.
-2. **F4 (codigo) va en caida: 1 en Iter1, 1 en Iter3, 0 en Iter2/Iter4/D34/Iter5.** 2 defectos de codigo en
-   101 commits (2,0/100), ninguno escapado a CI. Con los datos de hasta Iter4 el flash cuantizado ha sido
+2. **F4 (codigo) sigue en 0 en Iter2, Iter4, D34 e Iter5: 1 en Iter1 y 1 en Iter3.** 2 defectos de codigo en
+   107 commits (**1,9/100**), ninguno escapado a CI. Con los datos hasta Iter5 el flash cuantizado ha sido
    suficiente para CRUD, migraciones, documentacion y generacion TDOP.
 3. **El riesgo real del cuantizado no es F4 sino el falso verde**: DEF-12 (Testcontainers saltando en silencio)
    y DEF-13 (PNG recortado en silencio) son trampas que dan verde a algo roto, y la unica familia F4 grave
-   (DEF-05/D35) fue un hueco que los tests originales *no miraban*. Eso pesa justo sobre lo que viene:
-   concurrencia real de 2 hilos, boundaries de transaccion, maquina de estados y puertas de cobertura en
-   Iter5 (y despues Iter6 seguridad e Iter7 SAGA).
-4. **Umbrales para pedir modelo mas potente** (revisar en cada cierre, sobre esta tabla):
+   (DEF-05/D35) fue un hueco que los tests originales *no miraban*. Eso pesaba justo sobre Iter5, que ya esta
+   cerrada en rama: **concurrencia real de 2 hilos** peleando por el mismo hueco (D36, UNIQUE + la BD decide el
+   duelo), maquina de estados de 5 estados con su 409 `TRANSICION_INVALIDA`, cancelacion que libera el hueco y
+   reapertura la solicitud, y puerta JaCoCo 0,80. El duelo concurrente esta probado con dos hilos reales y los
+   Testcontainers de MySQL corren de verdad (0 saltados con Docker arriba), asi que el escenario de falso verde
+   de DEF-12 quedo vigilado: los 3 tests de MySQL figuran como ejecutados, no saltados.
+4. **Cierre de Iter5: no salta ningun umbral.** Ni mas de 2 F4 en una familia (CDU12 lleva 0), ni una decision
+   de diseno erronea que obligue a reescribir codigo commiteado, ni un falso verde colado en CI. La matriz D33
+   de CDU12 (172 casos) no destapo ningun F4 de produccion: lo que tenia que destapar (la solicitud apta solo en
+   `creada`, el profesional sin agenda como `FUERA_DE_FRANJA`, `TRANSICION_INVALIDA` ganando a `PLAZO_CANCELACION`)
+   ya estaba resuelto en los `.puml` antes de escribir codigo (D31), y por eso cae bajo la regla de exclusion.
+   Sigue el flash cuantizado para el codigo de Iter6 (CDU19 / CFG-06).
+5. **Umbrales para pedir modelo mas potente** (revisar en cada cierre, sobre esta tabla):
    - una familia de CDU acumula **> 2 defectos F4 detectados en revision/TC humanos**, o
    - **1 decision de diseno erronea que obliga a reescribir codigo ya commiteado** (hasta ahora: cero; el
      `{vendor}` de Flyway se descarto antes de commitear), o

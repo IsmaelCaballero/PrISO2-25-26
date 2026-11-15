@@ -12,7 +12,15 @@ plantilla, asi que la ejecucion automatica y la manual trazan sobre el mismo cas
 Tipos de composicion por tabla (campo ``kind``):
 
 * ``pairwise``  -> cobertura de todos los pares de niveles de factores distintos
-                   (voraz aleatorio con reparacion, semilla fija).
+                   (voraz aleatorio con reparacion, semilla fija). Con
+                   ``noCombinaInvalidos`` una fila nunca acumula dos niveles fuera
+                   de clase valida; con ``noEmparejar`` los niveles del factor
+                   indicado se prueban uno por fila sobre base valida y no generan
+                   pares obligatorios (si no, un rechazo de ese factor taparia el
+                   resultado de los demas niveles y la fila no seria atribuible).
+                   ``filasBase`` son combinaciones fijadas a mano que el voraz no
+                   puede podar, y ``estadosBase`` exige que la tabla observe cada
+                   uno de esos estados esperados (se comprueba al generar).
 * ``full``      -> producto completo (solo cuando el producto es pequeno).
 * ``filas``     -> enumeracion completa escrita a mano en la spec (tabla D: con dos
                    factores el producto es pequeno, pero se prefiere escribirlo a
@@ -90,9 +98,17 @@ def pairwise(tabla: dict, semilla: int) -> list[list[int]]:
     validos = [[k for k, mal in enumerate(fila) if not mal] for fila in invalido]
     defecto = [fila[0] if fila else 0 for fila in validos]
     sin_dos = bool(tabla.get("noCombinaInvalidos"))
+    # Factores que no emparejan (``noEmparejar``): combinar dos de sus niveles
+    # rechazados con otros factores taparia el motivo real del rechazo (un cuerpo
+    # ilegitimo oculta cualquier otro fallo). Se prueban uno por fila sobre una
+    # base valida y no generan pares obligatorios.
+    excluidos = {k for k, f in enumerate(tabla["factores"])
+                 if f["nombre"] in tabla.get("noEmparejar", [])}
 
     obligatorios: set[tuple[int, int, int, int]] = set()
     for i, j in itertools.combinations(range(n), 2):
+        if i in excluidos or j in excluidos:
+            continue
         for vi in range(len(niveles[i])):
             for vj in range(len(niveles[j])):
                 if sin_dos and invalido[i][vi] and invalido[j][vj]:
@@ -101,14 +117,20 @@ def pairwise(tabla: dict, semilla: int) -> list[list[int]]:
 
     cubiertos: set[tuple[int, int, int, int]] = set()
     filas: list[list[int]] = []
+    intocables: set[int] = set()
 
-    def añadir(fila: list[int]) -> None:
+    def añadir(fila: list[int], intocable: bool = False) -> None:
         filas.append(fila)
-        cubiertos.update(pares_de(fila, n))
+        if intocable:
+            intocables.add(id(fila))
+        cubiertos.update(p for p in pares_de(fila, n) if p in obligatorios)
 
     def completa(fila: list[int], fijos: set[int]) -> list[int]:
         """Elige, para los factores libres, el nivel que cubre mas pares pendientes."""
-        orden = [k for k in range(n) if k not in fijos]
+        for k in excluidos:
+            if k not in fijos:
+                fila[k] = defecto[k]
+        orden = [k for k in range(n) if k not in fijos and k not in excluidos]
         azar.shuffle(orden)
         fijados = set(fijos)
         for k in orden:
@@ -119,22 +141,43 @@ def pairwise(tabla: dict, semilla: int) -> list[list[int]]:
                     continue
                 prueba = list(fila)
                 prueba[k] = v
-                aporte = len(pares_de(prueba, n) - cubiertos)
+                aporte = len((pares_de(prueba, n) & obligatorios) - cubiertos)
                 if aporte > ganancia:
                     mejor, ganancia = v, aporte
             fila[k] = mejor if mejor is not None else azar.choice(validos[k])
             fijados.add(k)
         return fila
 
-    # 1) camino feliz y un caso por cada nivel invalido (rechazo con un solo motivo).
+    def factor_pos(nombre: str) -> int:
+        for k, f in enumerate(tabla["factores"]):
+            if f["nombre"] == nombre:
+                return k
+        raise ValueError("no existe el factor %s en la tabla %s"
+                         % (nombre, tabla["id"]))
+
+    def nivel_pos(k: int, valor: str) -> int:
+        for j, nivel in enumerate(tabla["factores"][k]["niveles"]):
+            if nivel["valor"] == valor:
+                return j
+        raise ValueError("la fila base %s=%s no existe en la tabla %s"
+                         % (tabla["factores"][k]["nombre"], valor, tabla["id"]))
+
+    # 1) camino feliz, las filas base declaradas en la spec (reglas cuya observacion
+    # el voraz podria acabar ensombreciendo) y un caso por cada nivel invalido.
     añadir(list(defecto))
+    for fila_fija in tabla.get("filasBase", []):
+        fila = list(defecto)
+        for factor, valor in fila_fija.items():
+            k = factor_pos(factor)
+            fila[k] = nivel_pos(k, valor)
+        añadir(fila, intocable=True)
     if sin_dos:
         for i in range(n):
             for vi in range(len(niveles[i])):
                 if invalido[i][vi]:
                     fila = list(defecto)
                     fila[i] = vi
-                    añadir(completa(fila, {i}))
+                    añadir(completa(fila, {i}), intocable=(i in excluidos))
 
     # 2) a tapar los pares restantes: en cada ronda se prueban los pares cuyos
     # niveles estan menos repetidos y se queda la fila que mas pares nuevos aporta.
@@ -149,26 +192,41 @@ def pairwise(tabla: dict, semilla: int) -> list[list[int]]:
         for i, vi, j, vj in candidatas[:80]:
             prueba = list(defecto)
             prueba[i], prueba[j] = vi, vj
-            aporte = len(pares_de(completa(prueba, {i, j}), n) - cubiertos)
+            aporte = len((pares_de(completa(prueba, {i, j}), n) & obligatorios) - cubiertos)
             if aporte > mejor_aporte:
                 mejor_fila, mejor_aporte = prueba, aporte
         añadir(mejor_fila)
 
-    # 3) poda: si una fila no aporta ningun par unico, se elimina.
+    # 3) poda: si una fila no aporta ningun par unico, se elimina. No se poda una
+    # fila declarada en filasBase, ni la unica que prueba un nivel de un factor que
+    # no empareja (si no, ese nivel no se ejecutaria nunca).
     cambio = True
     while cambio:
         cambio = False
-        for indice in reversed(range(len(filas))):
-            fila = filas[indice]
+        for indice_fila in reversed(range(len(filas))):
+            fila = filas[indice_fila]
+            if id(fila) in intocables:
+                continue
             if sin_dos and not any(invalido[k][fila[k]] for k in range(n)):
                 continue  # las filas totalmente validas son el camino feliz: no se podan
-            resto = filas[:indice] + filas[indice + 1:]
+            resto = filas[:indice_fila] + filas[indice_fila + 1:]
             cubiertos_resto: set[tuple[int, int, int, int]] = set()
-            for fila in resto:
-                cubiertos_resto.update(pares_de(fila, n))
+            niveles_resto: set[tuple[int, int]] = set()
+            for otra in resto:
+                cubiertos_resto.update(pares_de(otra, n))
+                niveles_resto.update((k, otra[k]) for k in excluidos)
+            if {(k, fila[k]) for k in excluidos} - niveles_resto:
+                continue
             if obligatorios <= cubiertos_resto:
-                filas.pop(indice)
+                filas.pop(indice_fila)
                 cambio = True
+
+    for k in excluidos:
+        sin_probar = set(range(len(niveles[k]))) - {f[k] for f in filas}
+        if sin_probar:
+            raise SystemExit("el factor %r de la tabla %s tiene niveles sin probar: %s"
+                             % (tabla["factores"][k]["nombre"], tabla["id"],
+                                [niveles[k][v]["valor"] for v in sorted(sin_probar)]))
     return filas
 
 
@@ -323,8 +381,11 @@ def pares_esperados(tabla: dict) -> set[tuple[str, str, str, str]]:
     obligacion: una fila con dos valores fuera de clase no deja atribuir el rechazo.
     """
     mal = invalidos_por_valor(tabla)
+    sin_emparejar = set(tabla.get("noEmparejar", []))
     esperados = set()
     for fa, fb in itertools.combinations(tabla["factores"], 2):
+        if fa["nombre"] in sin_emparejar or fb["nombre"] in sin_emparejar:
+            continue
         for na in fa["niveles"]:
             for nb in fb["niveles"]:
                 if tabla.get("noCombinaInvalidos") \
@@ -384,6 +445,13 @@ def main(argv: list[str]) -> int:
         filas = (filas_conjetura(tabla, prefijo)
                  if tabla["kind"] in ("conjetura", "filas")
                  else filas_de(tabla, spec["semilla"]))
+        # el voraz puede ensombrecer una regla: si la spec exige estados, se comprueba
+        # que al menos una fila los observa (si falta, se declara una filasBase).
+        vistos_estado = {f["registro"]["esperadoStatus"] for f in filas}
+        faltan = sorted(set(tabla.get("estadosBase", [])) - vistos_estado)
+        if faltan:
+            raise SystemExit("la tabla %s no observa los estados exigidos: %s"
+                             % (tabla["id"], ", ".join(faltan)))
         destino = os.path.join(base, tabla["csv"])
         escribir_csv(destino, filas)
         copias = [destino]
