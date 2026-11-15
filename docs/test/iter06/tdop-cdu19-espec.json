@@ -52,7 +52,8 @@
     " (6) La sesion SSO del IdP simulado no sustituye al JWT de CDU17: ninguna ruta de integracion mira el",
     "   bearer devuelto por /sso/login, el spike solo informa (TC19-C01 y hallazgo del informe).",
     " (7) La idempotencia de sincronizar solo funciona mientras el HCE responde: el servicio pregunta al",
-    "   adaptador antes de mirar su instantanea, asi que con el sistema caido no se sirve la copia local."
+    "   adaptador antes de mirar su instantanea, asi que con el sistema caido no se sirve la copia local.",
+    "HALLAZGO del paso rojo (TC19-E10): un segmento de ruta vacio no enruta, asi que la clase 'sistema en blanco' en el ping se bifurca en dos comportamientos distintos y se escriben dos filas: E10 con segmento vacio (404 de Spring, sin ApiError) y E17 con segmento de solo espacios (404 del advice con SISTEMA_NO_ENCONTRADO). La spec no adjudica un unico esperado a una entrada que la propia ruta no puede expresar."
   ],
   "cdu": "CDU19",
   "iter": "iter06",
@@ -155,18 +156,57 @@
       "CAIDO": "SISTEMA_NO_DISPONIBLE",
       "LENTO_TIMEOUT": "SISTEMA_TIEMPO_SUPERADO"
     },
-    "estadosBase": ["OK", "CAIDO", "LENTO_TIMEOUT", "INVALIDOS", "NO_ENCONTRADA", "RUTA_INEXISTENTE"],
+    "estadosBase": [
+      "OK",
+      "CAIDO",
+      "LENTO_TIMEOUT",
+      "INVALIDOS",
+      "NO_ENCONTRADA",
+      "RUTA_INEXISTENTE"
+    ],
     "factores": [
       {
         "nombre": "paciente",
         "niveles": [
-          {"valor": "AUT", "valido": true, "nota": "api-paciente-ok: el HCE simulado siempre devuelve la misma historia"},
-          {"valor": "ROTATIVO", "valido": true, "nota": "api-paciente-rotativo: alterna dos contenidos, cada sincronizacion aporta huella nueva"},
-          {"valor": "RODEADO", "valido": true, "nota": "id valido con espacios: recortar lo deja reconocible, leccion ya vista en CDU12"},
-          {"valor": "VACIO", "valido": false, "motivo": "id de solo espacios: tras recortar queda vacio y el adaptador exige identificador", "nota": "la guarda del adaptador avisa antes de buscar"},
-          {"valor": "AUSENTE", "valido": false, "motivo": "segmento de ruta suprimido: la ruta queda en /historias/sincronizar y ningun handler la atiende", "nota": "Spring resuelve el 404 sin llamar al controlador"},
-          {"valor": "DESCONOCIDO", "valido": false, "motivo": "el paciente no esta registrado en el HCE simulado", "nota": "identificador con buena pinta pero inexistente"},
-          {"valor": "LARGO", "valido": false, "motivo": "identificador de 80 caracteres", "nota": "la fachada no pone limite de longitud: se busca y no esta"}
+          {
+            "valor": "AUT",
+            "valido": true,
+            "nota": "api-paciente-ok: el HCE simulado siempre devuelve la misma historia"
+          },
+          {
+            "valor": "ROTATIVO",
+            "valido": true,
+            "nota": "api-paciente-rotativo: alterna dos contenidos, cada sincronizacion aporta huella nueva"
+          },
+          {
+            "valor": "RODEADO",
+            "valido": true,
+            "nota": "id valido con espacios: recortar lo deja reconocible, leccion ya vista en CDU12"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "id de solo espacios: tras recortar queda vacio y el adaptador exige identificador",
+            "nota": "la guarda del adaptador avisa antes de buscar"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "segmento de ruta suprimido: la ruta queda en /historias/sincronizar y ningun handler la atiende",
+            "nota": "Spring resuelve el 404 sin llamar al controlador"
+          },
+          {
+            "valor": "DESCONOCIDO",
+            "valido": false,
+            "motivo": "el paciente no esta registrado en el HCE simulado",
+            "nota": "identificador con buena pinta pero inexistente"
+          },
+          {
+            "valor": "LARGO",
+            "valido": false,
+            "motivo": "identificador de 80 caracteres",
+            "nota": "la fachada no pone limite de longitud: se busca y no esta"
+          }
         ]
       },
       {
@@ -177,20 +217,86 @@
           "LENTO_TIMEOUT": "SIM-HCE-LENTO_TIMEOUT-250-100-0"
         },
         "niveles": [
-          {"valor": "NORMAL", "valido": true, "nota": "politica por defecto del modulo"},
-          {"valor": "CAIDO", "valido": true, "nota": "la HCE externa no responde"},
-          {"valor": "LENTO_TIMEOUT", "valido": true, "criterio": "latencia 250 supera el plazo de 100", "nota": "degradacion por tiempo de espera superado"}
+          {
+            "valor": "NORMAL",
+            "valido": true,
+            "nota": "politica por defecto del modulo"
+          },
+          {
+            "valor": "CAIDO",
+            "valido": true,
+            "nota": "la HCE externa no responde"
+          },
+          {
+            "valor": "LENTO_TIMEOUT",
+            "valido": true,
+            "criterio": "latencia 250 supera el plazo de 100",
+            "nota": "degradacion por tiempo de espera superado"
+          }
         ]
       }
     ],
     "reglas": [
-      {"si": {"factor": "paciente", "igual": "AUSENTE"}, "estado": "RUTA_INEXISTENTE", "codigo": "-", "porque": "el segmento de ruta suprimido deja la peticion en /historias/sincronizar, que no coincide con /historias/{pacienteExternoId}/sincronizar: el 404 de Spring sin ApiError gana incluso a un HCE caido, porque la politica jamas llega a consultarse"},
-      {"si": {"factor": "politica", "igual": "CAIDO"}, "estado": "CAIDO", "codigo": "SISTEMA_NO_DISPONIBLE", "porque": "proteger() lee la politica antes de mirar el identificador: el fallo del sistema gana a la entrada fuera de clase"},
-      {"si": {"factor": "politica", "igual": "LENTO_TIMEOUT"}, "estado": "LENTO_TIMEOUT", "codigo": "SISTEMA_TIEMPO_SUPERADO", "porque": "la latencia desborda el plazo y la llamada real nunca se ejecuta: 503 en lugar del 400 o 404 que daria la peticion"},
-      {"si": {"factor": "paciente", "igual": "VACIO"}, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "recortar deja el id vacio y el adaptador lo exige antes de buscar: 400 por delante del 404"},
-      {"si": {"factor": "paciente", "igual": "DESCONOCIDO"}, "estado": "NO_ENCONTRADA", "codigo": "HISTORIA_NO_ENCONTRADA", "porque": "el HCE simulado solo conoce api-paciente-ok y api-paciente-rotativo"},
-      {"si": {"factor": "paciente", "igual": "LARGO"}, "estado": "NO_ENCONTRADA", "codigo": "HISTORIA_NO_ENCONTRADA", "porque": "no hay cota de longitud en la fachada: el identificador largo se busca igual y no esta"},
-      {"si": {}, "estado": "OK", "codigo": "-", "porque": "historia sincronizada con su huella sha256 y sus registros; la segunda vez sobre el mismo contenido seria reutilizado=true (lo comprueba la tabla B)"}
+      {
+        "si": {
+          "factor": "paciente",
+          "igual": "AUSENTE"
+        },
+        "estado": "RUTA_INEXISTENTE",
+        "codigo": "-",
+        "porque": "el segmento de ruta suprimido deja la peticion en /historias/sincronizar, que no coincide con /historias/{pacienteExternoId}/sincronizar: el 404 de Spring sin ApiError gana incluso a un HCE caido, porque la politica jamas llega a consultarse"
+      },
+      {
+        "si": {
+          "factor": "politica",
+          "igual": "CAIDO"
+        },
+        "estado": "CAIDO",
+        "codigo": "SISTEMA_NO_DISPONIBLE",
+        "porque": "proteger() lee la politica antes de mirar el identificador: el fallo del sistema gana a la entrada fuera de clase"
+      },
+      {
+        "si": {
+          "factor": "politica",
+          "igual": "LENTO_TIMEOUT"
+        },
+        "estado": "LENTO_TIMEOUT",
+        "codigo": "SISTEMA_TIEMPO_SUPERADO",
+        "porque": "la latencia desborda el plazo y la llamada real nunca se ejecuta: 503 en lugar del 400 o 404 que daria la peticion"
+      },
+      {
+        "si": {
+          "factor": "paciente",
+          "igual": "VACIO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "recortar deja el id vacio y el adaptador lo exige antes de buscar: 400 por delante del 404"
+      },
+      {
+        "si": {
+          "factor": "paciente",
+          "igual": "DESCONOCIDO"
+        },
+        "estado": "NO_ENCONTRADA",
+        "codigo": "HISTORIA_NO_ENCONTRADA",
+        "porque": "el HCE simulado solo conoce api-paciente-ok y api-paciente-rotativo"
+      },
+      {
+        "si": {
+          "factor": "paciente",
+          "igual": "LARGO"
+        },
+        "estado": "NO_ENCONTRADA",
+        "codigo": "HISTORIA_NO_ENCONTRADA",
+        "porque": "no hay cota de longitud en la fachada: el identificador largo se busca igual y no esta"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "historia sincronizada con su huella sha256 y sus registros; la segunda vez sobre el mismo contenido seria reutilizado=true (lo comprueba la tabla B)"
+      }
     ]
   },
   "tabla_B": {
@@ -205,10 +311,32 @@
       "CAIDO": "SISTEMA_NO_DISPONIBLE",
       "LENTO_TIMEOUT": "SISTEMA_TIEMPO_SUPERADO"
     },
-    "columnas": ["id", "paciente", "llamadas", "setup", "setupEntre", "esperadoStatus", "esperadoReutilizado", "esperadoCodigo", "nota"],
+    "columnas": [
+      "id",
+      "paciente",
+      "llamadas",
+      "setup",
+      "setupEntre",
+      "esperadoStatus",
+      "esperadoReutilizado",
+      "esperadoCodigo",
+      "nota"
+    ],
     "reglas": [
-      { "si": { "invalido": true }, "estado": "ver fila", "codigo": "ver fila", "porque": "la enumeracion no combina factores: cada fila lleva el esperado escrito a mano" },
-      { "si": {}, "estado": "ver fila", "codigo": "ver fila", "porque": "cada fila fija su esperado" }
+      {
+        "si": {
+          "invalido": true
+        },
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "la enumeracion no combina factores: cada fila lleva el esperado escrito a mano"
+      },
+      {
+        "si": {},
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "cada fila fija su esperado"
+      }
     ],
     "filas": [
       {
@@ -296,25 +424,73 @@
       "CAIDO": "SISTEMA_NO_DISPONIBLE"
     },
     "noCombinaInvalidos": true,
-    "estadosBase": ["OK", "INVALIDOS", "CREDENCIALES", "CAIDO"],
+    "estadosBase": [
+      "OK",
+      "INVALIDOS",
+      "CREDENCIALES",
+      "CAIDO"
+    ],
     "factores": [
       {
         "nombre": "usuario",
         "niveles": [
-          { "valor": "AUT", "valido": true, "nota": "idp-admin: el unico usuario del padron simulado" },
-          { "valor": "MALO", "valido": false, "motivo": "el usuario no esta en el padron del IdP simulado", "nota": "usuario con buena pinta pero desconocido" },
-          { "valor": "VACIO", "valido": false, "motivo": "usuario vacio: la guarda del adaptador lo exige", "nota": "rechazo 400 por delante del 401" },
-          { "valor": "ESPACIOS", "valido": false, "motivo": "usuario de solo espacios: recortar lo deja vacio", "nota": "misma clase de rechazo que VACIO: el controlador no recorta" },
-          { "valor": "LARGO", "valido": false, "motivo": "usuario de 80 caracteres", "nota": "el IdP simulado no pone cota de longitud: lo busca y no esta" }
+          {
+            "valor": "AUT",
+            "valido": true,
+            "nota": "idp-admin: el unico usuario del padron simulado"
+          },
+          {
+            "valor": "MALO",
+            "valido": false,
+            "motivo": "el usuario no esta en el padron del IdP simulado",
+            "nota": "usuario con buena pinta pero desconocido"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "usuario vacio: la guarda del adaptador lo exige",
+            "nota": "rechazo 400 por delante del 401"
+          },
+          {
+            "valor": "ESPACIOS",
+            "valido": false,
+            "motivo": "usuario de solo espacios: recortar lo deja vacio",
+            "nota": "misma clase de rechazo que VACIO: el controlador no recorta"
+          },
+          {
+            "valor": "LARGO",
+            "valido": false,
+            "motivo": "usuario de 80 caracteres",
+            "nota": "el IdP simulado no pone cota de longitud: lo busca y no esta"
+          }
         ]
       },
       {
         "nombre": "contrasena",
         "niveles": [
-          { "valor": "AUT", "valido": true, "nota": "idp-pass: la contrasena emparejada con idp-admin" },
-          { "valor": "MALA", "valido": false, "motivo": "la contrasena no coincide con la del padron", "nota": "credencial completa pero erronea: 401" },
-          { "valor": "VACIA", "valido": false, "motivo": "contrasena en blanco", "nota": "la guarda del adaptador la exige: 400 por delante del 401" },
-          { "valor": "AUSENTE", "valido": false, "motivo": "se omite la clave contrasena del cuerpo: llega null", "nota": "el DTO usa envoltorios: null y vacio caen en la misma clase de equivalencia" }
+          {
+            "valor": "AUT",
+            "valido": true,
+            "nota": "idp-pass: la contrasena emparejada con idp-admin"
+          },
+          {
+            "valor": "MALA",
+            "valido": false,
+            "motivo": "la contrasena no coincide con la del padron",
+            "nota": "credencial completa pero erronea: 401"
+          },
+          {
+            "valor": "VACIA",
+            "valido": false,
+            "motivo": "contrasena en blanco",
+            "nota": "la guarda del adaptador la exige: 400 por delante del 401"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "se omite la clave contrasena del cuerpo: llega null",
+            "nota": "el DTO usa envoltorios: null y vacio caen en la misma clase de equivalencia"
+          }
         ]
       },
       {
@@ -324,21 +500,98 @@
           "CAIDO": "SIM-SSO-CAIDO-5-300-0"
         },
         "niveles": [
-          { "valor": "NORMAL", "valido": true, "nota": "IdP operativo" },
-          { "valor": "CAIDO", "valido": true, "nota": "el proveedor de identidad no responde: 503 con cualquier credencial" }
+          {
+            "valor": "NORMAL",
+            "valido": true,
+            "nota": "IdP operativo"
+          },
+          {
+            "valor": "CAIDO",
+            "valido": true,
+            "nota": "el proveedor de identidad no responde: 503 con cualquier credencial"
+          }
         ]
       }
     ],
     "reglas": [
-      { "si": { "factor": "idp", "igual": "CAIDO" }, "estado": "CAIDO", "codigo": "SISTEMA_NO_DISPONIBLE", "porque": "proteger() del SsoAdaptadorSimulado lee la politica antes de la guarda de credenciales: el fallo del IdP gana a un 400 o un 401" },
-      { "si": { "factor": "usuario", "igual": "VACIO" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "la guarda del adaptador exige usuario y contrasena antes de buscar en el padron" },
-      { "si": { "factor": "usuario", "igual": "ESPACIOS" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "recortar deja el usuario vacio: misma salida que la anterior" },
-      { "si": { "factor": "contrasena", "igual": "VACIA" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "contrasena en blanco: la misma guarda" },
-      { "si": { "factor": "contrasena", "igual": "AUSENTE" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "la clave ausente llega como null y la guarda cubre null y vacio" },
-      { "si": { "factor": "contrasena", "igual": "MALA" }, "estado": "CREDENCIALES", "codigo": "CREDENCIALES_INVALIDAS", "porque": "credenciales completas pero erroneas: el IdP simulado responde CredencialesInvalidasException -> 401" },
-      { "si": { "factor": "usuario", "igual": "MALO" }, "estado": "CREDENCIALES", "codigo": "CREDENCIALES_INVALIDAS", "porque": "el usuario no esta en el padron: mismo 401, sin revelar si existe o no" },
-      { "si": { "factor": "usuario", "igual": "LARGO" }, "estado": "CREDENCIALES", "codigo": "CREDENCIALES_INVALIDAS", "porque": "el identificador largo no esta en el padron: no hay cota de longitud que lo rechace antes" },
-      { "si": {}, "estado": "OK", "codigo": "-", "porque": "sesion SSO con sujeto, rol externo radiologia y caducidad; la sesion es informativa y no sustituye al JWT de CDU17 (hallazgo del spike)" }
+      {
+        "si": {
+          "factor": "idp",
+          "igual": "CAIDO"
+        },
+        "estado": "CAIDO",
+        "codigo": "SISTEMA_NO_DISPONIBLE",
+        "porque": "proteger() del SsoAdaptadorSimulado lee la politica antes de la guarda de credenciales: el fallo del IdP gana a un 400 o un 401"
+      },
+      {
+        "si": {
+          "factor": "usuario",
+          "igual": "VACIO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "la guarda del adaptador exige usuario y contrasena antes de buscar en el padron"
+      },
+      {
+        "si": {
+          "factor": "usuario",
+          "igual": "ESPACIOS"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "recortar deja el usuario vacio: misma salida que la anterior"
+      },
+      {
+        "si": {
+          "factor": "contrasena",
+          "igual": "VACIA"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "contrasena en blanco: la misma guarda"
+      },
+      {
+        "si": {
+          "factor": "contrasena",
+          "igual": "AUSENTE"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "la clave ausente llega como null y la guarda cubre null y vacio"
+      },
+      {
+        "si": {
+          "factor": "contrasena",
+          "igual": "MALA"
+        },
+        "estado": "CREDENCIALES",
+        "codigo": "CREDENCIALES_INVALIDAS",
+        "porque": "credenciales completas pero erroneas: el IdP simulado responde CredencialesInvalidasException -> 401"
+      },
+      {
+        "si": {
+          "factor": "usuario",
+          "igual": "MALO"
+        },
+        "estado": "CREDENCIALES",
+        "codigo": "CREDENCIALES_INVALIDAS",
+        "porque": "el usuario no esta en el padron: mismo 401, sin revelar si existe o no"
+      },
+      {
+        "si": {
+          "factor": "usuario",
+          "igual": "LARGO"
+        },
+        "estado": "CREDENCIALES",
+        "codigo": "CREDENCIALES_INVALIDAS",
+        "porque": "el identificador largo no esta en el padron: no hay cota de longitud que lo rechace antes"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "sesion SSO con sujeto, rol externo radiologia y caducidad; la sesion es informativa y no sustituye al JWT de CDU17 (hallazgo del spike)"
+      }
     ]
   },
   "tabla_D": {
@@ -354,15 +607,37 @@
       "CAIDO": "SISTEMA_NO_DISPONIBLE",
       "LENTO_TIMEOUT": "SISTEMA_TIEMPO_SUPERADO"
     },
-    "estadosBase": ["OK", "ESTUDIO_PERDIDO", "CAIDO", "LENTO_TIMEOUT"],
+    "estadosBase": [
+      "OK",
+      "ESTUDIO_PERDIDO",
+      "CAIDO",
+      "LENTO_TIMEOUT"
+    ],
     "factores": [
       {
         "nombre": "acceso",
         "niveles": [
-          { "valor": "AUT", "valido": true, "nota": "ACC-0001: numero emparejon tal cual" },
-          { "valor": "MINUSCULA", "valido": true, "nota": "acc-0001: el RIS simulado busca en mayusculas, el contrato no obliga a escribirlas" },
-          { "valor": "RODEADO", "valido": true, "nota": "numero valido con espacios: recortar lo deja reconocible" },
-          { "valor": "INEXISTENTE", "valido": false, "motivo": "ACC-9999 no esta entre ACC-0001 y ACC-0004 del RIS simulado", "nota": "identificador con buena pinta pero sin estudio detras" }
+          {
+            "valor": "AUT",
+            "valido": true,
+            "nota": "ACC-0001: numero emparejon tal cual"
+          },
+          {
+            "valor": "MINUSCULA",
+            "valido": true,
+            "nota": "acc-0001: el RIS simulado busca en mayusculas, el contrato no obliga a escribirlas"
+          },
+          {
+            "valor": "RODEADO",
+            "valido": true,
+            "nota": "numero valido con espacios: recortar lo deja reconocible"
+          },
+          {
+            "valor": "INEXISTENTE",
+            "valido": false,
+            "motivo": "ACC-9999 no esta entre ACC-0001 y ACC-0004 del RIS simulado",
+            "nota": "identificador con buena pinta pero sin estudio detras"
+          }
         ]
       },
       {
@@ -373,17 +648,59 @@
           "LENTO_TIMEOUT": "SIM-RIS-LENTO_TIMEOUT-250-100-0"
         },
         "niveles": [
-          { "valor": "NORMAL", "valido": true, "nota": "RIS operativo" },
-          { "valor": "CAIDO", "valido": true, "nota": "el RIS no responde: la politica se mira antes que el numero de acceso" },
-          { "valor": "LENTO_TIMEOUT", "valido": true, "criterio": "latencia 250 supera el plazo de 100", "nota": "degradacion por tiempo de espera superado" }
+          {
+            "valor": "NORMAL",
+            "valido": true,
+            "nota": "RIS operativo"
+          },
+          {
+            "valor": "CAIDO",
+            "valido": true,
+            "nota": "el RIS no responde: la politica se mira antes que el numero de acceso"
+          },
+          {
+            "valor": "LENTO_TIMEOUT",
+            "valido": true,
+            "criterio": "latencia 250 supera el plazo de 100",
+            "nota": "degradacion por tiempo de espera superado"
+          }
         ]
       }
     ],
     "reglas": [
-      { "si": { "factor": "ris", "igual": "CAIDO" }, "estado": "CAIDO", "codigo": "SISTEMA_NO_DISPONIBLE", "porque": "proteger() mira la politica antes de mirar el numero de acceso: un RIS caido responde 503 aunque el estudio exista o no" },
-      { "si": { "factor": "ris", "igual": "LENTO_TIMEOUT" }, "estado": "LENTO_TIMEOUT", "codigo": "SISTEMA_TIEMPO_SUPERADO", "porque": "la latencia desborda el plazo y la busqueda jamas llega a ejecutarse" },
-      { "si": { "factor": "acceso", "igual": "INEXISTENTE" }, "estado": "ESTUDIO_PERDIDO", "codigo": "ESTUDIO_NO_ENCONTRADO", "porque": "el RIS simulado solo tiene cuatro estudios dados de alta" },
-      { "si": {}, "estado": "OK", "codigo": "-", "porque": "estudio importado con accession, paciente, fecha y numero de series: es el contrato base heredado" }
+      {
+        "si": {
+          "factor": "ris",
+          "igual": "CAIDO"
+        },
+        "estado": "CAIDO",
+        "codigo": "SISTEMA_NO_DISPONIBLE",
+        "porque": "proteger() mira la politica antes de mirar el numero de acceso: un RIS caido responde 503 aunque el estudio exista o no"
+      },
+      {
+        "si": {
+          "factor": "ris",
+          "igual": "LENTO_TIMEOUT"
+        },
+        "estado": "LENTO_TIMEOUT",
+        "codigo": "SISTEMA_TIEMPO_SUPERADO",
+        "porque": "la latencia desborda el plazo y la busqueda jamas llega a ejecutarse"
+      },
+      {
+        "si": {
+          "factor": "acceso",
+          "igual": "INEXISTENTE"
+        },
+        "estado": "ESTUDIO_PERDIDO",
+        "codigo": "ESTUDIO_NO_ENCONTRADO",
+        "porque": "el RIS simulado solo tiene cuatro estudios dados de alta"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "estudio importado con accession, paciente, fecha y numero de series: es el contrato base heredado"
+      }
     ]
   },
   "tabla_E": {
@@ -398,92 +715,208 @@
       "SISTEMA_DESCONOCIDO": "SISTEMA_NO_ENCONTRADO",
       "RUTA_INEXISTENTE": "-"
     },
-    "columnas": ["id", "operacion", "sistema", "setup", "previas", "esperadoStatus", "esperadoExtra", "esperadoCodigo", "nota"],
-    "estadosBase": ["OK", "SISTEMA_DESCONOCIDO", "RUTA_INEXISTENTE"],
+    "columnas": [
+      "id",
+      "operacion",
+      "sistema",
+      "setup",
+      "previas",
+      "esperadoStatus",
+      "esperadoExtra",
+      "esperadoCodigo",
+      "nota"
+    ],
+    "estadosBase": [
+      "OK",
+      "SISTEMA_DESCONOCIDO",
+      "RUTA_INEXISTENTE"
+    ],
     "reglas": [
-      { "si": { "invalido": true }, "estado": "ver fila", "codigo": "ver fila", "porque": "la enumeracion no combina factores: cada fila lleva el esperado escrito a mano" },
-      { "si": {}, "estado": "ver fila", "codigo": "ver fila", "porque": "cada fila fija su esperado" }
+      {
+        "si": {
+          "invalido": true
+        },
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "la enumeracion no combina factores: cada fila lleva el esperado escrito a mano"
+      },
+      {
+        "si": {},
+        "estado": "ver fila",
+        "codigo": "ver fila",
+        "porque": "cada fila fija su esperado"
+      }
     ],
     "filas": [
       {
-        "operacion": "PING", "sistema": "HCE_MIN", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_SI", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "HCE_MIN",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_SI",
+        "esperadoCodigo": "-",
         "nota": "sistema operativo: devuelve disponible=true y la media movil de latencias de los intentos registrados"
       },
       {
-        "operacion": "PING", "sistema": "HCE_MIN", "setup": "SIM-HCE-CAIDO-5-300-0", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_NO_CAIDO", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "HCE_MIN",
+        "setup": "SIM-HCE-CAIDO-5-300-0",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_NO_CAIDO",
+        "esperadoCodigo": "-",
         "nota": "HCE caida: 200 con disponible=false y motivo CAIDO; AdaptadorSimulado.estado jamas lanza, por eso el ping no puede acabar en 5xx ni llevar codigo de error (el 503 SISTEMA_NO_DISPONIBLE de la misma politica lo da sincronizar, lo comprueba la tabla A)"
       },
       {
-        "operacion": "PING", "sistema": "HCE_MIN", "setup": "SIM-HCE-LENTO_TIMEOUT-250-100-0", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_NO_TIEMPO_SUPERADO", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "HCE_MIN",
+        "setup": "SIM-HCE-LENTO_TIMEOUT-250-100-0",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_NO_TIEMPO_SUPERADO",
+        "esperadoCodigo": "-",
         "nota": "degradacion por tiempo de espera: el ping informa el fallo con disponible=false y motivo TIEMPO_SUPERADO en lugar de propagar el 503 SISTEMA_TIEMPO_SUPERADO"
       },
       {
-        "operacion": "PING", "sistema": "HCE_MIN", "setup": "SIM-HCE-LENTO-20-300-1", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_SI", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "HCE_MIN",
+        "setup": "SIM-HCE-LENTO-20-300-1",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_SI",
+        "esperadoCodigo": "-",
         "nota": "lento dentro del plazo (latencia 20 < plazo 300): sigue disponible; es el limite del teorema de valores limite de la politica"
       },
       {
-        "operacion": "PING", "sistema": "PACS_MIN", "setup": "SIM-PACS-CAIDO-5-300-0", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_NO_CAIDO", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "PACS_MIN",
+        "setup": "SIM-PACS-CAIDO-5-300-0",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_NO_CAIDO",
+        "esperadoCodigo": "-",
         "nota": "caer el PACS no arrastra a los demas sistemas: cada adaptador tiene su politica. El ping de un sistema caido sigue respondiendo 200 con disponible=false y motivo CAIDO: el degradado se informa, nunca se propaga como 5xx"
       },
       {
-        "operacion": "PING", "sistema": "SSO_MIN", "setup": "SIM-SSO-CAIDO-5-300-0", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_NO_CAIDO", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "SSO_MIN",
+        "setup": "SIM-SSO-CAIDO-5-300-0",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_NO_CAIDO",
+        "esperadoCodigo": "-",
         "nota": "el IdP caido se ve en el ping aunque la API de ISO2 siga funcionando con su JWT de CDU17"
       },
       {
-        "operacion": "PING", "sistema": "RIS_MIN", "setup": "SIM-RIS-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_SI", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "RIS_MIN",
+        "setup": "SIM-RIS-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_SI",
+        "esperadoCodigo": "-",
         "nota": "ping del RIS sin llamadas previas: latencia media sin muestra"
       },
       {
-        "operacion": "PING", "sistema": "MAYUSCULAS", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_SI", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "MAYUSCULAS",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_SI",
+        "esperadoCodigo": "-",
         "nota": "codigo en mayusculas: SistemaExterno.desdeCodigo las tolera, la API no obliga a la minuscula"
       },
       {
-        "operacion": "PING", "sistema": "RODEADO", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "DISPONIBLE_SI", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "RODEADO",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "DISPONIBLE_SI",
+        "esperadoCodigo": "-",
         "nota": "codigo con espacios delante y detras: desdeCodigo recorta antes de buscar"
       },
       {
-        "operacion": "PING", "sistema": "VACIO", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "SISTEMA_DESCONOCIDO", "esperadoExtra": "-", "esperadoCodigo": "SISTEMA_NO_ENCONTRADO",
-        "nota": "codigo de solo espacios: desdeCodigo lo deja vacio y el controlador responde 404 con ApiError (a diferencia del control de simulacion, que responde 400)"
+        "operacion": "PING",
+        "sistema": "VACIO",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoExtra": "-",
+        "esperadoCodigo": "-",
+        "nota": "HALLAZGO del paso rojo: el alias VACIO se representa como segmento vacio, asi que la peticion queda en /api/integracion/sistemas//ping y ningun patron de /sistemas/{sistema}/ping la atiende: el 404 lo resuelve Spring sin cuerpo ApiError, igual que con el segmento suprimido (TC19-E12). La clase 'codigo de sistema en blanco' sigue cubierta por TC19-E17, que usa un segmento no vacio de solo espacios y si llega al controlador"
       },
       {
-        "operacion": "PING", "sistema": "DESCONOCIDO", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "SISTEMA_DESCONOCIDO", "esperadoExtra": "-", "esperadoCodigo": "SISTEMA_NO_ENCONTRADO",
+        "operacion": "PING",
+        "sistema": "DESCONOCIDO",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "SISTEMA_DESCONOCIDO",
+        "esperadoExtra": "-",
+        "esperadoCodigo": "SISTEMA_NO_ENCONTRADO",
         "nota": "nombre de sistema que no es sso, hce, ris ni pacs"
       },
       {
-        "operacion": "PING", "sistema": "AUSENTE", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "RUTA_INEXISTENTE", "esperadoExtra": "-", "esperadoCodigo": "-",
+        "operacion": "PING",
+        "sistema": "AUSENTE",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoExtra": "-",
+        "esperadoCodigo": "-",
         "nota": "segmento de ruta suprimido: la peticion se arma como /sistemas/ping, ninguna mano del controlador la atiende y Spring responde 404 sin cuerpo ApiError. Si PathPattern tratara el tramo final como variable vacia, la respuesta pasaria a 404 con ApiError SISTEMA_NO_ENCONTRADO: el paso rojo sobre la rama decide"
       },
       {
-        "operacion": "SISTEMAS", "sistema": "-", "setup": "SIM-SSO-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "TODOS_DISPONIBLES", "esperadoCodigo": "-",
+        "operacion": "SISTEMAS",
+        "sistema": "-",
+        "setup": "SIM-SSO-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "TODOS_DISPONIBLES",
+        "esperadoCodigo": "-",
         "nota": "listado de los cuatro sistemas en orden sso, hce, ris, pacs, todos disponibles"
       },
       {
-        "operacion": "SISTEMAS", "sistema": "-", "setup": "SIM-HCE-CAIDO-5-300-0", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "MIXTO", "esperadoCodigo": "-",
+        "operacion": "SISTEMAS",
+        "sistema": "-",
+        "setup": "SIM-HCE-CAIDO-5-300-0",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "MIXTO",
+        "esperadoCodigo": "-",
         "nota": "la politica de un solo sistema no contamina al resto: solo HCE aparece indisponible en el listado"
       },
       {
-        "operacion": "AUDITORIA", "sistema": "-", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "sso,sincronizar",
-        "esperadoStatus": "OK", "esperadoExtra": "CADENA_INTEGRA", "esperadoCodigo": "-",
+        "operacion": "AUDITORIA",
+        "sistema": "-",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "sso,sincronizar",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "CADENA_INTEGRA",
+        "esperadoCodigo": "-",
         "nota": "tras un login y una sincronizacion felices la cadena trae eslabones, ultimoHash y cadenaIntegra=true; el ping no se audita"
       },
       {
-        "operacion": "AUDITORIA", "sistema": "-", "setup": "SIM-HCE-NORMAL-5-300-2", "previas": "-",
-        "esperadoStatus": "OK", "esperadoExtra": "CADENA_VACIA", "esperadoCodigo": "-",
+        "operacion": "AUDITORIA",
+        "sistema": "-",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "OK",
+        "esperadoExtra": "CADENA_VACIA",
+        "esperadoCodigo": "-",
         "nota": "sin llamadas previas: cadena integra y sin registros (el reset del BeforeEach deja la auditoria del subdominio limpia)"
+      },
+      {
+        "operacion": "PING",
+        "sistema": "ESPACIOS",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "previas": "-",
+        "esperadoStatus": "SISTEMA_DESCONOCIDO",
+        "esperadoExtra": "-",
+        "esperadoCodigo": "SISTEMA_NO_ENCONTRADO",
+        "nota": "codigo de sistema de solo espacios: el segmento existe, la ruta enruta y desdeCodigo lo deja vacio al recortar, asi que el ping responde 404 con ApiError SISTEMA_NO_ENCONTRADO. Es la prueba de que la clase en blanco es observable: el control del simulacion rechaza el mismo valor con 400 porque su guarda mira el blanco antes de resolver el codigo (tabla F)"
       }
     ]
   },
@@ -500,56 +933,236 @@
       "INVALIDOS": "DATOS_INVALIDOS"
     },
     "noCombinaInvalidos": true,
-    "setups": ["NINGUNO"],
-    "estadosBase": ["OK", "INVALIDOS", "SISTEMA_DESCONOCIDO", "TIPO_ERRONEO"],
+    "setups": [
+      "NINGUNO"
+    ],
+    "estadosBase": [
+      "OK",
+      "INVALIDOS",
+      "SISTEMA_DESCONOCIDO",
+      "TIPO_ERRONEO"
+    ],
     "factores": [
       {
         "nombre": "sistema",
         "niveles": [
-          { "valor": "HCE_MIN", "valido": true, "nota": "hce: codigo canonico en minusculas" },
-          { "valor": "RIS_MIN", "valido": true, "nota": "ris: otro sistema admitido" },
-          { "valor": "VACIO", "valido": false, "motivo": "sistema vacio: la guarda del controlador lo exige", "nota": "400 por delante del 404: la guarda corre antes de resolver el codigo" },
-          { "valor": "ESPACIOS", "valido": false, "motivo": "sistema de solo espacios", "nota": "el controlador no recorta antes de comprobar el blanco" },
-          { "valor": "DESCONOCIDO", "valido": false, "motivo": "sap no es un sistema del CDU19", "nota": "fuera de clase: 404 SISTEMA_NO_ENCONTRADO" }
+          {
+            "valor": "HCE_MIN",
+            "valido": true,
+            "nota": "hce: codigo canonico en minusculas"
+          },
+          {
+            "valor": "RIS_MIN",
+            "valido": true,
+            "nota": "ris: otro sistema admitido"
+          },
+          {
+            "valor": "VACIO",
+            "valido": false,
+            "motivo": "sistema vacio: la guarda del controlador lo exige",
+            "nota": "400 por delante del 404: la guarda corre antes de resolver el codigo"
+          },
+          {
+            "valor": "ESPACIOS",
+            "valido": false,
+            "motivo": "sistema de solo espacios",
+            "nota": "el controlador no recorta antes de comprobar el blanco"
+          },
+          {
+            "valor": "DESCONOCIDO",
+            "valido": false,
+            "motivo": "sap no es un sistema del CDU19",
+            "nota": "fuera de clase: 404 SISTEMA_NO_ENCONTRADO"
+          }
         ]
       },
       {
         "nombre": "modo",
         "niveles": [
-          { "valor": "NORMAL_MINUS", "valido": true, "nota": "normal en minusculas: el controlador lo pasa a mayusculas antes de valueOf" },
-          { "valor": "NORMAL", "valido": true, "nota": "NORMAL escrito como el enum" },
-          { "valor": "LENTO", "valido": true, "nota": "duerme la latencia dentro del plazo" },
-          { "valor": "CAIDO", "valido": true, "nota": "el modo de fallo que se activa desde la API" },
-          { "valor": "DESCONOCIDO", "valido": false, "motivo": "FUERA_SERVICIO no existe en ModoSimulacion", "nota": "el controlador lo rechaza con 400 antes de construir el record" },
-          { "valor": "AUSENTE", "valido": false, "motivo": "se omite la clave modo del cuerpo: llega null", "nota": "el record tambien exigiria modo, pero el controlador lo detecta primero" }
+          {
+            "valor": "NORMAL_MINUS",
+            "valido": true,
+            "nota": "normal en minusculas: el controlador lo pasa a mayusculas antes de valueOf"
+          },
+          {
+            "valor": "NORMAL",
+            "valido": true,
+            "nota": "NORMAL escrito como el enum"
+          },
+          {
+            "valor": "LENTO",
+            "valido": true,
+            "nota": "duerme la latencia dentro del plazo"
+          },
+          {
+            "valor": "CAIDO",
+            "valido": true,
+            "nota": "el modo de fallo que se activa desde la API"
+          },
+          {
+            "valor": "DESCONOCIDO",
+            "valido": false,
+            "motivo": "FUERA_SERVICIO no existe en ModoSimulacion",
+            "nota": "el controlador lo rechaza con 400 antes de construir el record"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "se omite la clave modo del cuerpo: llega null",
+            "nota": "el record tambien exigiria modo, pero el controlador lo detecta primero"
+          }
         ]
       },
       {
         "nombre": "cifras",
         "niveles": [
-          { "valor": "COMPLETAS", "valido": true, "nota": "latencia 5, plazo 300, reintentos 2: la politica tipica" },
-          { "valor": "CERO", "valido": true, "criterio": "los tres valores en su cota inferior", "nota": "ceros validos: el record solo prohibe negativos" },
-          { "valor": "MAX", "valido": true, "criterio": "longe/int en su cota superior", "nota": "MAX_VALUE aceptado; con modo NORMAL no se duerme nunca, asi que la fila es barata" },
-          { "valor": "NEG_LAT", "valido": false, "motivo": "latencia negativa", "nota": "lo rechaza el compact constructor de PoliticaSimulacion -> 400 DATOS_INVALIDOS" },
-          { "valor": "NEG_TIMEOUT", "valido": false, "motivo": "tiempo de espera negativo", "nota": "misma guarda del record" },
-          { "valor": "NEG_REINT", "valido": false, "motivo": "reintentos negativo", "nota": "misma guarda del record" },
-          { "valor": "AUSENTE", "valido": false, "motivo": "se omiten las tres cifras: los envoltorios llegan null", "nota": "el controlador distingue no enviado de cero y lo exige" },
-          { "valor": "TIPO_ERRONEO", "valido": false, "motivo": "latencia con un valor de texto no convertible a long", "nota": "la conversion la absorbe HttpMessageNotReadableException: 400 con cuerpo ApiError" }
+          {
+            "valor": "COMPLETAS",
+            "valido": true,
+            "nota": "latencia 5, plazo 300, reintentos 2: la politica tipica"
+          },
+          {
+            "valor": "CERO",
+            "valido": true,
+            "criterio": "los tres valores en su cota inferior",
+            "nota": "ceros validos: el record solo prohibe negativos"
+          },
+          {
+            "valor": "MAX",
+            "valido": true,
+            "criterio": "longe/int en su cota superior",
+            "nota": "MAX_VALUE aceptado; con modo NORMAL no se duerme nunca, asi que la fila es barata"
+          },
+          {
+            "valor": "NEG_LAT",
+            "valido": false,
+            "motivo": "latencia negativa",
+            "nota": "lo rechaza el compact constructor de PoliticaSimulacion -> 400 DATOS_INVALIDOS"
+          },
+          {
+            "valor": "NEG_TIMEOUT",
+            "valido": false,
+            "motivo": "tiempo de espera negativo",
+            "nota": "misma guarda del record"
+          },
+          {
+            "valor": "NEG_REINT",
+            "valido": false,
+            "motivo": "reintentos negativo",
+            "nota": "misma guarda del record"
+          },
+          {
+            "valor": "AUSENTE",
+            "valido": false,
+            "motivo": "se omiten las tres cifras: los envoltorios llegan null",
+            "nota": "el controlador distingue no enviado de cero y lo exige"
+          },
+          {
+            "valor": "TIPO_ERRONEO",
+            "valido": false,
+            "motivo": "latencia con un valor de texto no convertible a long",
+            "nota": "la conversion la absorbe HttpMessageNotReadableException: 400 con cuerpo ApiError"
+          }
         ]
       }
     ],
     "reglas": [
-      { "si": { "factor": "sistema", "igual": "VACIO" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "la guarda del controlador exige sistema no vacio y lo lanza como IllegalArgumentException -> 400, antes de resolver el codigo" },
-      { "si": { "factor": "sistema", "igual": "ESPACIOS" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "isBlank tambien catches los espacios: mismo 400" },
-      { "si": { "factor": "sistema", "igual": "DESCONOCIDO" }, "estado": "SISTEMA_DESCONOCIDO", "codigo": "SISTEMA_NO_ENCONTRADO", "porque": "el codigo si esta relleno pero no es sso, hce, ris ni pacs: la resolucion responde 404" },
-      { "si": { "factor": "modo", "igual": "DESCONOCIDO" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "el modo no esta en ModoSimulacion: el controlador lo rechaza con IllegalArgumentException, que su propio advice traduce en 400 DATOS_INVALIDOS" },
-      { "si": { "factor": "modo", "igual": "AUSENTE" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "modo null: el controlador lo comprueba antes de construir el record y lanza el mismo IAE -> 400 DATOS_INVALIDOS" },
-      { "si": { "factor": "cifras", "igual": "AUSENTE" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "las cifras son obligatorias en el controlador: null no se confunde con cero, y de nuevo sale un IAE -> 400 DATOS_INVALIDOS" },
-      { "si": { "factor": "cifras", "igual": "NEG_LAT" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "el compact constructor del record prohibe latencias negativas y lanza IllegalArgumentException -> 400" },
-      { "si": { "factor": "cifras", "igual": "NEG_TIMEOUT" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "misma guarda del record sobre el tiempo de espera" },
-      { "si": { "factor": "cifras", "igual": "NEG_REINT" }, "estado": "INVALIDOS", "codigo": "DATOS_INVALIDOS", "porque": "misma guarda del record sobre los reintentos" },
-      { "si": { "factor": "cifras", "igual": "TIPO_ERRONEO" }, "estado": "TIPO_ERRONEO", "codigo": "DATOS_INVALIDOS", "porque": "la cifra llega como texto: la conversion de Jackson falla y el consejo de cuerpo ilegible responde 400 con ApiError" },
-      { "si": {}, "estado": "OK", "codigo": "-", "porque": "politica registrada en caliente: la respuesta trae el sistema y la politica vigente y el registro vivo cambia sin reiniciar" }
+      {
+        "si": {
+          "factor": "sistema",
+          "igual": "VACIO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "la guarda del controlador exige sistema no vacio y lo lanza como IllegalArgumentException -> 400, antes de resolver el codigo"
+      },
+      {
+        "si": {
+          "factor": "sistema",
+          "igual": "ESPACIOS"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "isBlank tambien catches los espacios: mismo 400"
+      },
+      {
+        "si": {
+          "factor": "sistema",
+          "igual": "DESCONOCIDO"
+        },
+        "estado": "SISTEMA_DESCONOCIDO",
+        "codigo": "SISTEMA_NO_ENCONTRADO",
+        "porque": "el codigo si esta relleno pero no es sso, hce, ris ni pacs: la resolucion responde 404"
+      },
+      {
+        "si": {
+          "factor": "modo",
+          "igual": "DESCONOCIDO"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "el modo no esta en ModoSimulacion: el controlador lo rechaza con IllegalArgumentException, que su propio advice traduce en 400 DATOS_INVALIDOS"
+      },
+      {
+        "si": {
+          "factor": "modo",
+          "igual": "AUSENTE"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "modo null: el controlador lo comprueba antes de construir el record y lanza el mismo IAE -> 400 DATOS_INVALIDOS"
+      },
+      {
+        "si": {
+          "factor": "cifras",
+          "igual": "AUSENTE"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "las cifras son obligatorias en el controlador: null no se confunde con cero, y de nuevo sale un IAE -> 400 DATOS_INVALIDOS"
+      },
+      {
+        "si": {
+          "factor": "cifras",
+          "igual": "NEG_LAT"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "el compact constructor del record prohibe latencias negativas y lanza IllegalArgumentException -> 400"
+      },
+      {
+        "si": {
+          "factor": "cifras",
+          "igual": "NEG_TIMEOUT"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "misma guarda del record sobre el tiempo de espera"
+      },
+      {
+        "si": {
+          "factor": "cifras",
+          "igual": "NEG_REINT"
+        },
+        "estado": "INVALIDOS",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "misma guarda del record sobre los reintentos"
+      },
+      {
+        "si": {
+          "factor": "cifras",
+          "igual": "TIPO_ERRONEO"
+        },
+        "estado": "TIPO_ERRONEO",
+        "codigo": "DATOS_INVALIDOS",
+        "porque": "la cifra llega como texto: la conversion de Jackson falla y el consejo de cuerpo ilegible responde 400 con ApiError"
+      },
+      {
+        "si": {},
+        "estado": "OK",
+        "codigo": "-",
+        "porque": "politica registrada en caliente: la respuesta trae el sistema y la politica vigente y el registro vivo cambia sin reiniciar"
+      }
     ]
   },
   "tabla_G": {
@@ -565,77 +1178,181 @@
       "METODO": "-",
       "CONTENIDO": "CONTENIDO_NO_ACEPTADO"
     },
-    "columnas": ["id", "grupo", "metodo", "ruta", "cuerpo", "contentTipo", "setup", "esperadoStatus", "esperadoCodigo", "nota"],
-    "estadosBase": ["RUTA_INEXISTENTE", "METODO", "CONTENIDO", "CUERPO_ILEGIBLE", "CREDENCIALES", "TIPO_ERRONEO", "INVALIDOS", "OK"],
+    "columnas": [
+      "id",
+      "grupo",
+      "metodo",
+      "ruta",
+      "cuerpo",
+      "contentTipo",
+      "setup",
+      "esperadoStatus",
+      "esperadoCodigo",
+      "nota"
+    ],
+    "estadosBase": [
+      "RUTA_INEXISTENTE",
+      "METODO",
+      "CONTENIDO",
+      "CUERPO_ILEGIBLE",
+      "CREDENCIALES",
+      "TIPO_ERRONEO",
+      "INVALIDOS",
+      "OK"
+    ],
     "filas": [
       {
-        "grupo": "RUTA", "metodo": "GET", "ruta": "/api/integracion/no-existe", "cuerpo": "NINGUNO", "contentTipo": "NINGUNO", "setup": "NINGUNO",
-        "esperadoStatus": "RUTA_INEXISTENTE", "esperadoCodigo": "-",
+        "grupo": "RUTA",
+        "metodo": "GET",
+        "ruta": "/api/integracion/no-existe",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "NINGUNO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoCodigo": "-",
         "nota": "ruta sin mapear dentro del prefijo del modulo: el 404 lo resuelve Spring y no pasa por el advice del modulo, asi que no hay cuerpo ApiError"
       },
       {
-        "grupo": "METODO", "metodo": "POST", "ruta": "/api/integracion/sistemas", "cuerpo": "NINGUNO", "contentTipo": "NINGUNO", "setup": "NINGUNO",
-        "esperadoStatus": "METODO", "esperadoCodigo": "-",
+        "grupo": "METODO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/sistemas",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "NINGUNO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "METODO",
+        "esperadoCodigo": "-",
         "nota": "el listado de sistemas solo admite GET: 405 sin cuerpo ApiError por el mismo motivo"
       },
       {
-        "grupo": "CONTENIDO", "metodo": "POST", "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar", "cuerpo": "NINGUNO", "contentTipo": "TEXT_PLANO", "setup": "SIM-HCE-NORMAL-5-300-2",
-        "esperadoStatus": "OK", "esperadoCodigo": "-",
+        "grupo": "CONTENIDO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "TEXT_PLANO",
+        "setup": "SIM-HCE-NORMAL-5-300-2",
+        "esperadoStatus": "OK",
+        "esperadoCodigo": "-",
         "nota": "HALLAZGO: sincronizar no lleva @RequestBody, asi que un Content-Type text/plain no lo rechaza y la sincronizacion pasa de verdad (el paciente de la ruta existe en la HCE simulada); el 415 solo aparece en los endpoints con cuerpo"
       },
       {
-        "grupo": "CONTENIDO", "metodo": "POST", "ruta": "/api/integracion/sso/login", "cuerpo": "SSO_COMPLETO", "contentTipo": "TEXT_PLANO", "setup": "NINGUNO",
-        "esperadoStatus": "CONTENIDO", "esperadoCodigo": "CONTENIDO_NO_ACEPTADO",
+        "grupo": "CONTENIDO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/sso/login",
+        "cuerpo": "SSO_COMPLETO",
+        "contentTipo": "TEXT_PLANO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "CONTENIDO",
+        "esperadoCodigo": "CONTENIDO_NO_ACEPTADO",
         "nota": "text/plain en un endpoint con @RequestBody: HttpMediaTypeNotSupportedException tiene consejo propio -> 415 con cuerpo ApiError"
       },
       {
-        "grupo": "CUERPO", "metodo": "POST", "ruta": "/api/integracion/sso/login", "cuerpo": "NO_JSON", "contentTipo": "JSON", "setup": "NINGUNO",
-        "esperadoStatus": "CUERPO_ILEGIBLE", "esperadoCodigo": "DATOS_INVALIDOS",
+        "grupo": "CUERPO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/sso/login",
+        "cuerpo": "NO_JSON",
+        "contentTipo": "JSON",
+        "setup": "NINGUNO",
+        "esperadoStatus": "CUERPO_ILEGIBLE",
+        "esperadoCodigo": "DATOS_INVALIDOS",
         "nota": "cuerpo que no es JSON parseable: el consejo de cuerpo ilegible lo traduce a 400 con ApiError"
       },
       {
-        "grupo": "CUERPO", "metodo": "POST", "ruta": "/api/integracion/sso/login", "cuerpo": "NULL", "contentTipo": "JSON", "setup": "NINGUNO",
-        "esperadoStatus": "CUERPO_ILEGIBLE", "esperadoCodigo": "DATOS_INVALIDOS",
+        "grupo": "CUERPO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/sso/login",
+        "cuerpo": "NULL",
+        "contentTipo": "JSON",
+        "setup": "NINGUNO",
+        "esperadoStatus": "CUERPO_ILEGIBLE",
+        "esperadoCodigo": "DATOS_INVALIDOS",
         "nota": "literal null como cuerpo: @RequestBody lo trata como cuerpo ausente -> 400 DATOS_INVALIDOS, no un 500 por null pointer"
       },
       {
-        "grupo": "COERCION", "metodo": "POST", "ruta": "/api/integracion/sso/login", "cuerpo": "USUARIO_NUMERICO", "contentTipo": "JSON", "setup": "NINGUNO",
-        "esperadoStatus": "CREDENCIALES", "esperadoCodigo": "CREDENCIALES_INVALIDAS",
+        "grupo": "COERCION",
+        "metodo": "POST",
+        "ruta": "/api/integracion/sso/login",
+        "cuerpo": "USUARIO_NUMERICO",
+        "contentTipo": "JSON",
+        "setup": "NINGUNO",
+        "esperadoStatus": "CREDENCIALES",
+        "esperadoCodigo": "CREDENCIALES_INVALIDAS",
         "nota": "HALLAZGO: Jackson coercea el escalar numerico a la cadena 123 y el IdP lo rechaza con el 401 normal; no hay 400 por tipo en este endpoint"
       },
       {
-        "grupo": "TIPO", "metodo": "POST", "ruta": "/api/integracion/simulacion", "cuerpo": "CIFRAS_TEXTO", "contentTipo": "JSON", "setup": "NINGUNO",
-        "esperadoStatus": "TIPO_ERRONEO", "esperadoCodigo": "DATOS_INVALIDOS",
+        "grupo": "TIPO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/simulacion",
+        "cuerpo": "CIFRAS_TEXTO",
+        "contentTipo": "JSON",
+        "setup": "NINGUNO",
+        "esperadoStatus": "TIPO_ERRONEO",
+        "esperadoCodigo": "DATOS_INVALIDOS",
         "nota": "aqui las cifras si son long e int: un valor de texto no convertible revienta en la conversion -> 400 con ApiError"
       },
       {
-        "grupo": "CUERPO", "metodo": "POST", "ruta": "/api/integracion/simulacion", "cuerpo": "VACIO", "contentTipo": "JSON", "setup": "NINGUNO",
-        "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS",
+        "grupo": "CUERPO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/simulacion",
+        "cuerpo": "VACIO",
+        "contentTipo": "JSON",
+        "setup": "NINGUNO",
+        "esperadoStatus": "INVALIDOS",
+        "esperadoCodigo": "DATOS_INVALIDOS",
         "nota": "objeto vacio: sistema null, la guarda del controlador responde 400 y no deja ver el modo ni las cifras"
       },
       {
-        "grupo": "METODO", "metodo": "POST", "ruta": "/api/integracion/auditoria", "cuerpo": "NINGUNO", "contentTipo": "NINGUNO", "setup": "NINGUNO",
-        "esperadoStatus": "METODO", "esperadoCodigo": "-",
+        "grupo": "METODO",
+        "metodo": "POST",
+        "ruta": "/api/integracion/auditoria",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "NINGUNO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "METODO",
+        "esperadoCodigo": "-",
         "nota": "la auditoria es solo lectura: no hay escritura externa de eslabones en el spike"
       },
       {
-        "grupo": "CONTRATO", "metodo": "PATCH", "ruta": "/api/integracion/historias/api-paciente-ok/reintentos", "cuerpo": "NINGUNO", "contentTipo": "NINGUNO", "setup": "NINGUNO",
-        "esperadoStatus": "RUTA_INEXISTENTE", "esperadoCodigo": "-",
+        "grupo": "CONTRATO",
+        "metodo": "PATCH",
+        "ruta": "/api/integracion/historias/api-paciente-ok/reintentos",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "NINGUNO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoCodigo": "-",
         "nota": "HALLAZGO: la ruta aparece en el borrador del contrato comun de integracion y el CDU19 no la implementa. Como ningun metodo la mapea, Spring no llega ni a plantear el 405: responde 404 sin cuerpo ApiError, y el spike no decide el mecanismo de reintentos por API"
       },
       {
-        "grupo": "METODO", "metodo": "GET", "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar", "cuerpo": "NINGUNO", "contentTipo": "NINGUNO", "setup": "NINGUNO",
-        "esperadoStatus": "METODO", "esperadoCodigo": "-",
+        "grupo": "METODO",
+        "metodo": "GET",
+        "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "NINGUNO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "METODO",
+        "esperadoCodigo": "-",
         "nota": "sincronizar solo admite POST: traerla por GET seria una escritura disfrazada de lectura"
       },
       {
-        "grupo": "RUTA", "metodo": "GET", "ruta": "/api/integracion/estudios/", "cuerpo": "NINGUNO", "contentTipo": "NINGUNO", "setup": "NINGUNO",
-        "esperadoStatus": "RUTA_INEXISTENTE", "esperadoCodigo": "-",
+        "grupo": "RUTA",
+        "metodo": "GET",
+        "ruta": "/api/integracion/estudios/",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "NINGUNO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoCodigo": "-",
         "nota": "segmento de ruta vacio en el endpoint de estudios: si Spring lo mapa, la guarda del adaptador responderia 400 DATOS_INVALIDOS"
       },
       {
-        "grupo": "RUTA", "metodo": "GET", "ruta": "/api/integracion/sistemas/hce/ping/extra", "cuerpo": "NINGUNO", "contentTipo": "NINGUNO", "setup": "NINGUNO",
-        "esperadoStatus": "RUTA_INEXISTENTE", "esperadoCodigo": "-",
+        "grupo": "RUTA",
+        "metodo": "GET",
+        "ruta": "/api/integracion/sistemas/hce/ping/extra",
+        "cuerpo": "NINGUNO",
+        "contentTipo": "NINGUNO",
+        "setup": "NINGUNO",
+        "esperadoStatus": "RUTA_INEXISTENTE",
+        "esperadoCodigo": "-",
         "nota": "segmento de mas bajo una ruta mapeada: Spring no la atiende y el advice del modulo no interviene"
       }
     ]
