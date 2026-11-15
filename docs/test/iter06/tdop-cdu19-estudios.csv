@@ -1,0 +1,13 @@
+id;acceso;ris;setup;esperadoStatus;esperadoCodigo;nota
+TC19-D01;AUT;NORMAL;SIM-RIS-NORMAL-5-300-2;OK;-;estudio importado con accession, paciente, fecha y numero de series: es el contrato base heredado
+TC19-D02;AUT;CAIDO;SIM-RIS-CAIDO-5-300-0;CAIDO;SISTEMA_NO_DISPONIBLE;proteger() mira la politica antes de mirar el numero de acceso: un RIS caido responde 503 aunque el estudio exista o no
+TC19-D03;AUT;LENTO_TIMEOUT;SIM-RIS-LENTO_TIMEOUT-250-100-0;LENTO_TIMEOUT;SISTEMA_TIEMPO_SUPERADO;la latencia desborda el plazo y la busqueda jamas llega a ejecutarse | valores limite: ris=LENTO_TIMEOUT (latencia 250 supera el plazo de 100)
+TC19-D04;MINUSCULA;NORMAL;SIM-RIS-NORMAL-5-300-2;OK;-;estudio importado con accession, paciente, fecha y numero de series: es el contrato base heredado
+TC19-D05;MINUSCULA;CAIDO;SIM-RIS-CAIDO-5-300-0;CAIDO;SISTEMA_NO_DISPONIBLE;proteger() mira la politica antes de mirar el numero de acceso: un RIS caido responde 503 aunque el estudio exista o no
+TC19-D06;MINUSCULA;LENTO_TIMEOUT;SIM-RIS-LENTO_TIMEOUT-250-100-0;LENTO_TIMEOUT;SISTEMA_TIEMPO_SUPERADO;la latencia desborda el plazo y la busqueda jamas llega a ejecutarse | valores limite: ris=LENTO_TIMEOUT (latencia 250 supera el plazo de 100)
+TC19-D07;RODEADO;NORMAL;SIM-RIS-NORMAL-5-300-2;OK;-;estudio importado con accession, paciente, fecha y numero de series: es el contrato base heredado
+TC19-D08;RODEADO;CAIDO;SIM-RIS-CAIDO-5-300-0;CAIDO;SISTEMA_NO_DISPONIBLE;proteger() mira la politica antes de mirar el numero de acceso: un RIS caido responde 503 aunque el estudio exista o no
+TC19-D09;RODEADO;LENTO_TIMEOUT;SIM-RIS-LENTO_TIMEOUT-250-100-0;LENTO_TIMEOUT;SISTEMA_TIEMPO_SUPERADO;la latencia desborda el plazo y la busqueda jamas llega a ejecutarse | valores limite: ris=LENTO_TIMEOUT (latencia 250 supera el plazo de 100)
+TC19-D10;INEXISTENTE;NORMAL;SIM-RIS-NORMAL-5-300-2;ESTUDIO_PERDIDO;ESTUDIO_NO_ENCONTRADO;el RIS simulado solo tiene cuatro estudios dados de alta | acceso: ACC-9999 no esta entre ACC-0001 y ACC-0004 del RIS simulado
+TC19-D11;INEXISTENTE;CAIDO;SIM-RIS-CAIDO-5-300-0;CAIDO;SISTEMA_NO_DISPONIBLE;proteger() mira la politica antes de mirar el numero de acceso: un RIS caido responde 503 aunque el estudio exista o no | acceso: ACC-9999 no esta entre ACC-0001 y ACC-0004 del RIS simulado
+TC19-D12;INEXISTENTE;LENTO_TIMEOUT;SIM-RIS-LENTO_TIMEOUT-250-100-0;LENTO_TIMEOUT;SISTEMA_TIEMPO_SUPERADO;la latencia desborda el plazo y la busqueda jamas llega a ejecutarse | acceso: ACC-9999 no esta entre ACC-0001 y ACC-0004 del RIS simulado

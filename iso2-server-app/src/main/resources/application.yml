@@ -32,6 +32,20 @@ iso2:
     jwt:
       secret: ${ISO2_JWT_SECRET:}
       duracion-minutos: 60
+  # CDU19 (Iter6/CFG-06, spike): politica inicial de los sistemas externos simulados.
+  # Son solo el punto de partida del arranque: durante la ejecucion se cambian en
+  # caliente por POST /api/integracion/simulacion (solo ADMINISTRADOR). Opciones de
+  # modo: NORMAL, LENTO, LENTO_TIMEOUT, CAIDO (el enum ModoSimulacion; un valor
+  # distinto hace fallar el arranque).
+  integracion:
+    modo: NORMAL
+    latencia-ms: 20
+    timeout-ms: 800
+    reintentos: 0
+    # Repaso por sistema (sso, hce, ris, pacs). Ejemplo para arrancar el HCE caido:
+    #   sistemas:
+    #     hce:
+    #       modo: CAIDO
 
 server:
   port: 8080

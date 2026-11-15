@@ -1,0 +1,142 @@
+@startuml cdu19-secuencia
+' CDU19 (Iter6/CFG-06) - Secuencia SSO, sincronizacion idempotente de historia externa,
+' ping degradado RIS/PACS, importacion baseline y politicas de simulacion de fallos
+' Autor: agente (diseno previo al codigo, issue #44) - fuentes PlantUML (D31)
+title CDU19 - SSO, historia externa con huella, ping degradado y modo degradado (200/401/404/503)
+
+skinparam sequence {
+  LifeLineParticipant true
+}
+
+actor "Administrador\n(rol ADMINISTRADOR)" as ADMIN
+actor "Medico\n(rol MEDICO)" as MEDICO
+actor "Anonimo\n(sin token JWT)" as ANON
+boundary "IntegracionControlador\n/api/integracion" as CTRL
+control "IntegracionServicio\n(iso2-integracion 1.1.0,\nimplementa InteropFacade)" as SVC
+participant "SsoAdaptador\n(simula el IdP)" as SSOAD
+participant "HceAdaptador\n(simula el HCE)" as HCEAD
+participant "RisAdaptador /\nPacsAdaptador\n(simulan RIS y PACS)" as IMGAD
+database "Registro en memoria\n(huella SHA-256 por paciente\n+ cadena de auditoria)" as MEM
+participant "JwtAutenticacionFiltro\n(CDU17)" as FILTRO
+
+== Login SSO contra el IdP simulado (flujo feliz) ==
+ADMIN -> CTRL : POST /api/integracion/sso/login\n{usuario, contrasena}\n(Authorization: Bearer <token JWT>)
+CTRL <- FILTRO : token valido: ROLE_ADMINISTRADOR,\nmatriz concede integracion:escribir
+CTRL -> SVC : autenticarSso(CredencialesSsoDTO)
+SVC -> SSOAD : autenticar(usuario, contrasena)
+SSOAD -> SSOAD : proteger(): aplica PoliticaSimulacion\n(modo NORMAL => latencia pequena)
+SSOAD --> SVC : SesionSso(sujeto, rolExterno, caducaEn)
+SVC -> MEM : append de auditoria encadenada\n(accion=SSO_LOGIN, hashAnterior+SHA-256)
+SVC --> CTRL : SesionSsoDTO
+CTRL --> ADMIN : 200 + SesionSsoDTO\n(OJO: NO sustituye al JWT de CDU17:\nla API sigue pidiendo Bearer <token>)
+
+== Login SSO rechazado (credenciales mal) ==
+ADMIN -> CTRL : POST /api/integracion/sso/login\n{usuario="idp-desconocido", contrasena="x"}
+CTRL -> SVC : autenticarSso(...)
+SVC -> SSOAD : autenticar(...)
+SSOAD --> SVC : CredencialesInvalidasException
+SVC -> MEM : append auditoria (resultado=FALLO_CREDENCIALES)
+SVC --> CTRL : CredencialesInvalidasException
+CTRL --> ADMIN : 401 + ApiError(CREDENCIALES_INVALIDAS)
+
+== Modo degradado: el adaptador caido gana a las credenciales ==
+ADMIN -> CTRL : POST /api/integracion/sso/login (IdP en modo CAIDO)
+CTRL -> SVC : autenticarSso(...)
+SVC -> SSOAD : autenticar(...)
+SSOAD -> SSOAD : proteger(): modo CAIDO => no se mira\nsiquiera la credencial (precedencia 503 > 401)
+SSOAD --> SVC : SistemaExternoException(NO_DISPONIBLE)
+SVC -> MEM : append auditoria (resultado=SISTEMA_CAIDO)
+SVC --> CTRL : SistemaExternoException
+CTRL --> ADMIN : 503 + ApiError(SISTEMA_NO_DISPONIBLE)
+
+== Sincronizar la historia clinica externa (primera vez) ==
+ADMIN -> CTRL : POST /api/integracion/historias/api-paciente-ok/sincronizar
+CTRL -> SVC : sincronizarHistoriaClinica("api-paciente-ok")
+SVC -> HCEAD : buscarHistoria(pacienteExternoId)
+HCEAD --> SVC : HistoriaExterna(registros: codigo, fecha, detalle)
+SVC -> SVC : huella = SHA-256(canonico de los registros\nordenados por codigo y fecha)
+SVC -> MEM : ¿huella distinta de la guardada\npara ese paciente?
+note right of MEM
+  Primera sincronizacion: no hay huella previa.
+  Se guarda la instantanea (snapshot) y su huella.
+  El spike NO persiste en BBDD: mapa en memoria
+  (sin migracion Flyway nueva; hueco V1.6.0 libre).
+end note
+SVC -> MEM : append auditoria (ACCION=HCE_SINCRONIZAR, reutilizado=false)
+SVC --> CTRL : HistoriaSincronizadaDTO(reutilizado=false, registros)
+CTRL --> ADMIN : 200 + historia externa
+
+== Re-sincronizar: idempotencia por huella (mismo contenido) ==
+ADMIN -> CTRL : POST /api/integracion/historias/api-paciente-ok/sincronizar
+CTRL -> SVC : sincronizarHistoriaClinica("api-paciente-ok")
+SVC -> HCEAD : buscarHistoria(...)
+HCEAD --> SVC : mismo contenido que antes
+SVC -> SVC : huella igual a la guardada
+SVC -> MEM : append auditoria (reutilizado=true)
+SVC --> CTRL : HistoriaSincronizadaDTO(reutilizado=true, mismos registros)
+CTRL --> ADMIN : 200 + reutilizado=true (nadie duplica la historia)
+
+== Paciente con contenido que cambia y paciente inexistente ==
+ADMIN -> CTRL : POST /api/integracion/historias/api-paciente-rotativo/sincronizar
+CTRL -> SVC : sincronizarHistoriaClinica(...)
+SVC -> HCEAD : buscarHistoria(...)
+HCEAD --> SVC : el adaptador alterna dos contenidos validos
+SVC -> SVC : huella nueva != huella guardada -> se actualiza la instantanea
+CTRL --> ADMIN : 200 + reutilizado=false (detectado el cambio, UC19.5)
+== Paciente inexistente en el HCE ==
+ADMIN -> CTRL : POST /api/integracion/historias/api-paciente-desconocido/sincronizar
+CTRL -> SVC : sincronizarHistoriaClinica(...)
+SVC -> HCEAD : buscarHistoria(...)
+HCEAD --> SVC : HistoriaNoEncontradaException\n(el id recortado: leccion CDU12 con los ids)
+SVC --> CTRL : HistoriaNoEncontradaException
+CTRL --> ADMIN : 404 + ApiError(HISTORIA_NO_ENCONTRADA)
+
+== Ping degradado de RIS y PACS (monitor, nunca 5xx) ==
+ADMIN -> CTRL : GET /api/integracion/sistemas
+CTRL -> SVC : estadoSistemas()
+SVC -> IMGAD : estado() de RIS y PACS (tambien SSO y HCE)
+IMGAD --> SVC : EstadoSistema(nombre, disponible,\nmotivo, latenciaMediaMs)
+CTRL --> ADMIN : 200 + lista de los 4 sistemas
+== Ping con el RIS en modo CAIDO ==
+ADMIN -> CTRL : GET /api/integracion/sistemas/ris/ping (RIS en modo CAIDO)
+CTRL -> SVC : pingSistema("ris")\n(nombre desconocido -> 404 SISTEMA_NO_ENCONTRADO)
+SVC -> IMGAD : estado()
+IMGAD --> SVC : disponible=false, motivo="CAIDO"\n(ping NO reintenta y NO lanza: si devolviera\n5xx el monitor no podria pintar el estado)
+SVC --> CTRL : EstadoSistemaDTO(disponible=false)
+CTRL --> ADMIN : 200 + disponible=false (ping degradado, decision fija del spike)
+
+== Importar la cabecera de un estudio (baseline 1.0.0 congelado) ==
+ADMIN -> CTRL : GET /api/integracion/estudios/ACC-0001
+CTRL -> SVC : importarEstudio("ACC-0001") (metodo baseline)
+SVC -> IMGAD : RisPort.buscarEstudio(accessionNumber)
+IMGAD --> SVC : EstudioExterno -> EstudioDTO (contrato 1.0.0 sin tocar)
+CTRL --> ADMIN : 200 + EstudioDTO (la trazabilidad del spike\nno rompe el contrato congelado)
+
+== Ajustar la simulacion de fallos (TCs TDOP con columna setup) ==
+ADMIN -> CTRL : POST /api/integracion/simulacion\n{sistema="hce", modo=LENTO_TIMEOUT,\nlatenciaMs=800, timeoutMs=500, reintentos=0}
+CTRL -> CTRL : el registro de simulacion vive en la capa web\n(nunca en adaptadores:ArchUnit lo vigila)
+CTRL -> HCEAD : instalar PoliticaSimulacion en el adaptador HCE
+CTRL --> ADMIN : 200 + estado actual de las 4 politicas
+note right of CTRL
+  Los CSV de TDOP fijan el modo por fila con setups
+  tipo SIM-HCE-CAIDO-5-50-0 (modo, latencia, timeout,
+  reintentos). Sin este endpoint no habria forma
+  reproducible de ejecutar los TC de modo degradado.
+end note
+
+== Auditoria encadenada y su verificacion ==
+ADMIN -> CTRL : GET /api/integracion/auditoria
+CTRL -> SVC : estadoAuditoriaIntegracion()
+SVC -> MEM : leer la cadena y recalcular\nSHA-256 de cada eslabon
+MEM --> SVC : cadenaIntegra=true + ultimo hash
+CTRL --> ADMIN : 200 + registros + EstadoCadenaDTO(integra=true)
+
+== Autorizacion RBAC (hallazgo del spike: solo ADMINISTRADOR) ==
+MEDICO -> CTRL : GET /api/integracion/sistemas (JWT de MEDICO)
+CTRL <- FILTRO : rol MEDICO no tiene integracion:leer
+CTRL --> MEDICO : 403 (el controlador ni se ejecuta)
+== Anonimo sin token JWT ==
+ANON -> CTRL : POST /api/integracion/sso/login sin token
+CTRL --> ANON : 401 (filtro JWT: ni siquiera llega\nal controlador, sin cuerpo ApiError propio)
+
+@enduml

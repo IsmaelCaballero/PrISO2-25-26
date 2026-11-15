@@ -1,46 +1,69 @@
 # STATUS.md — Estado vivo del proyecto
 
-**Última actualización:** 2026-11-15 (sesión 21 · **Iter5 · CDU12 / CFG-05 en cierre de cierre**: Ismael
-fusionó el **PR #42** (merge `08a7ed8`, 14/11 22:25) con los 12 commits de código y **cerró #40 a mano**
-(D29), pero la **matriz D33 de 172 casos** (`Cdu12MatrizTdopTest`, `b912554`) se pusheó después del merge y
-**no entró en `develop`**: va por una **segunda rama de cierre** igual que el PR #32 de la Iter4, y sobre su
-fusión se pondrá el tag `cfg-iter05`. Cifras ya medidas con Docker: `mvn -B -ntp clean verify` **637 tests /
-0 saltados**; **wiki `Iter5-CDU12-citas` publicada**; `TASADEFECTOS.md` al día (D37: Iter5 cierra **sin
-defectos nuevos**). Sesión 20: libro `TASADEFECTOS.md` + decisión **D37**. Prompts 17 a 21)
+**Última actualización:** 2026-11-15 (sesión 23 · **Iter6 · CDU19 / CFG-06: parte b TERMINADA — wiki incluida**:
+matriz TDOP ejecutada y en verde, TC humanos, informe de spike, evidencia D33 y **página de wiki
+`Iter6-CDU19-integracion` publicada** (`9b7f513` en `master` del repo wiki). La sesión 21 quedó
+cortada por un reset del equipo y su registro local se perdió, pero **todo su trabajo estaba subido**; **Iter5 /
+CFG-05 cerró del todo** con el **PR #43 → merge `cbb1901`** en `develop` y el tag anotado **`cfg-iter05`**.
+**Iter6 · CDU19 (CFG-06)** va en la rama `feature/iter06-cdu19-integracion` sobre la **issue #44**: modelo
+PlantUML (D31) + módulo `iso2-integracion` 1.1.0 con `InteropFacade` y adaptadores simulados + **203 pruebas en
+el módulo** (10 clases, con el contrato del baseline 1.0.0 blindado), de ellas **126 de la matriz TDOP
+`Cdu19MatrizTdopTest`, en verde** (la spec creció a **126 casos / 8 tablas A-H** al corregir la E10). Reactor
+revalidado sobre `2388b7e`: **BUILD SUCCESS, 839 tests, 0 fallos, 0 errores, 0 omitidos** y 13 puertas JaCoCo
+verdes; `iso2-integracion` en **JaCoCo 96,5 % de líneas (361/374) y 78,4 % de ramas**, puerta `0.70` superada.
+Aviso metodológico: **el CSV de JaCoCo solo lo escribe la fase `verify`**; leerlo tras un `mvn test` da cifras
+caducadas (de ahí salía el 88,2 % que venía repitiendo este fichero). De la parte b **ya no queda nada**: la wiki
+**`Iter6-CDU19-integracion` quedó publicada** y el **PR borrador está abierto como #45** a `develop`; a la CDU19
+solo le faltan los **TC humanos que ejecuta Ismael (D28)** y la **fusión con su tag (D29/D30)**.
+Rama `feature/iter06-cdu19-integracion` **pusheada hasta el último docs de la sesión 23**, árbol limpio y **nada sin
+subir**; registro cronológico en `PROMPTS.md` (Prompts 17 a 23).
 
 ## Estado global
 
 | Fase | Estado |
 |---|---|
 | Inicio (Iter0) | ✔ **Completada, etiquetada y publicada** — PR #7 fusionado a `develop` (`641e72d`), tag `cfg-iter00`; **R0 publicada en `main`**: PR #19 fusionado (merge `e165622`) con el tag anotado **`v0.1.0`** (regla **D30**: release desde `release/R0`) |
-| Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) fusionada el 14/11 por Ismael (PR #42 → merge `08a7ed8`)** con los 12 commits de código (D34 ya estaba en `develop` por el PR #41 → `d4749e3`), **#40 cerrada a mano**; la **matriz D33 de 172 casos** (`Cdu12MatrizTdopTest`) se pusheó tras ese merge y va en un **PR de cierre aparte** (como el #32 de la Iter4) con el tag `cfg-iter05` sobre su fusión; wiki ya publicada. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
+| Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) CERRADA EL 15/11**: código fusionado por Ismael con el **PR #42** (merge `08a7ed8`) y matriz D33 de 172 casos con el **PR #43** (merge `cbb1901`), **tip actual de `develop` = `cbb1901`**, tag anotado **`cfg-iter05` → `cbb1901`** y **#40 cerrada a mano** (D29). **Iter6 (CDU19 / CFG-06) EN CURSO** en `feature/iter06-cdu19-integracion` (issue **#44**, commits hasta los **docs de la sesión 23** subidos, **PR borrador #45** abierto a `develop`): modelo + módulo `iso2-integracion` + **203 pruebas (10 clases)** con la **matriz TDOP de 126 casos en verde** (`Cdu19MatrizTdopTest`, spec de 8 tablas A-H subida en `c104d78`), **TC humanos proyectados** (`docs/tc/cdu19-tc-humanos.md`), **informe de spike** (`docs/informes/spike-cdu19.md`, en `2388b7e`) y **reactor revalidado en 839 tests**; **ya no falta nada del trabajo del agente: la wiki `Iter6-CDU19-integracion` quedó publicada** (`9b7f513` en `master` del repo wiki); solo quedan los **TC humanos de Ismael (D28)** y **fusionar el PR borrador #45** con su tag. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
 | Construcción (Iter7–20) | ⏳ Pendiente |
 | Transición (Iter21) | ⏳ Pendiente — cierre 14/12, entrega 15/12 |
 
-**Avance cuantificado (09/11/2026), sobre el plan de `docs/planificacion-iteraciones+Calidad.csv`:** el total
+**Avance cuantificado (15/11/2026), sobre el plan de `docs/planificacion-iteraciones+Calidad.csv`:** el total
 planificado son **612 h con IA** repartidas en 22 iteraciones (Iter0 40 h; Elaboración Iter1-6 188 h;
-Construcción Iter7-20 304 h; Transición Iter21 80 h). **Fusionadas y tagueadas van Iter0-Iter4 = 156 h ≈ 25,5 %
-del esfuerzo** (5 de 22 iteraciones). **Cerradas del todo, con TC humanos hechos e issue cerrada a mano, solo
-Iter0 (CFG-00) e Iter1 (CFG-01) = 62 h ≈ 10,1 %.** En calendario vamos por delante: el plan ponía Iter1-3 del
-09/11 al 13/11 e Iter4-6 del 16/11 al 20/11, y la Iter4 ya estaba fusionada el 08/11.
+Construcción Iter7-20 304 h; Transición Iter21 80 h). **Fusionadas y tagueadas van Iter0-Iter5 = 192 h ≈ 31,4 %
+del esfuerzo** (6 de 22 iteraciones, tag `cfg-iter05` ya puesto). **Cerradas del todo, con TC humanos hechos e
+issue cerrada a mano, solo Iter0 (CFG-00) e Iter1 (CFG-01) = 62 h ≈ 10,1 %**: a Iter2/3/4/5 les faltan los TC
+humanos (D28). En calendario vamos por delante: el plan ponía Iter4-6 del 16/11 al 20/11 y la Iter5 ya estaba
+fusionada y tagueada el 15/11.
 
-**Iteración en curso:** **Iter5 · CDU12 citas (CFG-05) — fusionada; queda el PR de cierre con la matriz
-D33**. El 15/11 (sesión 21) se completó CFG-05 en `feature/iter05-cdu12-citas` con **13 commits
-(`6feabdf..b912554`)**: diseño PlantUML `a7b88e8` (D31) → módulo `iso2-citas` 1.1.0 + Flyway dual `V1.5.0`
-→ RBAC y `CitasApiTest` → parte b del contrato (cliente JavaFX) → **matriz D33 de 172 casos**
-(`Cdu12MatrizTdopTest`, `b912554`). Ismael **fusionó el PR #42 el 14/11 (merge `08a7ed8`)** llevándose los
-12 commits de código y **cerró #40 a mano** esa misma noche (D29), pero la matriz D33 se pusheó **después**
-del merge y se quedó fuera de `develop`: viaja en un **PR de cierre aparte** (el mismo patrón de la Iter4:
-PR #31 de código + PR #32 de docs) junto con `TASADEFECTOS.md` y `STATUS.md`, y el tag anotado
-**`cfg-iter05`** se pondrá sobre la fusión de ese PR de cierre. Cifras ya medidas: `mvn -B -ntp clean
-verify` con Docker arriba **637 tests, 0 saltados**; wiki **`Iter5-CDU12-citas`** publicada; D37 al día
-(**Iter5 cierra sin defectos nuevos**). Después llegan los **TC humanos de CDU12** (D28) e **Iter6 · CDU19
-(CFG-06)** con el hito `v0.2.0-alpha`. La **capa D34 de persistencia MySQL** que también era de esta
-iteración se fusionó antes en `develop` por su propia rama (PR #41 → merge `d4749e3`, issue #34 cerrada
-el 11/11). Antes, el 09/11 (sesión 17), se cerró **del todo la Iter1 · CDU16 / CFG-01**, que es la primera
-que completa el ciclo entero: diseño → código → puertas técnicas → **D33** → **TC humanos** → issue cerrada
-a mano → wiki al día, y en la sesión 16 se cerró **Iter4 · CDU06 (CFG-04)** (PR #31 → merge `a3fe109`,
-tag `cfg-iter04`, wiki y **#30 cerrada a mano** por Ismael).
+**Iteración en curso:** **Iter6 · CDU19 integrar con sistemas externos (CFG-06) — parte b casi terminada**.
+La issue **#44** (abierta por Ismael el 15/11) fija el alcance: spike de viabilidad del
+SSO y de la sincronización de historias en el módulo **`iso2-integracion` 1.1.0**, con el puerto
+`InteropFacade` y adaptadores simulados (CDU del dominio **sin tocar**), `server-app` **0.2.0-SNAPSHOT** y
+el hito **`v0.2.0-alpha` (R1 ALFA, 20/11)**. Lo que ya está en `feature/iter06-cdu19-integracion`
+(commits `db075c0..2388b7e` sobre `cbb1901`): **modelo PlantUML D31** (`docs/modelo/iter06/`, 4 diagramas con
+sus `.png`), **puerto + adaptadores + DTOs + auditoría encadenada en memoria**, `SimulacionControlador` con
+`SetupSimulacion` (token `SIM-*`, **sin persistencia**: no hay slot Flyway que llenar) — ojo: el RBAC real es
+**solo rol `ADMINISTRADOR`** en los 7 endpoints, la pareja `INTEGRACION_LEER/ESCRIBIR` que anunciaba la issue
+no existe — y **203 pruebas en el módulo** repartidas en 10 clases: `AdaptadorSimuladoTest` 15,
+`IntegracionServicioTest` 20, `IntegracionControladorTest` 13, `SimulacionControladorTest` 8,
+`ArquitecturaIntegracionTest` 6, `AuditoriaIntegracionTest` 6, `SetupSimulacionTest` 4,
+`RegistroSimulacionTest` 4, `ContratoBaselineTest` 1 (fija que el contrato de `iso2-integracion` 1.0.0 del
+baseline no se rompe) y la nueva **`Cdu19MatrizTdopTest` con los 126 casos de la matriz D33 leídos de CSV**.
+Puertas medidas sobre `2388b7e` con `mvn -B -ntp verify`: **BUILD SUCCESS con 839 tests, 0 fallos, 0 errores,
+0 omitidos** (203 de ellos de CDU19) y `iso2-integracion` en **JaCoCo 96,5 % de líneas (361/374) y 78,4 % de
+ramas**, por encima de la cota del módulo (70 %). El **informe del spike ya está escrito** en
+`docs/informes/spike-cdu19.md`: veredicto de viabilidad por integración, decisión **FHIR/JSON sobre REST**
+(descartado HL7v2/MLLP y descartado escribir un visor DICOM propio en Iter16, con DICOMweb como contrato),
+**15 hallazgos** del spike con su evidencia en la matriz y **deuda D-01..D-07** para Iter7. **Parte b CERRADA:**
+la wiki **`Iter6-CDU19-integracion`** ya está publicada (`9b7f513`) y el **PR borrador #45** está abierto a
+`develop`; a la CDU19 solo le siguen faltando los **TC humanos de CDU19**, que
+ejecuta Ismael (D28), y la **fusión del PR con su tag** (D29/D30). **Iter5 · CDU12 (CFG-05)
+queda CERRADA**: código por **PR #42** (`08a7ed8`), matriz D33 y docs por **PR #43** (merge `cbb1901`,
+15/11 08:52, **tip de `develop`**), **tag `cfg-iter05` → `cbb1901`** y **#40 cerrada a mano**; solo les siguen
+faltando los **TC humanos de CDU12** (D28, pendiente 20). Antes, el 09/11 (sesión 17), se cerró **del todo la
+Iter1 · CDU16 / CFG-01**, que es la primera que completa el ciclo entero: diseño → código → puertas técnicas →
+**D33** → **TC humanos** → issue cerrada a mano → wiki al día, y en la sesión 16 se cerró **Iter4 · CDU06
+(CFG-04)** (PR #31 → merge `a3fe109`, tag `cfg-iter04`, wiki y **#30 cerrada a mano** por Ismael).
 
 **Dos cambios de enfoque pedidos por Ismael el 08/11:** (1) el **método D33** de pruebas — clases de
 equivalencia + teorema del valor límite + conjetura de errores compuestos con **pairwise**, ejecutados con
@@ -93,14 +116,15 @@ técnicas, la D33 y sus TC humanos.
   esté en `develop`: `git diff --stat origin/develop...origin/main` queda vacío, así que la publicación de
   R1 no arrastrará restos del PR #17. Rama `release/R0` **borrada** en remoto y local el 09/11 (el tag `v0.1.0`
   ya fija ese punto).
-- **Open / en curso (09/11):** **no queda ningún PR abierto** (#33, #36 y #37 ya fusionados). En la sesión 17 se
-  abre el PR de este sync documental → `develop`. **Issues abiertas: ninguna**, y hay que reabrir el seguimiento
-  de dos: **#35** (pruebas D33) la cerró Ismael a mano el **09/11 00:26**, cuando la matriz todavía no se había
-  ejecutado; el trabajo llegó después (PRs **#36** y **#37**) y se dejó constancia en un comentario de cierre, así
-  que **no se reabre**. Pero **#34** (persistencia D34) se cerró **a la vez** (09/11 00:26) **sin trabajo detrás**:
-  D34 sigue **aceptada y sin implementar** (no hay Docker, ni MySQL, ni DAO, ni `AgenteMySQL` en el repo). Para la
-  próxima sesión hace falta **reabrir #34 o abrir una issue nueva** con la implementación de D34 (la apertura/cierre
-  de issues es de Ismael, D29).
+- **Open / en curso (15/11, sesión 23):** al empezar la sesión no había **ningún PR abierto** (el de cierre de CFG-05,
+  **PR #43**, se fusionó el 15/11 08:52 → `cbb1901`). Al cerrarla sí lo hay: **PR borrador #45** de la Iter6
+  (`feature/iter06-cdu19-integracion` → `develop`, con `Ref: #44` y **sin `Closes`**): lo fusiona y cierra Ismael
+  (D29). **Issue abierta: la #44** (Iter6 · CDU19 / CFG-06), abierta por Ismael el 15/11 y
+  **en curso** en `feature/iter06-cdu19-integracion`; es la que lleva el DoD de esta iteración y solo Ismael la
+  cerrará (D29). Histórico de la sesión 17: **#35** (pruebas D33) la cerró Ismael a mano el **09/11 00:26** antes
+  de que llegara el trabajo (PRs **#36** y **#37**) y **no se reabre**; **#34** (persistencia D34) se cerró **a la
+  vez sin trabajo detrás**, se reabrió el 11/11 y **quedó implementada y cerrada** esa misma semana (PR #41 →
+  merge `d4749e3`).
 - **Javadoc publicado en GitHub Pages (D32, sesión 14):** workflow nuevo `.github/workflows/javadoc.yml`
   (push a `develop` + `workflow_dispatch`) que ejecuta `mvn -B -ntp javadoc:aggregate` y publica
   `target/reports/apidocs`. URL base **`https://ismaelcaballero.github.io/PrISO2-25-26/apidocs/`**; solo la
@@ -123,8 +147,13 @@ técnicas, la D33 y sus TC humanos.
   release desde `release/R0` (rama creada sobre `cfg-iter00` = `641e72d`, árbol idéntico a CFG-00).
   Se descartó `revert -m 1` (impediría re-aplicar esos ficheros al fusionar `develop` en el futuro).
 - **Tags de configuración creados:** `cfg-iter00` → `641e72d`, `cfg-iter01` → `df09bca`,
-  `cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`, **`cfg-iter04` → `a3fe109`** (los cinco anotados y
-  subidos) y la etiqueta de release **`v0.1.0` → `e165622`** (merge del PR #19 en `main`, anotada y subida).
+  `cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`, `cfg-iter04` → `a3fe109`,
+  **`cfg-iter05` → `cbb1901`** (los seis anotados y subidos) y la etiqueta de release **`v0.1.0` → `e165622`**
+  (merge del PR #19 en `main`, anotada y subida). El tag `cfg-iter05` es el objeto anotado `005476e`, puesto el
+  15/11 (sesión 22) sobre la fusión del **PR #43** siguiendo la receta de `docs/mapa-configuraciones.md` y el
+  formato del mensaje de `cfg-iter04`: fija el cierre de CFG-05 (código + matriz D33 de 172 casos + docs),
+  recuerda que **no hay release en `main` para la Iter5** (D30) y que los **TC humanos de CDU12 siguen
+  pendientes** (D28).
 - **Tag `cfg-iter01` reanotado el 09/11 (misma decisión de Ismael, misma posición):** el tag sigue apuntando al
   **mismo commit `df09bca`** (el merge del PR #10, el único de `develop` que hay entre `cfg-iter00` y
   `cfg-iter02`: CFG-01 solo vive ahí) pero el objeto del tag cambia `af95aff` → **`429d67f`**, subido con
@@ -167,6 +196,54 @@ técnicas, la D33 y sus TC humanos.
   (siguen siendo criterio de cierre de CFG-01/02/03, D28); **#23 Kanban + wiki** → wiki creada con su
   página `Home.md` enlazando los ficheros vivos; el Kanban (GitHub Project) no es verificable con el token
   del agente (sin scope `read:project`): queda a la revisión visual de Ismael.
+- **Estado de ramas e instantáneas a 15/11 (sesión 23):** `origin/develop` = **`cbb1901`** (merge del PR #43),
+  `origin/main` = `d12388b` (la desviación ya documentada en D30, sigue sin tocar), `origin/docs/config-opencode`
+  = `2a2f0a8` y `origin/feature/iter06-cdu19-integracion` = **el último docs de la sesión 23** (tras `a470584`
+  van `e1d418c` del sync del PR #45, `6606d81` de la wiki, `a2fc906` del forense de ramas y el docs de la causa del
+  wipe), con el árbol local idéntico
+  al remoto y **nada sin subir** (**18** commits de Iter6 sobre `cbb1901`: `db075c0` modelo, `687c624` contrato
+  `InteropFacade`, `7a03e0c` módulo `iso2-integracion`, `9ca712f` refino del diseño, `a22e654` RBAC y ensamblado,
+  `f5411c1` 77 pruebas y arreglo del `@ConfigurationProperties`, `a81b85b` spec TDOP, `a86d1f4` + `a532992` registro de
+  la sesión 22, `c104d78` matriz verde, `ec7f228` evidencia + TC humanos, `86f68ff` fixes de docs, `2388b7e` informe
+  del spike, `a470584` + `e1d418c` + `6606d81` cierre documental de la sesión 23, `a2fc906` el forense y el docs de la
+  causa del wipe). Tags en el
+  remoto: `cfg-iter00`…`cfg-iter05` y `v0.1.0`. La rama `feature/iter05-cdu12-citas` **ya no existe**: el remoto la
+  borró el **15/11 a las 08:52** (`DeleteEvent`, justo al
+  fusionar el PR #43) y en local tampoco está; sus dos commits del cierre, `b912554` y `5771a38`, están contenidos en
+  `develop`. [Corregido en la sesión 23: aquí ponía «sigue viva en remoto con `b912554` y `9457972`», y los dos datos
+  eran falsos —la rama llevaba borrada esa misma mañana y **`9457972` no es un commit de este repo**: `git cat-file`
+  lo rechaza y la API de GitHub lo devuelve 422—. El dato venía de un `git branch -r` sin `fetch` previo.] **PR
+  borrador de la Iter6 abierto: #45**
+  (`feature/iter06-cdu19-integracion` → `develop`, 91 ficheros, `Ref: #44` y **sin `Closes`** → lo fusiona y cierra
+  Ismael, D29). **Repo wiki** `PrISO2-25-26.wiki`, rama `master` = **`8aa524b`**: página nueva
+  **`Iter6-CDU19-integracion`** + sus 4 PNG en `images/iter06-cdu19-*` y `Home.md` con la fila de Iter6
+  (publicada en **`9b7f513`** y corregida en **`8aa524b`**, que quita de la cabecera el conteo de commits que
+  envejece).
+- **Incidencia 1 — reinicio del equipo a media sesión 21 (15/11):** el apagón dejó vacío el almacenamiento
+  local de OpenCode (`%USERPROFILE%\.local\share\opencode\storage`), así que **se perdió el historial de la
+  conversación pero no el trabajo**, que estaba subido. La sesión 22 se reconstruyó leyendo `git reflog`,
+  `STATUS.md` y GitHub, y ahí apareció que Ismael ya había **fusionado el PR #43 y cerrado #40**: solo quedaba
+  el tag `cfg-iter05` y este sync. Regla aplicada desde entonces: **nada se queda sin subir** y el registro son
+  `STATUS.md` + `PROMPTS.md`, no la sesión de la herramienta.
+- **Incidencia 2 — dos agentes escribiendo a la vez sobre el mismo árbol y la misma rama (15/11, en dos
+  olas):** tras el reinicio, la otra sesión se reanimó **dos veces**: entre **11:29 y 11:49** y otra vez entre
+  **12:37 y 13:54**. No hubo conflicto de `git` (un solo HEAD y un solo índice), pero sí dos tramos de trabajo:
+  la primera ola quedó contenida en **`f5411c1`** (las 77 pruebas del CDU19) y esta sesión lo **verificó ejecu-
+  tando** en lugar de reescribirlo: compila y pasa las **713 pruebas** del reactor. La segunda ola dejó en el
+  árbol, **sin commitear**, el spec TDOP y los 16 CSV de `docs/test/iter06/` (mtimes 12:37-13:53): esta sesión
+  los regeneró con `tools/pairwise.py` — **los 16 ficheros salen byte a byte iguales** a los del árbol — los
+  validó contra `IntegracionManejadorErrores` y `SetupSimulacion`, y los subió tal cual en **`a81b85b`**,
+  dejando la procedencia en el cuerpo del mensaje. Su última actividad registrada fue **13:54:41** y desde
+  entonces no ha vuelto a tocar nada: **el único agente activo es esta sesión**, y ya no hay dos. Regla
+  práctica: **una rama y un árbol por sesión**, y comprobar `HEAD` + `git status` antes de escribir.
+- **Incidencia 3 — clon de la wiki desactualizado y PNG de iter01-03 borrados (15/11, sesión 23):** el clon del
+  repo wiki del temp estaba **5 commits por detrás** de `origin/master` (Ismael había añadido
+  `Iter5-CDU12-citas`, `Requisitos`, el PDF del enunciado `v1.15.3` y los PNG de iter05) y el **wipe de ficheros
+  no trackeados** se había llevado por delante los 12 PNG de `images/iter01-*`…`iter03-*`. Se resolvió con
+  `git checkout -f master` + `git merge --ff-only origin/master` → HEAD `df2c140`, que **recupera los PNG perdidos**
+  desde el remoto; la página nueva y los PNG de Iter6 se escribieron **después** de ese `merge`, y antes de
+  commitear se verificó el índice con `git diff --cached --name-only`. Regla: **en la wiki hay que `fetch` +
+  `merge --ff-only origin/master` antes de escribir**, porque el remoto puede ir por delante del clon.
 - Identidad git del repo: IsmaelCaballero@users.noreply.github.com (cambiar si se prefiere el correo UCLM).
 
 ## Registro de sesiones
@@ -263,27 +340,104 @@ técnicas, la D33 y sus TC humanos.
     decidió Ismael); **Testcontainers con `mysql:8.4`** en la puerta (3 tests) y reactor verde **356 tests,
     0 saltados**. Queda de Ismael: **fusionar el PR** a `develop` y **cerrar #34 a mano** (D29). El aviso de
     seguimiento (cierre de #34 del 09/11 sin trabajo detrás) quedó zanjado reabriendo la issue el 11/11.
-20. **TC humanos de CDU12 (D28) — pendientes de Ismael tras fusionar el PR de cierre de CFG-05**: plantilla en
+20. **TC humanos de CDU12 (D28) — pendientes de Ismael, ya sin bloqueo de PR**: el PR de cierre de CFG-05 se
+    fusionó el **15/11** (**PR #43** → merge `cbb1901`), así que la plantilla está en `develop`. Está en
     `docs/tc/cdu12-tc-humanos.md` con los **172 casos TDOP generados** por el método D33 (tablas A–F, los
     mismos que ejecuta `Cdu12MatrizTdopTest`) más la preparación del entorno. Al ejecutarlos sobre el
     sistema en marcha, anotar el resultado y cerrarlos como se hizo con los de CDU16 (PR #37).
+21. **Iter6 · CDU19 (CFG-06) — parte b CERRADA: solo queda la fusión y los TC humanos (issue #44, rama
+    `feature/iter06-cdu19-integracion`)**:
+    (a1) **hecho** — evidencia TDOP en `docs/test/iter06/` (`tdop-cdu19-espec.json` de **126 casos en 8 tablas
+    A-H** + los **17 CSV**, también versionados en `iso2-integracion/src/test/resources/tdop/`, generados con
+    `tools/pairwise.py`) subida en `a81b85b` y corregida en `c104d78`;
+    (a2) **hecho** — **`Cdu19MatrizTdopTest`: 126 casos leídos de CSV, en verde**, y `docs/test/iter06/tdop-cdu19.md`
+    como evidencia autogenerada (`c104d78`);
+    (a3) **hecho** — **TC humanos proyectados** a `docs/tc/cdu19-tc-humanos.md` con `tools/tc_plantillas.py`
+    (`ec7f228`); (b) **hecho** — **informe de spike** en `docs/informes/spike-cdu19.md` con el veredicto de
+    viabilidad por integración, la decisión FHIR/JSON y **15 hallazgos** (`2388b7e`); (d) **hecho** — **PR borrador
+    #45** abierto a `develop` con `Ref: #44` y **sin `Closes`** (91 ficheros, +8232/−82); (e) **hecho** — wiki
+    **`Iter6-CDU19-integracion`** publicada en `master` del repo wiki con la **clase probada** `Cdu19MatrizTdopTest`,
+    los 4 diagramas, la API/RBAC reales y las cifras de JaCoCo medidas con `verify` (merge **`9b7f513`**, y
+    `Home.md` con la fila de Iter6). **Queda**: (f) **TC humanos de CDU19 los
+    ejecuta Ismael** (D28); (g) sobre la fusión del **#45**, el tag `cfg-iter06` **más el hito `v0.2.0-alpha`**, que se
+    materializa en `release/R1` hacia `main`, no en esta rama.
+22. **Revalidación D37 al cerrar la Iter6**: en `TASADEFECTOS.md` hay que contar el **único DEF fugado del
+    tramo** (F4 de código: `IntegracionProperties` se escribió sin `@ConfigurationProperties(prefix =
+    "iso2.integracion")` aunque el modelo `.puml` de la iteración sí lo ponía → el contexto del `server-app`
+    moría al arrancar; arreglado en `f5411c1`). Corte de commits, serie y ratio, como en las iteraciones
+    anteriores.
+23. **Higiene de ramas (Ismael):** ~~borrar `feature/iter05-cdu12-citas`~~ **ya está borrada del remoto** (15/11
+    08:52, tras fusionar el PR #43) y tampoco existe en local, así que ese pendiente **queda cerrado**. Lo que sigue
+    pendiente es borrar `feature/iter06-cdu19-integracion` **después** de fusionar el PR #45 (y el tag `cfg-iter06`).
+24. **Deuda que deja el spike de la CDU19 (D-01..D-07 del informe `docs/informes/spike-cdu19.md` §6), para
+    Iter7:** **D-01** servir la instantánea guardada cuando el externo cae (hoy `IntegracionServicio` consulta HCE
+    antes que sus `snapshots` → los casos B04/B05 de la matriz cierran en 503) o documentar que el degradado no
+    incluye caché; **D-02** probar `IntegracionProperties` (11/30 ramas cubiertas) y decidir si un modo mal escrito
+    es *aviso + default* (promete el DoD) o *fail-fast* (hace el código); **D-03** canjear la sesión SSO por el JWT
+    de CDU17 y mapear el rol externo a `Permiso`; **D-04** cliente HTTP real (timeout que corta, reintentos con
+    backoff, `Idempotency-Key`) e importación **DICOMweb** del PACS para Iter16; **D-05** regresión del **modo
+    degradado** en `iso2-server-app` (hoy solo el TC19-04 manual) y el **403 por rol no `ADMINISTRADOR`**
+    automatizado, ambos pedidos por el DoD y hoy inexistentes: ningún test de `iso2-server-app` toca
+    `/api/integracion`; **D-06** auditoría de integración persistente (implica reabrir la puerta a Flyway, que la
+    issue cerraba); **D-07** `HuellaContenido` (2/4 líneas) y el record `IntegracionProperties.SistemaOverride`
+    (0/1) sin cubrir.
+25. **Configurar el entorno OpenCode para cortar el wipe (decisión de Ismael; la causa ya está investigada)**: el
+    borrado de ficheros **no trackeados** que ha venido sufriendo el árbol coincide literalmente con cómo funciona
+    el `undo`/`Revert` de las **snapshots** de OpenCode: el rollback restaura las rutas atribuidas a los pasos del
+    asistente posteriores a la frontera elegida y **elimina un fichero creado por esos pasos si antes no existía**;
+    además captura ficheros no trackeados no ignorados de hasta 2 MiB. El almacén está en
+    `%USERPROFILE%\.local\share\opencode\snapshot` (ahora 16,6 MB de un solo proyecto) y **no** es lo mismo que el
+    apagón del 15/11, que vació el almacenamiento de sesiones. La pieza que lo desactiva es `"snapshots": false` en
+    `~/.config/opencode/opencode.jsonc` (o en el `opencode.json` del proyecto): deja de capturar estado de ficheros,
+    el rollback solo deshace conversación y las instantáneas ya guardadas no se borran. Contrapartida: se pierde el
+    `/undo` de ficheros, algo aceptable mientras el agente trabaje con **commit + push inmediato**. No se ha
+    aplicado: cambia la configuración global de la máquina y le corresponde a Ismael (el agente puede hacerlo si se
+    lo pide). **Decisión tomada el 15/11: se queda como está, sin tocar la config**; así que el wiping no se corta y
+    la única defensa sigue siendo el orden **escribir → verificar en disco → `git add` → commit → push inmediato**.
+26. **Alcance del agente B de la Iter7 (decidido por Ismael el 15/11)**: se autoriza un segundo agente en un
+    *worktree* aparte (`C:\ProgIA\PrISO2-iter07`, creado desde `develop`) **solo sobre `docs/modelo/iter07/` y
+    `docs/test/iter07/`**: diagramas `.puml` + sus PNG y la especificación/matriz TDOP con sus CSV. **No toca `src/`,
+    ni `pom.xml`, ni `STATUS.md`/`PROMPTS.md`, ni `main`/`develop`**, y abre su propio PR a `develop` cuando el #45 ya
+    esté fusionado, para no pisar la integración de la CDU19.
 
 ## Punto exacto de continuación para la próxima sesión
 
-**La parte del agente de la Iter5/CFG-05 está TERMINADA** (15/11, sesión 21). Ya en `develop`: los 12
-commits de código de CFG-05, **fusionados por Ismael con el PR #42 (merge `08a7ed8`, 14/11 22:25)** y
-**#40 cerrada a mano** esa misma noche (D29). **Lo que sigue sin fusionar es la matriz D33**: el commit
-`b912554` (172 filas de `Cdu12MatrizTdopTest` + evidencia `docs/test/iter05/` + `docs/tc/cdu12-tc-humanos.md`)
-se pusheó **después** del merge de #42 y es el único commit de la rama que no está en `develop`; sube en un
-**PR de cierre aparte** (`feature/iter05-cdu12-citas` → `develop`) junto con este `TASADEFECTOS.md` y
-`STATUS.md`, igual que el PR #32 hizo con los docs de la Iter4. Cifras ya medidas sobre `b912554`:
-`Cdu12MatrizTdopTest` **172/172**, `mvn -B -ntp clean verify` con Docker arriba **BUILD SUCCESS con 637
-tests y 0 saltados** (los 3 Testcontainers de MySQL corren), wiki **`Iter5-CDU12-citas` publicada** (merge
-`0809425` en `master` de la wiki + fila en `Home.md` + 4 PNG). **Lo que queda es solo de Ismael (D29):**
-(1) **fusionar el PR de cierre** de CFG-05; (2) **tag anotado `cfg-iter05`** sobre ese commit de fusión
-(receta en `docs/mapa-configuraciones.md`); (3) borrar la rama `feature/iter05-cdu12-citas` tras fusionar;
-(4) **TC humanos de CDU12** (D28, pendiente 20). Tras eso, **Iter6 · CDU19 (CFG-06)** con el hito
-**`v0.2.0-alpha`**: Ismael abre la issue con su prompt y la sesión arranca por los diagramas (D31).
+**La Iter5 / CFG-05 está CERRADA del lado del repo** (15/11, sesiones 21-22): los 12 commits de código entraron
+con el **PR #42** (merge `08a7ed8`, 14/11 22:25) y la **matriz D33 de 172 casos** con el **PR #43** (merge
+**`cbb1901`**, 15/11 08:52), que es el **tip de `develop`**; **#40 la cerró Ismael a mano** (D29) y el tag
+anotado **`cfg-iter05`** (`005476e`) ya apunta a `cbb1901`. Solo le quedan los **TC humanos de CDU12** (D28,
+Deuda nº 20) y borrar la rama fusionada (Deuda nº 23).
+
+**La parte b de la Iter6 / CDU19 (CFG-06) está CERRADA del lado del agente** (15/11, sesión 23), rama
+`feature/iter06-cdu19-integracion` (= `origin/feature/iter06-cdu19-integracion`, árbol limpio y
+todo subido). Está hecho el modelo, el módulo, el puerto, los adaptadores simulados, el RBAC, las **203 pruebas del
+módulo** repartidas en 10 clases, la **especificación TDOP de 126 casos con los 17 CSV**, la **matriz ejecutada en
+verde** por `Cdu19MatrizTdopTest` (126 casos, `c104d78`), la evidencia `docs/test/iter06/tdop-cdu19.md`, los **TC
+humanos proyectados** (`ec7f228`), el **informe de spike** (`2388b7e`), el **PR borrador #45** abierto a `develop` y
+la **wiki `Iter6-CDU19-integracion`** publicada (merge **`9b7f513`** de la wiki, tip actual **`8aa524b`**). Reactor
+revalidado sobre `2388b7e`: **839 tests, 0 fallos, 0 errores, 0 omitidos** y 13 puertas JaCoCo verdes. **Todo lo que
+queda es de Ismael**, en este orden:
+
+1. **Fusionar el PR borrador #45** (`feature/iter06-cdu19-integracion` → `develop`, `Ref: #44`, **sin `Closes`**):
+   lo fusiona y cierra **#44** Ismael (D29); sobre esa fusión van el tag **`cfg-iter06`** y el hito
+   **`v0.2.0-alpha`**, que se materializa publicando **`release/R1` → `main`** (D30), no en esta rama. Avisos del
+   PR: son **18 commits de código + docs** (el inventario exacto lo da la pestaña *Commits* del PR), la puerta JaCoCo
+   del módulo mide **96,5 %** (no el 88,2 % caducado), las fichas Javadoc de `iso2-integracion` **solo se publican al
+   fusionar** (hoy dan 404, por eso la wiki enlaza
+   esas clases al fuente) y el RBAC real es **solo rol `ADMINISTRADOR`**.
+2. **Wiki** `Iter6-CDU19-integracion` **ya publicada** (D32) con la **clase probada** `Cdu19MatrizTdopTest` y las
+   cifras reales de JaCoCo de `iso2-integracion` (**96,5 % líneas / 78,4 % ramas**, medidas con
+   `mvn -B -ntp -pl iso2-integracion verify`: **el CSV de JaCoCo solo lo escribe `verify`**). Al fusionar, sus enlaces
+   «al fuente» de las clases del módulo se pueden cambiar a las fichas de Javadoc.
+3. **Revalidación D37** en `TASADEFECTOS.md` al cierre (Deuda nº 22): en la Iter6 ya hay **1 defecto F4 fugado**
+   (el `@ConfigurationProperties` que faltaba en `IntegracionProperties`, arreglado en `f5411c1`).
+4. **TC humanos de CDU19** (`docs/tc/cdu19-tc-humanos.md`, TC19-01…09 + el bloque TDOP de 126 filas): los ejecuta
+   **Ismael** (D28).
+5. **Deuda del spike D-01..D-07** (ver `docs/informes/spike-cdu19.md`), a repartir en Iter7: modo degradado como
+   regresión automatizada en `iso2-server-app` (hoy solo se comprueba a mano en el TC19-04), el **403 por rol no
+   `ADMINISTRADOR`** que pide el DoD (ningún test de `iso2-server-app` toca `/api/integracion`), subir las ramas de
+   `IntegracionProperties` (11/30) con un TC de configuración corrupta (fail-fast frente al «default + warning»
+   que promete el DoD), y decidir Flyway/auditoría persistente.
 
 ### 0) Arranque en el equipo nuevo (10/11/2026)
 
@@ -326,7 +480,29 @@ en esta máquina salvo lo que está en GitHub, así que el arranque es:
    doc) y, si quiere, repetirlos él mismo. A partir del 10/11 eso se hace contra la H2 nueva del otro equipo:
    las filas `TC16H-*` y los 5 asientos de auditoría se quedan en esta máquina (apartado 0, punto 5).
 
-### 2) Siguiente iteración: Iter5 · CDU12 citas (CFG-05)
+### 2) Iter6 · CDU19 integración (CFG-06) — en curso: las condiciones del trabajo
+
+Rama `feature/iter06-cdu19-integracion`, abierta **desde `develop` = `cbb1901`** (ya con la Iter5 dentro) y con
+`Ref: #44` en cada commit. Versiones: `iso2-integracion` **1.1.0-SNAPSHOT** (su baseline **1.0.0 queda
+congelado**: `ContratoBaselineTest` es el test que lo blindó en Iter4 y sigue verde), `common` **1.1.0-SNAPSHOT**
+(se congela en 1.1.0 al publicar R1) y las apps **0.2.0-SNAPSHOT** (es el primer salto de tren de release).
+**Sin migración Flyway**: el spike es deliberadamente **sin persistencia** (la auditoría va encadenada en
+memoria), así que el slot `V1.6.0__…` queda libre para el CDU de Construcción que lo necesite. Puertas de
+CFG-06 en `docs/mapa-configuraciones.csv`: **flujo rol+catálogo+agenda+solicitud+cita end-to-end** y
+**JaCoCo ≥ 60 %**; el módulo puso su propia cota más alta, **`jacoco.line.min = 0.70`**, y está en **96,5 % de
+líneas y 78,4 % de ramas** (medido con `mvn -B -ntp -pl iso2-integracion verify` sobre `2388b7e`; **el CSV de
+JaCoCo solo lo escribe la fase `verify`**, así que leerlo tras un `mvn test` da cifras caducadas — era el caso del
+88,2 % que venía escrito aquí).
+El trabajo va **después de los diagramas** (D31, diseño-primero: los 4 `.puml` + `.png` de `docs/modelo/iter06/`
+se commitearon antes que el código, en `db075c0`). Fecha objetivo **20/11/2026**, porque la Iter6 es la que
+trae el hito **`v0.2.0-alpha`** (ALFA-1 / R1). Orden de lectura al llegar: `CONTEXT.md` → `DECISIONS.md`
+(D28-D37) → `STATUS.md` → `PLAN.md` §4 → fila CFG-06 del mapa. Al cerrar: **revalidación D37** en
+`TASADEFECTOS.md` (Deuda nº 22) y wiki con la **clase probada** nombrada (D33).
+
+### 2-bis) Iter5 · CDU12 (CFG-05) — ~~siguiente iteración~~ → ejecutada y cerrada el 15/11
+
+~~Receta tal como se escribió, cerrada con el PR #42 (`08a7ed8`), el PR #43 (`cbb1901`) y el tag `cfg-iter05`.
+Se deja por si sirve de patrón para la Iter6:~~
 
 **Primero: Ismael fusiona el PR de la D34** (y cierra #34 a mano, D29; fusiona también el PR #39 si le vale).
 La rama `feature/iter05-cdu12-citas` se abre **desde `develop` ya con la D34 dentro**, con `Ref: #40` en cada
@@ -465,4 +641,135 @@ F3 contrato 0 · F4 código 0 · total 1 (fugados 1) · **7,7 por 100 commits** 
 código**. Queda de Ismael (D29): fusionar el PR de cierre (lleva `b912554` + estos docs), poner el tag
 `cfg-iter05` sobre esa fusión y borrar la rama; luego TC humanos de CDU12
 (D28) e **Iter6 · CDU19 (CFG-06)** con el hito `v0.2.0-alpha`.
+
+
+**Trabajo de la sesión 22 (15/11/2026, recovery tras el reset del equipo + apertura de Iter6/CFG-06 —
+Prompts 21 y 22):** la sesión 21 se cortó de golpe por un reinicio del equipo y el almacenamiento local de
+OpenCode (`%USERPROFILE%\.local\share\opencode\storage`) quedó vacío, así que **se perdió el registro de la
+conversación**. No se perdió trabajo: la sesión 22 se reconstruyó leyendo `git reflog`, `STATUS.md`,
+`TASADEFECTOS.md` y GitHub, y apareció que Ismael ya había **fusionado el PR #43 (merge `cbb1901`, 15/11 08:52,
+hoy tip de `develop`)** y **cerrado #40 a mano**. Con eso:
+
+* **Cerrada Iter5 / CFG-05 del lado del repo** y puesto el **tag anotado `cfg-iter05`** (objeto `005476e`) sobre
+  `cbb1901`, siguiendo la receta de `docs/mapa-configuraciones.md` y el formato del mensaje de `cfg-iter04`. El
+  tag recuerda que **no hay release en `main` para la Iter5** (D30) y que los **TC humanos de CDU12 siguen
+  pendientes** (D28).
+* **Arrancada la Iter6 · CDU19 (CFG-06)** en `feature/iter06-cdu19-integracion`, abierta desde `develop` =
+  `cbb1901` sobre la issue **#44**, con el flujo diseño-primero (D31) y `Ref: #44` en cada commit:
+  `db075c0` (`docs/modelo/iter06/` con los 4 `.puml` de casos de uso, análisis, diseño y secuencia, re-renderizados
+  con `-tpng` y `PLANTUML_LIMIT_SIZE=16384`) → `687c624` (puerto `InteropFacade` en **1.1.0**, baseline 1.0.0
+  congelado) → `7a03e0c` (módulo `iso2-integracion` 1.1.0-SNAPSHOT: adaptadores simulados SSO / historia clínica /
+  RIS-PACS, DTOs, auditoría encadenada en memoria y smoke del contrato) → `9ca712f` (re-render del diagrama de
+  secuencia tras el arreglo del diseño) → `a22e654` (RBAC `INTEGRACION_LEER/ESCRIBIR` + `IntegracionApiTest` +
+  salto de tren de release: apps **0.2.0-SNAPSHOT**, modelo `iso2.version`/`common` **1.1.0**) → `f5411c1`
+  (**77 pruebas del CDU19** y arreglo del `@ConfigurationProperties` que faltaba en `IntegracionProperties`).
+  **[Corregido en la sesión 23: el RBAC real de los 7 endpoints es solo el rol `ADMINISTRADOR`; la pareja
+  `INTEGRACION_LEER/ESCRIBIR` que anunciaba la issue #44 nunca existió en el código.]**
+* **Medido de nuevo con esta sesión, ejecutando**: `mvn -B -ntp test` en el reactor completo sobre `f5411c1` =
+  **BUILD SUCCESS con 713 tests, 0 fallos, 0 errores, 0 omitidos** y **JaCoCo de `iso2-integracion` en 88,2 % de
+  líneas** (cota propia `jacoco.line.min=0.70`, puerta de CFG-06 ≥ 60 %). **[Corregido en la sesión 23: esa cifra
+  estaba caducada porque el CSV de JaCoCo se leyó tras `mvn test`, y la fase `report`/`check` está enlazada a
+  `verify`; la medida real del módulo, con `mvn -B -ntp -pl iso2-integracion verify`, es 96,5 % de líneas y 78,4 %
+  de ramas.]** Reparto de los 77 del CDU19:
+  `AdaptadorSimuladoTest` 15 · `IntegracionServicioTest` 20 · `IntegracionControladorTest` 13 ·
+  `SimulacionControladorTest` 8 · `ArquitecturaIntegracionTest` 6 · `AuditoriaIntegracionTest` 6 ·
+  `SetupSimulacionTest` 4 · `RegistroSimulacionTest` 4 · `ContratoBaselineTest` 1. **Todavía no hay matriz D33
+  leída de CSV ni `Cdu19MatrizTdopTest`**: eso es la parte b, con `tools/pairwise.py`.
+* **Incidencia registrada (dos agentes a la vez, en dos olas):** entre las 11:29 y las 11:49 del 15/11, y otra
+  vez entre las 12:37 y las 13:54, trabajó en paralelo otra sesión sobre el **mismo árbol y la misma rama** con
+  la intención de hacer la matriz TDOP. No hubo conflicto de `git` (un solo HEAD, un solo índice). La primera
+  ola quedó contenida en `f5411c1` y esta sesión lo **verificó ejecutando** en lugar de reescribirlo; la segunda
+  dejó el spec TDOP y sus 16 CSV **sin commitear** en el árbol, y tras regenerarlos y comprobar que salían
+  **byte a byte iguales** se subieron en `a81b85b` con su procedencia en el mensaje del commit. Desde las
+  13:54:41 esa sesión no ha vuelto a escribir nada: **queda un solo agente**, y la regla práctica que se saca
+  es **una rama y un árbol por sesión**, comprobando `HEAD` y `git status` antes de escribir.
+* **Deuda nueva de esta sesión (nº 21, 22 y 23)** y revalidación **D37** aplazada al cierre de CFG-06: el tramo ya
+  arrastra **1 defecto F4 de código fugado** (`IntegracionProperties` sin `@ConfigurationProperties` pese a que el
+  `.puml` de la iteración sí lo prometía → el contexto del `server-app` moría al arrancar; arreglado en `f5411c1`).
+* **Cierre de jornada 15/11/2026 (mañana):** `develop` = `cbb1901` con **cfg-iter05 puesto**, `main` = `d12388b` sin tocar
+  (D30), rama de Iter6 en `f5411c1` con el árbol local idéntico al remoto y **nada sin subir**, ningún proceso
+  `java`/`mvn` suelto y ningún PR abierto. Avance del plan: **Iter0-Iter5 = 192 h de 612 h ≈ 31,4 %** (6 de 22
+  iteraciones fusionadas y tagueadas). Regla que se queda: **nada se queda sin subir** y el registro del proyecto
+  son `STATUS.md` + `PROMPTS.md`, no la sesión de la herramienta.
+
+* **Continuación de tarde (sesión 22):** la otra sesión volvió a trabajar entre 12:37 y 13:54 (ver Incidencia 2) y
+  dejó el spec TDOP y los CSV sin subir. Esta sesión **verificó** ese trabajo antes de tocar nada — regen
+  `pairwise.py` byte a byte igual, 125 casos en 7 tablas con 13 estados, coherentes con el código real— y lo subió
+  tal cual en **`a81b85b`**. Con eso el árbol vuelve a estar idéntico al remoto y **la parte b queda lanzada**: a
+  continuación `Cdu19MatrizTdopTest`, proyección de TC humanos, informe de spike, wiki y PR borrador.
+
+**Trabajo de la sesión 23 (15/11/2026, tarde-noche · Iter6/CFG-06 parte b terminada salvo wiki y PR — Prompt 23):**
+Ismael autorizó a seguir en solitario («arregla lo que sea necesario para asegurar la integridad del proyecto»), así
+que esta sesión cierra la parte b del DoD de la **#44** y deja la fusión, el tag y el cierre para Ismael (D29).
+
+* **Matriz TDOP en verde**: `Cdu19MatrizTdopTest` (patrón `Cdu12MatrizTdopTest`) lee los CSV de
+  `iso2-integracion/src/test/resources/tdop/` con `@SpringBootTest(classes = …ConfigTdopWeb.class)` +
+  `@AutoConfigureMockMvc` sobre un `@SpringBootConfiguration` interno con `@ComponentScan` del paquete
+  `es.uclm.iso2.integracion` (sin starter de seguridad: así no aparecen 401/403 falsos). **126 casos, 0 fallos**, y
+  el módulo entero **203 pruebas en 10 clases, 0 fallos, 0 errores, 0 omitidos**. Commit `c104d78`.
+* **Crecida de 125 a 126 casos (criterio E10)**: con segmento vacío, `/api/integracion/sistemas//ping` devuelve
+  **404 sin `ApiError`** (lo resuelve Spring, no el controlador), así que E10 se reclasifica a `RUTA_INEXISTENTE` y
+  se añade la fila nueva **E17** (alias `ESPACIOS`, `"   "` → `SISTEMA_NO_ENCONTRADO`). La spec y los CSV se
+  **regeneran con `tools/pairwise.py`**, no a mano: los ids son posicionales, por eso E17 queda al final. Subido en
+  `c104d78`.
+* **Trabajo forense sobre las sesiones anteriores**: el «`mvn test` de 90 casos con 7 fallos» que se citaba **nunca
+  existió** (no había `Cdu19MatrizTdopTest` ni CSV en Git). Los hallazgos, en cambio, sí eran reales y se confirmaron
+  leyendo el código: `AdaptadorSimulado.proteger()` mira la **política antes que la petición** (503 gana a
+  400/401/404) e `IntegracionServicio.sincronizarHistoriaClinica()` llama a `hce.buscarHistoria()` **antes** que a
+  sus `snapshots`, así que con HCE caído no se sirve la copia local (B04/B05 cierran en 503). Quedan escritos como
+  **H1..H15** en el informe.
+* **Cobertura real corregida**: **96,5 % de líneas (361/374) y 78,4 % de ramas**, puerta `jacoco.line.min=0.70` en
+  verde, medida con `mvn -B -ntp -pl iso2-integracion verify`. El **88,2 % que venía en `STATUS.md` estaba caducado**:
+  `report`/`check` están enlazados a `verify` en el pom padre, así que tras un `mvn test` el `jacoco.csv` no se
+  actualiza. Corregido en este fichero y en el informe. Sin cubrir: `IntegracionProperties.SistemaOverride` (0/1) y
+  `HuellaContenido` (2/4); ramas débiles: `IntegracionProperties` 11/30.
+* **Reactor revalidado**: `mvn -B -ntp verify` sobre `2388b7e` = **BUILD SUCCESS, 839 tests** en 14 módulos (13 con
+  tests), **0 fallos, 0 errores, 0 omitidos** y **13 puertas JaCoCo verdes**.
+* **TC humanos**: `docs/tc/cdu19-tc-humanos.md` proyectado **tal cual** con `tools/tc_plantillas.py` (9 casos
+  TC19-01…09 + el bloque de 126 filas), en `ec7f228`. Para ello se parcheó la herramienta de forma acotada
+  (`OPERACIONES_EXTRA["iso2-integracion"]`, petición derivada de `metodo`+`ruta`, `previo` ignora `-`, y solo las
+  tablas **sin `factores`** —las B y G de la CDU19— proyectan sus columnas como pares) para **no generar drift** en
+  las plantillas ya ejecutadas de iter01 e iter05.
+* **Informe de spike** en `docs/informes/spike-cdu19.md` (carpeta nueva), commit `2388b7e`: veredicto por
+  integración, decisión **FHIR STU3 en JSON sobre la REST existente** (la huella SHA-256 canónica da la idempotencia),
+  **HL7v2/MLLP descartado**, PACS encajado hacia **DICOMweb (`qido-rs`/`wado-rs`)** y recomendación de **no escribir
+  un visor DICOM propio en Iter16**; **15 hallazgos**, deudas **D-01..D-07** (Deuda nº 24 de este fichero) y riesgos
+  para R1. También `86f68ff` corrigiendo modos y acciones reales en la documentación de arranque.
+* **Corrección de fondo a lo que decía la issue #44**: el RBAC real de los 7 endpoints es **solo rol
+  `ADMINISTRADOR`**; la pareja `INTEGRACION_LEER/ESCRIBIR` nunca existió. Anotado en el bloque de iteración en curso
+  y en la sesión 22.
+* **Wiki publicada (D32)**: página nueva **`Iter6-CDU19-integracion`** en el repo `PrISO2-25-26.wiki`, rama `master`,
+  merge **`9b7f513`** (6 ficheros, +204): componentes y versiones, los 4 diagramas con sus PNG en
+  `images/iter06-cdu19-*`, tabla **API/RBAC real** de los 7 endpoints, clases con enlace a Javadoc **o al fuente**
+  mientras el #45 no esté fusionado (las fichas de `iso2-integracion` aún dan 404 en `develop`), sección **Testing**
+  con la **clase probada `Cdu19MatrizTdopTest`**, las tablas de la matriz TDOP, las puertas, los hallazgos H1/H2 y
+  las deudas D-01..D-07; y `Home.md` con la fila de Iter6. Antes de escribir hubo que
+  `merge --ff-only origin/master` porque el clon iba 5 commits por detrás (ver **Incidencia 3**). Justo después,
+  **`8aa524b`** quita de la cabecera de la página el conteo de commits («14 commits, tip `a470584`»), un dato que
+  envejece solo y que solo tiene sentido leer en la lista del propio PR.
+* **Forense del estado de ramas (corrección de `STATUS.md`)**: `git ls-remote --heads origin` deja solo `develop`
+  (`cbb1901`), `main` (`d12388b`), `docs/config-opencode` (`2a2f0a8`) y la rama de la Iter6. **`feature/iter05-cdu12-citas`
+  ya no existe en el remoto**: la rama se borró el **15/11 a las 08:52** (`DeleteEvent`, al fusionar el PR #43) y
+  tampoco está en local, así que su cierre ya estaba hecho y el pendiente de higiene pasa a **borrar la rama de la
+  Iter6 después de fusionar el #45** (Deuda 23 reescrita con ese criterio). Además **`9457972` no es un commit de este
+  repo**: `git cat-file` lo rechaza y la API de GitHub lo devuelve 422, y los dos commits reales del cierre de la Iter5
+  son `b912554` y `5771a38`, ambos contenidos en `develop`. El dato falso venía de un `git branch -r` **sin `fetch`
+  previo**, y la corrección se anota sin reescribir lo que ya se había registrado.
+* **Riesgo activo y cómo se mitigó**: el árbol se limpia a veces y **solo sobrevive lo commiteado y pusheado**. Se
+  cambió el orden de trabajo a **escribir → verificar en disco → `git add` inmediato → commit → push sin demora**, y
+  las herramientas de recuento se guardaron en el temp (`reactor_verify.log`, `reactor_tally.py`, `cobertura2.py`,
+  `jacoco_integracion.py`). **Causa encontrada en la sesión 23**: son las **snapshots** de OpenCode, que guardan el
+  estado del árbol en un repo Git interno (`%USERPROFILE%\.local\share\opencode\snapshot`) y al hacer `undo`/`Revert`
+  **borran el fichero creado por los pasos revertidos si en la frontera no existía** —exactamente los ficheros nuevos
+  aún sin `git add`. La llave para desactivarlo es `"snapshots": false` en la config; queda como **Deuda nº 25**
+  porque es un cambio en la configuración global de la máquina y no lo aplica el agente.
+* **Cierre de jornada 15/11/2026 (noche):** rama `feature/iter06-cdu19-integracion` en **`a470584`** = remoto, con los
+  14 commits `db075c0`, `687c624`, `7a03e0c`, `9ca712f`, `a22e654`, `f5411c1`, `a81b85b`, `a86d1f4`, `a532992`,
+  `c104d78`, `ec7f228`, `86f68ff`, `2388b7e` y `a470584` sobre `cbb1901`. [Aviso de la propia sesión 23: aquí se había
+  apuntado `71ce94b`, que en realidad es el commit de Iter4/CDU06 ya presente en `develop` y **no** pertenece a esta
+  rama.] `origin/develop` sigue en `cbb1901` y `origin/main` en `d12388b`, **sin tocar**. **PR borrador abierto: #45**
+  (borrador, `Ref: #44`, sin `Closes`). [Anotación de la misma sesión 23: **la wiki `Iter6-CDU19-integracion` quedó
+  publicada justo después** con el merge `9b7f513` del repo wiki, así que de la parte b ya no queda nada del agente;
+  tras `a470584` solo han entrado los docs de registro.] Pendientes: los **TC humanos de CDU19** (Ismael, D28),
+  **fusionar el #45** con su tag `cfg-iter06` y la revalidación **D37**.
 

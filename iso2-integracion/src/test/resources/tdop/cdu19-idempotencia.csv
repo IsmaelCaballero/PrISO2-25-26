@@ -1,0 +1,8 @@
+id;paciente;llamadas;setup;setupEntre;esperadoStatus;esperadoReutilizado;esperadoCodigo;nota
+TC19-B01;AUT;sincronizar,sincronizar;-;-;OK;SI;-;la primera sincronizacion crea la instantanea y la segunda la reutiliza: mismo huella sha256 y mismos registros
+TC19-B02;AUT;sincronizar,sincronizar,sincronizar;-;-;OK;SI;-;la tercera llamada sobre contenido estable sigue reutilizando: la instantanea no se degrada
+TC19-B03;ROTATIVO;sincronizar,sincronizar;-;-;OK;NO;-;el HCE alternante cambia el contenido cada llamada: la huella nueva obliga a registrar una instantanea distinta
+TC19-B04;AUT;sincronizar,sincronizar;-;SIM-HCE-CAIDO-5-300-0;CAIDO;-;SISTEMA_NO_DISPONIBLE;HALLAZGO: la fachada consulta al adaptador antes que a su propia instantanea, asi que con la HCE caida no se sirve la copia local (503 en la segunda llamada)
+TC19-B05;AUT;sincronizar,sincronizar;-;SIM-HCE-LENTO_TIMEOUT-250-100-0;LENTO_TIMEOUT;-;SISTEMA_TIEMPO_SUPERADO;igual con el tiempo de espera superado: la reutilizacion no protege del fallo del sistema externo
+TC19-B06;AUT;sincronizar,sincronizar;-;SIM-HCE-LENTO-20-300-1;OK;SI;-;HCE lenta dentro del plazo: la reutilizacion se mantiene (teorema de valores limite con latencia 20 y plazo 300)
+TC19-B07;DESCONOCIDO;sincronizar;-;-;NO_ENCONTRADA;-;HISTORIA_NO_ENCONTRADA;sin instantanea previa tampoco se puede reutilizar, pero la celda va en guion porque el 404 responde con ApiError, que no tiene campo reutilizado, el equivalente con cuerpo de contrato (reutilizado=false) lo cubre la fila de ROTATIVO

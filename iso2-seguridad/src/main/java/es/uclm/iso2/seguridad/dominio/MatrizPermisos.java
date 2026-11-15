@@ -19,7 +19,10 @@ import java.util.Set;
  * Con CDU06 (CFG-04) el Medico prescribe (solicitud:escribir) y el resto de roles
  * sanitarios solo consultan: recepcion lee solicitudes, tecnico y celador no.
  * Con CDU12 (CFG-05) recepcion gestiona citas (cita:escribir, actor Administrativo del
- * CDU12) y medico solo las lee; tecnico y celador quedan fuera de las citas.</p>
+ * CDU12) y medico solo las lee; tecnico y celador quedan fuera de las citas. Con CDU19
+  (CFG-06) llegan los permisos de integracion: el spike fija que la API de integracion
+  es solo de ADMINISTRADOR, y ya los cubre el {@code EnumSet.allOf} del administrador,
+  por eso ningun rol de trabajo los recibe en la matriz.</p>
  *
  * @since 1.1.0 (CFG-02)
  */

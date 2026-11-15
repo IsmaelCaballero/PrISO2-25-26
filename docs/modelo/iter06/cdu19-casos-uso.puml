@@ -1,0 +1,81 @@
+@startuml cdu19-casos-uso
+' CDU19 (Iter6/CFG-06) - Casos de uso de "Integracion con sistemas externos"
+' Autor: agente (diseno previo al codigo, issue #44) - fuentes PlantUML (D31)
+title CDU19 - Integracion con sistemas externos (spike SSO + historia externa + ping RIS/PACS)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Administrador\n(ROL: ADMINISTRADOR)" as SYSADMIN
+actor "Auditor\n(solo lectura de trazas)" as AUDITOR
+actor "Sistema\n(filtro JWT + reglas de dominio)" as SYS #D9D9D9
+actor "IdP externo\n(SSO simulado)" as IDP #D9D9D9
+actor "HCE externo\n(historia clinica simulada)" as HCE #D9D9D9
+actor "RIS / PACS\n(simulados)" as IMAGING #D9D9D9
+
+rectangle "ISO2 Radiodiagnostico - CDU19" {
+  usecase "UC19.1\nAutenticarse contra el\nIdP externo (SSO)" as UC1
+  usecase "UC19.2\nRecibir la sesion SSO\n(sujeto, rol, caducidad)" as UC2
+  usecase "UC19.3\nSincronizar la historia\nclinica externa de un paciente" as UC3
+  usecase "UC19.4\nReutilizar la historia\nya sincronizada (idempotencia)" as UC4
+  usecase "UC19.5\nDetectar el cambio de la\nhistoria por huella SHA-256" as UC5
+  usecase "UC19.6\nConsultar el estado de un\nsistema externo (ping)" as UC6
+  usecase "UC19.7\nImportar la cabecera de\nun estudio (baseline 1.0.0)" as UC7
+  usecase "UC19.8\nRegistrar la accion en la\nauditoria encadenada" as UC8
+  usecase "UC19.9\nVer el estado e integridad\nde la cadena de auditoria" as UC9
+  usecase "UC19.10\nCambiar la simulacion de\nfallos (modo degradado)" as UC10
+  usecase "UC19.11\nAplicar tiempo de espera y\nreintentos al adaptador" as UC11
+  usecase "UC19.12\nEntrar en modo degradado\ncuando el sistema cae" as UC12
+  usecase "UC17.5-6\nAutenticar y autorizar\n(CDU17)" as UC17 #FFFFFF
+}
+
+SYSADMIN --> UC1
+SYSADMIN --> UC3
+SYSADMIN --> UC6
+SYSADMIN --> UC7
+SYSADMIN --> UC10
+AUDITOR --> UC9
+SYSADMIN --> UC9
+
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC11 : <<include>>
+UC1 ..> UC8 : <<include>>
+UC3 ..> UC4 : <<include>>
+UC3 ..> UC5 : <<include>>
+UC3 ..> UC11 : <<include>>
+UC3 ..> UC8 : <<include>>
+UC6 ..> UC12 : <<include>>
+UC6 ..> UC8 : <<include>>
+UC7 ..> UC8 : <<include>>
+UC10 ..> UC12 : <<include>>
+UC1 ..> UC17 : <<include>>
+UC3 ..> UC17 : <<include>>
+UC6 ..> UC17 : <<include>>
+UC10 ..> UC17 : <<include>>
+
+IDP ..> UC1 : sistema de origen
+HCE ..> UC3 : sistema de origen
+IMAGING ..> UC6 : sistema monitorizado
+SYS ..> UC8 : escribe la traza
+
+note right of UC17
+  Spike CDU19: la matriz RBAC solo concede
+  integracion:leer / integracion:escribir al
+  ADMINISTRADOR. Los demas roles reciben 403 y
+  el anonimo 401.
+end note
+
+note bottom of UC2
+  La sesion SSO del spike NO sustituye al JWT de
+  CDU17: se registra y se devuelve como dato,
+  pero la API de ISO2 sigue autenticandose con JWT.
+  (Hallaazgo esperado del spike, ver informe 6b)
+end note
+
+note bottom of UC12
+  Ping degradado: un sistema caido se responde
+  200 con disponible=false, nunca 5xx. El monitor
+  tiene que poder pintar el estado.
+end note
+
+@enduml
