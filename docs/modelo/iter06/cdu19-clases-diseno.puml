@@ -102,8 +102,16 @@ package "iso2-integracion 1.1.0 (dominio puro: sin Spring ni JPA)" {
     + reintentos : int
     --
     compacto: latencia/timeout >= 0, reintentos >= 0
-    + desdeToken(String) : PoliticaSimulacion
-    (SIM-HCE-CAIDO-5-50-0 => modo + latencia + timeout + reintentos)
+    + normal(lat, timeout, reintentos) : PoliticaSimulacion
+    + excedeTiempoEspera() : boolean
+  }
+  class SetupSimulacion <<record>> {
+    + sistema : SistemaExterno
+    + politica : PoliticaSimulacion
+    --
+    + desdeToken(String) : SetupSimulacion
+    (SIM-HCE-CAIDO-5-50-0 => sistema + modo + latencia
+    + timeout + reintentos; toString() reconstruye el token)
   }
   class RegistroSimulacion {
     - politicas : ConcurrentHashMap~SistemaExterno, PoliticaSimulacion~
@@ -164,6 +172,8 @@ package "iso2-integracion 1.1.0 (dominio puro: sin Spring ni JPA)" {
     + sha256Hex(String canonico) : String
   }
   RegistroSimulacion o-- PoliticaSimulacion
+  SetupSimulacion o-- PoliticaSimulacion
+  SetupSimulacion ..> SistemaExterno
   HistoriaExterna o-- RegistroHistoria
   AuditoriaIntegracion o-- EslabonAuditoria
   AuditoriaIntegracion ..> HuellaContenido : encadena hashes\n(mismo patron que\nAuditoriaCitas, pero EN MEMORIA:\nel spike no anade tabla ni Flyway)
@@ -277,8 +287,6 @@ package "iso2-integracion (web: solo REST + registro de simulacion)" {
     POST /api/integracion/historias/{pacienteExternoId}/sincronizar
     GET  /api/integracion/estudios/{accessionNumber}
     GET  /api/integracion/auditoria
-    GET  /api/integracion/simulacion
-    POST /api/integracion/simulacion
   }
   class IntegracionManejadorErrores <<RestControllerAdvice>> {
     --
@@ -293,9 +301,12 @@ package "iso2-integracion (web: solo REST + registro de simulacion)" {
   }
   class SimulacionControlador {
     --
-    GET/POST /api/integracion/simulacion escriben en el
-    RegistroSimulacion del dominio (NUNCA tocan adaptadores:
-    ArchUnit prohibe que web dependa de adaptador)
+    GET  /api/integracion/simulacion
+    POST /api/integracion/simulacion
+    escriben en el RegistroSimulacion del dominio
+    (NUNCA tocan adaptadores: ArchUnit prohibe que
+    web dependa de adaptador). Auditan la accion
+    SIMULACION en AuditoriaIntegracion.
   }
   IntegracionControlador ..> IntegracionServicio : solo el contrato InteropFacade
   SimulacionControlador ..> RegistroSimulacion : dominio compartido
@@ -309,8 +320,12 @@ package "iso2-integracion (configuracion)" {
   }
   class IntegracionConfiguracion <<@Configuration>> {
     --
-    beans: 4 adaptadores, RegistroSimulacion,
-    AuditoriaIntegracion, IntegracionServicio
+    beans: IntegracionProperties (metodo
+    @ConfigurationProperties, sin PropertiesScan
+    en el repo), RegistroSimulacion y
+    AuditoriaIntegracion. Los 4 adaptadores son
+    @Component y el servicio es @Service: el scan
+    de es.uclm.iso2 los recoge solo.
   }
   IntegracionConfiguracion ..> IntegracionProperties
 }

@@ -181,13 +181,13 @@ public interface InteropFacade {
     /**
      * Eslabon de la cadena de auditoria de integracion (1.1.0).
      *
-     * @param secuencia    numero de eslabon (0 el genezis)
+     * @param secuencia    numero de eslabon, empezando en 1
      * @param accion       accion auditada ({@code SSO_LOGIN}, {@code HCE_SINCRONIZAR}, ...)
      * @param sistema      sistema externo implicado, {@code null} si no aplica
      * @param resultado    resultado de la accion ({@code OK}, {@code FALLO_CREDENCIALES}, ...)
      * @param actor        usuario ISO2 que provoco la accion
      * @param instante     momento del asiento
-     * @param hashAnterior hash del eslabon previo (genezis para el primero)
+     * @param hashAnterior hash del eslabon previo (el genezis SHA-256 en el primero)
      * @param hash         SHA-256 hex del canonico de este eslabon mas el hash anterior
      */
     record EslabonAuditoriaDTO(long secuencia, String accion, String sistema, String resultado, String actor,
@@ -198,9 +198,9 @@ public interface InteropFacade {
      * Estado completo de la cadena de auditoria de integracion (1.1.0).
      *
      * @param cadenaIntegra  {@code true} si al recalcular los hashes la cadena no fue alterada
-     * @param totalRegistros eslabones escritos (sin contar el genezis)
-     * @param ultimoHash     hash del ultimo eslabon escrito
-     * @param eslabones      eslabones de la cadena, el genezis primero
+     * @param totalRegistros eslabones escritos (el genezis no se cuenta ni se devuelve)
+     * @param ultimoHash     hash del ultimo eslabon escrito, el genezis si la cadena esta vacia
+     * @param eslabones      eslabones de la cadena desde el de secuencia 1 (el genezis no se lista)
      */
     record AuditoriaIntegracionDTO(boolean cadenaIntegra, int totalRegistros, String ultimoHash,
                                    List<EslabonAuditoriaDTO> eslabones) {
