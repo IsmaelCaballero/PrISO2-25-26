@@ -173,7 +173,8 @@ def documento_evidencia(spec: dict, tablas: list[tuple[dict, list[dict]], str]) 
 def titulo_de(tabla: dict, fila: dict, factores: list[str]) -> str:
     """Titulo corto del caso: lo que lo caracteriza (el motivo de la fila)."""
     if tabla["kind"] == "conjetura":
-        return "%s: %s" % (fila.get("operacion", "").lower(), fila["nota"])
+        operacion = fila.get("operacion", "")
+        return "%s: %s" % (operacion.lower(), fila["nota"]) if operacion else fila["nota"]
     return fila["nota"]
 
 
@@ -199,6 +200,15 @@ OPERACIONES_EXTRA = {
         "DETALLE": "GET /api/citas/{id}",
         "BAJA": "DELETE /api/citas/{id}",
         "AUDITORIA": "GET /api/citas/{id}/auditoria",
+    },
+    "iso2-integracion": {
+        "PING": "GET /api/integracion/sistemas/{sistema}/ping",
+        "SISTEMAS": "GET /api/integracion/sistemas",
+        "AUDITORIA": "GET /api/integracion/auditoria",
+        "SINCRONIZAR": "POST /api/integracion/historias/{pacienteExternoId}/sincronizar",
+        "SSO": "POST /api/integracion/sso/login",
+        "ESTUDIOS": "GET /api/integracion/estudios/{accessionNumber}",
+        "SIMULAR": "POST /api/integracion/simulacion",
     },
 }
 RUTA_EXTRA = {
@@ -247,10 +257,14 @@ CUERPOS = {
 
 def pasos_de(tabla: dict, fila: dict, factores: list[str], spec: dict) -> str:
     """Pasos reproducibles: peticion + niveles de la fila (descritos en la evidencia)."""
-    previo = "" if fila["setup"] == "NINGUNO" else "Previo `%s`; " % fila["setup"]
+    previo = "" if fila["setup"] in ("NINGUNO", "-") else "Previo `%s`; " % fila["setup"]
     ops = dict(OPERACIONES)
     ops.update(OPERACIONES_EXTRA.get(spec.get("modulo", ""), {}))
     peticion = ops.get(fila.get("operacion", ""), tabla.get("solicitud", ""))
+    if tabla["kind"] == "conjetura" and fila.get("metodo") and fila.get("ruta"):
+        # hay tablas de conjetura que llevan la peticion escrita en la propia fila
+        # (CDU19: metodo + ruta + content-type), y esa es la que se reproduce a mano
+        peticion = "%s %s" % (fila["metodo"], fila["ruta"])
     if tabla["kind"] in ("conjetura", "filas") and "operacion" in fila:
         detalle = ""
         if fila.get("cuerpo") not in (None, "-", ""):
@@ -270,9 +284,18 @@ def pasos_de(tabla: dict, fila: dict, factores: list[str], spec: dict) -> str:
         if tabla.get("solicitud") and fila.get("operacion") not in ops:
             peticion = tabla["solicitud"]
     else:
-        niveles = [", ".join("%s=%s" % (f["nombre"], fila[f["nombre"]])
-                             for f in tabla["factores"] if f["nombre"] != "operacion")]
-        detalle = " con " + niveles[0] if niveles and niveles[0] else ""
+        if tabla.get("factores"):
+            niveles = [", ".join("%s=%s" % (f["nombre"], fila[f["nombre"]])
+                                 for f in tabla["factores"] if f["nombre"] != "operacion")]
+            detalle = " con " + niveles[0] if niveles and niveles[0] else ""
+        else:
+            # tablas escritas a mano sin factores declarados (CDU19 B y G): lo que hay que
+            # preparar a mano son las columnas propias de la fila
+            pares = ["%s=%s" % (c, fila[c]) for c in fila
+                     if c not in ("id", "setup", "nota", "metodo", "ruta")
+                     and not c.startswith("esperado")
+                     and fila.get(c) not in (None, "", "-", "NINGUNO")]
+            detalle = " con " + ", ".join(pares) if pares else ""
     return "%s%s%s (niveles: tabla %s de `docs/test/%s/tdop-%s.md`)" % (
         previo, peticion, detalle, tabla["id"], spec["iter"], spec["cdu"].lower())
 

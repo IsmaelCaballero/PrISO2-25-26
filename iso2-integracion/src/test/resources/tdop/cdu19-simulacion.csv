@@ -1,5 +1,5 @@
 id;sistema;modo;cifras;setup;esperadoStatus;esperadoCodigo;nota
-TC19-F01;HCE_MIN;NORMAL_MINUS;COMPLETAS;NINGUNO;OK;-;politica registrada en caliente: la respuesta trae el sistema y la politica vigente y el registro vivo cambia sin reiniciar
+TC19-F01;HCE_MIN;NORMAL_MINUS;COMPLETAS;NINGUNO;OK;-;politica registrada en caliente: la respuesta es el record PoliticaSimulacion vigente (no lleva el nombre del sistema: hay que leer el registro vivo) y el registro cambia sin reiniciar
 TC19-F02;VACIO;NORMAL;COMPLETAS;NINGUNO;INVALIDOS;DATOS_INVALIDOS;la guarda del controlador exige sistema no vacio y lo lanza como IllegalArgumentException -> 400, antes de resolver el codigo | sistema: sistema vacio: la guarda del controlador lo exige
 TC19-F03;ESPACIOS;NORMAL_MINUS;CERO;NINGUNO;INVALIDOS;DATOS_INVALIDOS;isBlank tambien catches los espacios: mismo 400 | sistema: sistema de solo espacios
 TC19-F04;DESCONOCIDO;LENTO;COMPLETAS;NINGUNO;SISTEMA_DESCONOCIDO;SISTEMA_NO_ENCONTRADO;el codigo si esta relleno pero no es sso, hce, ris ni pacs: la resolucion responde 404 | sistema: sap no es un sistema del CDU19
@@ -19,7 +19,7 @@ TC19-F17;RIS_MIN;DESCONOCIDO;MAX;NINGUNO;INVALIDOS;DATOS_INVALIDOS;el modo no es
 TC19-F18;DESCONOCIDO;NORMAL;MAX;NINGUNO;SISTEMA_DESCONOCIDO;SISTEMA_NO_ENCONTRADO;el codigo si esta relleno pero no es sso, hce, ris ni pacs: la resolucion responde 404 | sistema: sap no es un sistema del CDU19
 TC19-F19;DESCONOCIDO;CAIDO;CERO;NINGUNO;SISTEMA_DESCONOCIDO;SISTEMA_NO_ENCONTRADO;el codigo si esta relleno pero no es sso, hce, ris ni pacs: la resolucion responde 404 | sistema: sap no es un sistema del CDU19
 TC19-F20;RIS_MIN;LENTO;NEG_LAT;NINGUNO;INVALIDOS;DATOS_INVALIDOS;el compact constructor del record prohibe latencias negativas y lanza IllegalArgumentException -> 400 | cifras: latencia negativa
-TC19-F21;RIS_MIN;NORMAL;CERO;NINGUNO;OK;-;politica registrada en caliente: la respuesta trae el sistema y la politica vigente y el registro vivo cambia sin reiniciar | valores limite: cifras=CERO (los tres valores en su cota inferior)
+TC19-F21;RIS_MIN;NORMAL;CERO;NINGUNO;OK;-;politica registrada en caliente: la respuesta es el record PoliticaSimulacion vigente (no lleva el nombre del sistema: hay que leer el registro vivo) y el registro cambia sin reiniciar | valores limite: cifras=CERO (los tres valores en su cota inferior)
 TC19-F22;RIS_MIN;CAIDO;NEG_REINT;NINGUNO;INVALIDOS;DATOS_INVALIDOS;misma guarda del record sobre los reintentos | cifras: reintentos negativo
 TC19-F23;HCE_MIN;NORMAL;NEG_TIMEOUT;NINGUNO;INVALIDOS;DATOS_INVALIDOS;misma guarda del record sobre el tiempo de espera | cifras: tiempo de espera negativo
 TC19-F24;RIS_MIN;NORMAL_MINUS;AUSENTE;NINGUNO;INVALIDOS;DATOS_INVALIDOS;las cifras son obligatorias en el controlador: null no se confunde con cero, y de nuevo sale un IAE -> 400 DATOS_INVALIDOS | cifras: se omiten las tres cifras: los envoltorios llegan null

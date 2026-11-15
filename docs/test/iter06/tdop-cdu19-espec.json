@@ -1161,7 +1161,7 @@
         "si": {},
         "estado": "OK",
         "codigo": "-",
-        "porque": "politica registrada en caliente: la respuesta trae el sistema y la politica vigente y el registro vivo cambia sin reiniciar"
+        "porque": "politica registrada en caliente: la respuesta es el record PoliticaSimulacion vigente (no lleva el nombre del sistema: hay que leer el registro vivo) y el registro cambia sin reiniciar"
       }
     ]
   },
