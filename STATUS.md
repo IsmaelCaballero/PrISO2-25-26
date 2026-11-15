@@ -199,17 +199,24 @@ técnicas, la D33 y sus TC humanos.
 - **Estado de ramas e instantáneas a 15/11 (sesión 23):** `origin/develop` = **`cbb1901`** (merge del PR #43),
   `origin/main` = `d12388b` (la desviación ya documentada en D30, sigue sin tocar), `origin/docs/config-opencode`
   = `2a2f0a8` y `origin/feature/iter06-cdu19-integracion` = **el último docs de la sesión 23** (tras `a470584`
-  van `e1d418c` del sync del PR #45 y el docs de la wiki), con el árbol local idéntico al remoto y
-  **nada sin subir** (14 commits de Iter6 sobre `cbb1901`: `db075c0` modelo, `687c624` contrato `InteropFacade`,
-  `7a03e0c` módulo `iso2-integracion`, `9ca712f` refino del diseño, `a22e654` RBAC y ensamblado, `f5411c1` 77 pruebas
-  y arreglo del `@ConfigurationProperties`, `a81b85b` spec TDOP, `a86d1f4` + `a532992` registro de la sesión 22,
-  `c104d78` matriz verde, `ec7f228` evidencia + TC humanos, `86f68ff` fixes de docs, `2388b7e` informe del spike y
-  `a470584` cierre documental de la sesión 23). Tags en el remoto: `cfg-iter00`…`cfg-iter05` y `v0.1.0`. La rama
-  `feature/iter05-cdu12-citas` sigue **viva en remoto** con `b912554` y `9457972` ya alcanzables desde `develop`;
-  borrarla tras el cierre es trabajo de Ismael. **PR borrador de la Iter6 abierto: #45**
+  van `e1d418c` del sync del PR #45, `6606d81` de la wiki y el docs forense de ramas), con el árbol local idéntico
+  al remoto y **nada sin subir** (**17** commits de Iter6 sobre `cbb1901`: `db075c0` modelo, `687c624` contrato
+  `InteropFacade`, `7a03e0c` módulo `iso2-integracion`, `9ca712f` refino del diseño, `a22e654` RBAC y ensamblado,
+  `f5411c1` 77 pruebas y arreglo del `@ConfigurationProperties`, `a81b85b` spec TDOP, `a86d1f4` + `a532992` registro de
+  la sesión 22, `c104d78` matriz verde, `ec7f228` evidencia + TC humanos, `86f68ff` fixes de docs, `2388b7e` informe
+  del spike, `a470584` + `e1d418c` + `6606d81` cierre documental de la sesión 23 y el docs forense). Tags en el
+  remoto: `cfg-iter00`…`cfg-iter05` y `v0.1.0`. La rama `feature/iter05-cdu12-citas` **ya no existe**: el remoto la
+  borró el **15/11 a las 08:52** (`DeleteEvent`, justo al
+  fusionar el PR #43) y en local tampoco está; sus dos commits del cierre, `b912554` y `5771a38`, están contenidos en
+  `develop`. [Corregido en la sesión 23: aquí ponía «sigue viva en remoto con `b912554` y `9457972`», y los dos datos
+  eran falsos —la rama llevaba borrada esa misma mañana y **`9457972` no es un commit de este repo**: `git cat-file`
+  lo rechaza y la API de GitHub lo devuelve 422—. El dato venía de un `git branch -r` sin `fetch` previo.] **PR
+  borrador de la Iter6 abierto: #45**
   (`feature/iter06-cdu19-integracion` → `develop`, 91 ficheros, `Ref: #44` y **sin `Closes`** → lo fusiona y cierra
-  Ismael, D29). **Repo wiki** `PrISO2-25-26.wiki`, rama `master` = **`9b7f513`**: página nueva
-  **`Iter6-CDU19-integracion`** + sus 4 PNG en `images/iter06-cdu19-*` y `Home.md` con la fila de Iter6.
+  Ismael, D29). **Repo wiki** `PrISO2-25-26.wiki`, rama `master` = **`8aa524b`**: página nueva
+  **`Iter6-CDU19-integracion`** + sus 4 PNG en `images/iter06-cdu19-*` y `Home.md` con la fila de Iter6
+  (publicada en **`9b7f513`** y corregida en **`8aa524b`**, que quita de la cabecera el conteo de commits que
+  envejece).
 - **Incidencia 1 — reinicio del equipo a media sesión 21 (15/11):** el apagón dejó vacío el almacenamiento
   local de OpenCode (`%USERPROFILE%\.local\share\opencode\storage`), así que **se perdió el historial de la
   conversación pero no el trabajo**, que estaba subido. La sesión 22 se reconstruyó leyendo `git reflog`,
@@ -357,8 +364,9 @@ técnicas, la D33 y sus TC humanos.
     "iso2.integracion")` aunque el modelo `.puml` de la iteración sí lo ponía → el contexto del `server-app`
     moría al arrancar; arreglado en `f5411c1`). Corte de commits, serie y ratio, como en las iteraciones
     anteriores.
-23. **Higiene pendiente (Ismael):** borrar la rama `feature/iter05-cdu12-citas` (remoto y local), ya fusionada en
-    `develop` con el PR #43.
+23. **Higiene de ramas (Ismael):** ~~borrar `feature/iter05-cdu12-citas`~~ **ya está borrada del remoto** (15/11
+    08:52, tras fusionar el PR #43) y tampoco existe en local, así que ese pendiente **queda cerrado**. Lo que sigue
+    pendiente es borrar `feature/iter06-cdu19-integracion` **después** de fusionar el PR #45 (y el tag `cfg-iter06`).
 24. **Deuda que deja el spike de la CDU19 (D-01..D-07 del informe `docs/informes/spike-cdu19.md` §6), para
     Iter7:** **D-01** servir la instantánea guardada cuando el externo cae (hoy `IntegracionServicio` consulta HCE
     antes que sus `snapshots` → los casos B04/B05 de la matriz cierran en 503) o documentar que el degradado no
@@ -386,15 +394,16 @@ todo subido). Está hecho el modelo, el módulo, el puerto, los adaptadores simu
 módulo** repartidas en 10 clases, la **especificación TDOP de 126 casos con los 17 CSV**, la **matriz ejecutada en
 verde** por `Cdu19MatrizTdopTest` (126 casos, `c104d78`), la evidencia `docs/test/iter06/tdop-cdu19.md`, los **TC
 humanos proyectados** (`ec7f228`), el **informe de spike** (`2388b7e`), el **PR borrador #45** abierto a `develop` y
-la **wiki `Iter6-CDU19-integracion`** publicada (merge **`9b7f513`** de la wiki). Reactor revalidado sobre `2388b7e`:
-**839 tests, 0 fallos, 0 errores, 0 omitidos** y 13 puertas JaCoCo verdes. **Todo lo que queda es de Ismael**, en
-este orden:
+la **wiki `Iter6-CDU19-integracion`** publicada (merge **`9b7f513`** de la wiki, tip actual **`8aa524b`**). Reactor
+revalidado sobre `2388b7e`: **839 tests, 0 fallos, 0 errores, 0 omitidos** y 13 puertas JaCoCo verdes. **Todo lo que
+queda es de Ismael**, en este orden:
 
 1. **Fusionar el PR borrador #45** (`feature/iter06-cdu19-integracion` → `develop`, `Ref: #44`, **sin `Closes`**):
    lo fusiona y cierra **#44** Ismael (D29); sobre esa fusión van el tag **`cfg-iter06`** y el hito
    **`v0.2.0-alpha`**, que se materializa publicando **`release/R1` → `main`** (D30), no en esta rama. Avisos del
-   PR: son **14 commits de código + docs**, la puerta JaCoCo del módulo mide **96,5 %** (no el 88,2 % caducado),
-   las fichas Javadoc de `iso2-integracion` **solo se publican al fusionar** (hoy dan 404, por eso la wiki enlaza
+   PR: son **17 commits de código + docs** (el inventario exacto lo da la pestaña *Commits* del PR), la puerta JaCoCo
+   del módulo mide **96,5 %** (no el 88,2 % caducado), las fichas Javadoc de `iso2-integracion` **solo se publican al
+   fusionar** (hoy dan 404, por eso la wiki enlaza
    esas clases al fuente) y el RBAC real es **solo rol `ADMINISTRADOR`**.
 2. **Wiki** `Iter6-CDU19-integracion` **ya publicada** (D32) con la **clase probada** `Cdu19MatrizTdopTest` y las
    cifras reales de JaCoCo de `iso2-integracion` (**96,5 % líneas / 78,4 % ramas**, medidas con
@@ -715,7 +724,17 @@ que esta sesión cierra la parte b del DoD de la **#44** y deja la fusión, el t
   mientras el #45 no esté fusionado (las fichas de `iso2-integracion` aún dan 404 en `develop`), sección **Testing**
   con la **clase probada `Cdu19MatrizTdopTest`**, las tablas de la matriz TDOP, las puertas, los hallazgos H1/H2 y
   las deudas D-01..D-07; y `Home.md` con la fila de Iter6. Antes de escribir hubo que
-  `merge --ff-only origin/master` porque el clon iba 5 commits por detrás (ver **Incidencia 3**).
+  `merge --ff-only origin/master` porque el clon iba 5 commits por detrás (ver **Incidencia 3**). Justo después,
+  **`8aa524b`** quita de la cabecera de la página el conteo de commits («14 commits, tip `a470584`»), un dato que
+  envejece solo y que solo tiene sentido leer en la lista del propio PR.
+* **Forense del estado de ramas (corrección de `STATUS.md`)**: `git ls-remote --heads origin` deja solo `develop`
+  (`cbb1901`), `main` (`d12388b`), `docs/config-opencode` (`2a2f0a8`) y la rama de la Iter6. **`feature/iter05-cdu12-citas`
+  ya no existe en el remoto**: la rama se borró el **15/11 a las 08:52** (`DeleteEvent`, al fusionar el PR #43) y
+  tampoco está en local, así que su cierre ya estaba hecho y el pendiente de higiene pasa a **borrar la rama de la
+  Iter6 después de fusionar el #45** (Deuda 23 reescrita con ese criterio). Además **`9457972` no es un commit de este
+  repo**: `git cat-file` lo rechaza y la API de GitHub lo devuelve 422, y los dos commits reales del cierre de la Iter5
+  son `b912554` y `5771a38`, ambos contenidos en `develop`. El dato falso venía de un `git branch -r` **sin `fetch`
+  previo**, y la corrección se anota sin reescribir lo que ya se había registrado.
 * **Riesgo activo y cómo se mitigó**: el árbol se limpia a veces y **solo sobrevive lo commiteado y pusheado**. Se
   cambió el orden de trabajo a **escribir → verificar en disco → `git add` inmediato → commit → push sin demora**, y
   las herramientas de recuento se guardaron en el temp (`reactor_verify.log`, `reactor_tally.py`, `cobertura2.py`,

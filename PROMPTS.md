@@ -892,10 +892,19 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   y las deudas D-01..D-07. `Home.md` gana la fila de Iter6 y la nota de los README llega hasta `docs/modelo/iter06`.
   Antes de escribir hubo que `git fetch` + `git merge --ff-only origin/master`: el clon del temp iba **5 commits por
   detrás** y el wipe se había llevado los 12 PNG de `images/iter01-*`…`iter03-*`; el `merge` los recuperó (apartado
-  **Incidencia 3** de `STATUS.md`).
+  **Incidencia 3** de `STATUS.md`). En la misma wiki, **`8aa524b`** quita después de la cabecera el conteo de commits
+  («14 commits, tip `a470584`»), un dato que envejece solo y que solo tiene sentido leer en la lista del propio PR.
+- **Forense de ramas y hashes fantasma**: `git ls-remote --heads origin` deja solo `develop` (`cbb1901`), `main`
+  (`d12388b`), `docs/config-opencode` (`2a2f0a8`) y la rama de la Iter6. **`feature/iter05-cdu12-citas` ya no existe**:
+  el remoto la borró el **15/11 a las 08:52** (`DeleteEvent`, al fusionar el PR #43) y en local tampoco está, así que
+  el cierre de la Deuda 23 queda hecho y el pendiente pasa a **borrar la rama de la Iter6 tras fusionar el #45**. Y
+  **`9457972` no es un commit de este repo** (`git cat-file` lo rechaza, la API de GitHub da 422); los dos commits
+  reales del cierre de la Iter5 son `b912554` y `5771a38`, contenidos en `develop`. El dato falso venía de un
+  `git branch -r` sin `fetch` previo, y en `STATUS.md` se anota la corrección sin reescribir lo que ya se había dicho.
 - **Commits de la sesión, todos subidos**: `c104d78` (matriz verde) → `ec7f228` (evidencia TDOP + TC humanos) →
   `86f68ff` (fix de docs/arranque) → `2388b7e` (informe del spike) → `a470584` (cierre de este registro) →
-  `e1d418c` (sync del PR #45) → **el docs de la wiki**, que cierra la parte b. **PR
+  `e1d418c` (sync del PR #45) → `6606d81` (wiki publicada, cierra la parte b) → **el docs forense de ramas**, que
+  además **pone al día el inventario de la rama: 17 commits sobre `cbb1901`**. **PR
   borrador a `develop`: #45** *(91 ficheros, `Ref: #44`, **sin `Closes`**)*. **Queda de Ismael**: ejecutar los TC humanos de
   CDU19 (D28), fusionar el PR y cerrar **#44** (D29), poner el tag `cfg-iter06` sobre la fusión y materializar
   `release/R1` → `main` con `v0.2.0-alpha` (D30).
