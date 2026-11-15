@@ -1,0 +1,358 @@
+@startuml cdu19-clases-diseno
+' CDU19 (Iter6/CFG-06) - Clases de diseno: iso2-integracion 1.1.0 + extension MINOR de InteropFacade
+' Autor: agente (diseno previo al codigo, issue #44) - fuentes PlantUML (D31)
+title CDU19 - Clases de diseno previstas (iso2-integracion 1.1.0-SNAPSHOT, apps 0.2.0-SNAPSHOT)
+
+skinparam classAttributeIconSize 0
+
+package "iso2-common 1.1.0 (contrato: baseline 1.0.0 congelado + extension MINOR CDU19)" {
+  interface InteropFacade {
+    + importarEstudio(String accessionNumber) : EstudioDTO
+    ..
+    + autenticarSso(CredencialesSsoDTO) : SesionSsoDTO
+    + sincronizarHistoriaClinica(String pacienteExternoId) : HistoriaSincronizadaDTO
+    + pingRis() : EstadoSistemaDTO
+    + pingPacs() : EstadoSistemaDTO
+    + pingSistema(String nombre) : EstadoSistemaDTO
+    + estadoSistemas() : List~EstadoSistemaDTO~
+    + estadoAuditoriaIntegracion() : AuditoriaIntegracionDTO
+  }
+  class EstudioDTO <<record, congelado 1.0.0>> {
+    + accessionNumber : String
+    + pacienteId : String
+    + fechaEstudio : LocalDate
+    + numeroSeries : int
+  }
+  class CredencialesSsoDTO <<record, nuevo>> {
+    + usuario : String
+    + contrasena : String
+    ..
+    compacto: usuario y contrasena no vacios
+  }
+  class SesionSsoDTO <<record, nuevo>> {
+    + sujeto : String
+    + rolExterno : String
+    + caducaEn : Instant
+  }
+  class HistoriaSincronizadaDTO <<record, nuevo>> {
+    + pacienteExternoId : String
+    + reutilizado : boolean
+    + huella : String (SHA-256 hex)
+    + sincronizadaEn : Instant
+    + registros : List~RegistroHistoriaDTO~
+  }
+  class RegistroHistoriaDTO <<record, nuevo>> {
+    + codigo : String
+    + fecha : LocalDate
+    + detalle : String
+  }
+  class EstadoSistemaDTO <<record, nuevo>> {
+    + nombre : String (sso|hce|ris|pacs)
+    + disponible : boolean
+    + motivo : String (nullable, p.ej. CAIDO)
+    + latenciaMediaMs : long
+  }
+  class AuditoriaIntegracionDTO <<record, nuevo>> {
+    + cadenaIntegra : boolean
+    + totalRegistros : int
+    + ultimoHash : String
+    + eslabones : List~EslabonAuditoriaDTO~
+  }
+  class EslabonAuditoriaDTO <<record, nuevo>> {
+    + secuencia : long
+    + accion : String
+    + sistema : String
+    + resultado : String
+    + actor : String
+    + instante : Instant
+    + hashAnterior : String
+    + hash : String
+  }
+  class CredencialesInvalidasException <<RuntimeException, nuevo>>
+  class HistoriaNoEncontradaException <<RuntimeException, nuevo>>
+  class EstudioNoEncontradoException <<RuntimeException, nuevo>>
+  class SistemaNoEncontradoException <<RuntimeException, nuevo>>
+  class SistemaExternoException <<RuntimeException, nuevo>> {
+    + tipo() : Fallo
+  }
+  enum Fallo <<nuevo>> {
+    NO_DISPONIBLE; TIEMPO_SUPERADO
+  }
+  note bottom of InteropFacade
+    Baseline 1.0.0: importarEstudio + EstudioDTO NO se tocan
+    (trazabilidad de CFG-00 respeta el contrato congelado).
+    Lo demas son anadidos aditivos => sigue siendo MINOR 1.1.0.
+  end note
+}
+
+package "iso2-integracion 1.1.0 (dominio puro: sin Spring ni JPA)" {
+  enum SistemaExterno {
+    SSO; HCE; RIS; PACS
+    --
+    + codigo() : String (minusculas)
+    + desdeCodigo(String) : Optional~SistemaExterno~
+  }
+  enum ModoSimulacion {
+    NORMAL; LENTO; LENTO_TIMEOUT; CAIDO
+  }
+  class PoliticaSimulacion <<record>> {
+    + modo : ModoSimulacion
+    + latenciaMs : long
+    + timeoutMs : long
+    + reintentos : int
+    --
+    compacto: latencia/timeout >= 0, reintentos >= 0
+    + desdeToken(String) : PoliticaSimulacion
+    (SIM-HCE-CAIDO-5-50-0 => modo + latencia + timeout + reintentos)
+  }
+  class RegistroSimulacion {
+    - politicas : ConcurrentHashMap~SistemaExterno, PoliticaSimulacion~
+    --
+    + de(SistemaExterno) : PoliticaSimulacion
+    + cambiar(SistemaExterno, PoliticaSimulacion) : void
+    + todas() : Map~SistemaExterno, PoliticaSimulacion~
+  }
+  class SesionSso <<record>> {
+    + sujeto : String
+    + rolExterno : String
+    + caducaEn : Instant
+  }
+  class HistoriaExterna <<record>> {
+    + pacienteExternoId : String
+    + registros : List~RegistroHistoria~
+    --
+    + canonica() : String (orden estable por codigo y fecha)
+  }
+  class RegistroHistoria <<record>> {
+    + codigo : String
+    + fecha : LocalDate
+    + detalle : String
+  }
+  class EstudioExterno <<record>> {
+    + accessionNumber : String
+    + pacienteId : String
+    + fechaEstudio : LocalDate
+    + numeroSeries : int
+  }
+  class EstadoSistema {
+    + sistema : SistemaExterno
+    + disponible : boolean
+    + motivo : String
+    + latenciaMediaMs : long
+  }
+  class EslabonAuditoria <<record>> {
+    + secuencia : long
+    + accion : String
+    + sistema : String
+    + resultado : String
+    + actor : String
+    + instante : Instant
+    + hashAnterior : String
+    + hash : String
+  }
+  class AuditoriaIntegracion {
+    - eslabones : CopyOnWriteArrayList~EslabonAuditoria~
+    - ultimoHash : String (GENESIS al inicio)
+    --
+    + registrar(accion, sistema, resultado, actor) : EslabonAuditoria
+    + cadenaIntegra() : boolean (recalcula cada SHA-256)
+    + listar() : List~EslabonAuditoria~
+    + ultimoHash() : String
+  }
+  class HuellaContenido {
+    --
+    + sha256Hex(String canonico) : String
+  }
+  RegistroSimulacion o-- PoliticaSimulacion
+  HistoriaExterna o-- RegistroHistoria
+  AuditoriaIntegracion o-- EslabonAuditoria
+  AuditoriaIntegracion ..> HuellaContenido : encadena hashes\n(mismo patron que\nAuditoriaCitas, pero EN MEMORIA:\nel spike no anade tabla ni Flyway)
+}
+
+package "iso2-integracion (puerto: salidas hacia el mundo exterior)" {
+  interface SsoPort {
+    + autenticar(String usuario, String contrasena) : SesionSso
+    + estado() : EstadoSistema
+  }
+  interface HcePort {
+    + buscarHistoria(String pacienteExternoId) : HistoriaExterna
+    + estado() : EstadoSistema
+  }
+  interface SistemaImagenPort {
+    + estado() : EstadoSistema
+  }
+  interface RisPort {
+    + buscarEstudio(String accessionNumber) : EstudioExterno
+  }
+  interface PacsPort {
+  }
+  RisPort --|> SistemaImagenPort
+  PacsPort --|> SistemaImagenPort
+  SsoPort ..> SistemaExterno
+  HcePort ..> SistemaExterno
+}
+
+package "iso2-integracion (adaptadores simulados: no hay IdP/HCE/RIS reales)" {
+  abstract class AdaptadorSimulado {
+    # registro : RegistroSimulacion (compartido)
+    # latencias : ArrayDeque~Long~ (media movil)
+    --
+    # <T> proteger(Supplier~T~ llamada) : T
+    (CAIDO -> SistemaExternoException(NO_DISPONIBLE);
+    LENTO con latencia > timeout -> TIEMPO_SUPERADO tras
+    1 + reintentos intentos; mide la latencia simulada)
+    # estadoDe(SistemaExterno) : EstadoSistema
+  }
+  class SsoAdaptadorSimulado {
+    - usuarios : Map~String, String~ (idp-admin / idp-pass ...)
+    --
+    + autenticar(usuario, contrasena) : SesionSso
+    + estado() : EstadoSistema
+    (idp-desconocido -> CredencialesInvalidasException;
+    el modo CAIDO del adaptador GANA a la credencial: 503 antes que 401)
+  }
+  class HceAdaptadorSimulado {
+    - historias : Map~String, List~RegistroHistoria~~
+    - rotativo : AtomicInteger (alterna 2 contenidos)
+    --
+    + buscarHistoria(pacienteExternoId) : HistoriaExterna
+    + estado() : EstadoSistema
+    (api-paciente-ok estable; api-paciente-rotativo cambia;
+    resto -> HistoriaNoEncontradaException; ids recortados: leccion CDU12)
+  }
+  class RisAdaptadorSimulado {
+    - estudios : Map~String, EstudioExterno~ (ACC-0001..)
+    --
+    + buscarEstudio(accessionNumber) : EstudioExterno
+    + estado() : EstadoSistema
+  }
+  class PacsAdaptadorSimulado {
+    --
+    + estado() : EstadoSistema (el spike solo monitoriza el PACS)
+  }
+  AdaptadorSimulado <|-- SsoAdaptadorSimulado
+  AdaptadorSimulado <|-- HceAdaptadorSimulado
+  AdaptadorSimulado <|-- RisAdaptadorSimulado
+  AdaptadorSimulado <|-- PacsAdaptadorSimulado
+  SsoAdaptadorSimulado ..|> SsoPort
+  HceAdaptadorSimulado ..|> HcePort
+  RisAdaptadorSimulado ..|> RisPort
+  PacsAdaptadorSimulado ..|> PacsPort
+  AdaptadorSimulado ..> RegistroSimulacion : lee la politica\nen cada llamada
+}
+
+package "iso2-integracion (servicio: implementa el contrato comun)" {
+  class IntegracionServicio {
+    - sso : SsoPort
+    - hce : HcePort
+    - ris : RisPort
+    - pacs : PacsPort
+    - auditoria : AuditoriaIntegracion
+    - snapshots : ConcurrentHashMap~String, InstantaneaHistoria~
+    --
+    + autenticarSso(CredencialesSsoDTO) : SesionSsoDTO
+    + sincronizarHistoriaClinica(String pacienteExternoId) : HistoriaSincronizadaDTO
+    + pingRis() : EstadoSistemaDTO
+    + pingPacs() : EstadoSistemaDTO
+    + pingSistema(String nombre) : EstadoSistemaDTO
+    + estadoSistemas() : List~EstadoSistemaDTO~
+    + importarEstudio(String accessionNumber) : EstudioDTO
+    + estadoAuditoriaIntegracion() : AuditoriaIntegracionDTO
+  }
+  class InstantaneaHistoria <<record>> {
+    + huella : String
+    + registros : List~RegistroHistoriaDTO~
+    + sincronizadaEn : Instant
+  }
+  IntegracionServicio ..|> InteropFacade
+  IntegracionServicio o-- InstantaneaHistoria : huella igual => reutilizado=true\nhuella distinta => se actualiza
+}
+
+package "iso2-integracion (web: solo REST + registro de simulacion)" {
+  class IntegracionControlador {
+    --
+    POST /api/integracion/sso/login
+    GET  /api/integracion/sistemas
+    GET  /api/integracion/sistemas/{sistema}/ping
+    POST /api/integracion/historias/{pacienteExternoId}/sincronizar
+    GET  /api/integracion/estudios/{accessionNumber}
+    GET  /api/integracion/auditoria
+    GET  /api/integracion/simulacion
+    POST /api/integracion/simulacion
+  }
+  class IntegracionManejadorErrores <<RestControllerAdvice>> {
+    --
+    CredencialesInvalidasException -> 401 CREDENCIALES_INVALIDAS
+    HistoriaNoEncontradaException -> 404 HISTORIA_NO_ENCONTRADA
+    EstudioNoEncontradoException -> 404 ESTUDIO_NO_ENCONTRADO
+    SistemaNoEncontradoException -> 404 SISTEMA_NO_ENCONTRADO
+    SistemaExternoException -> 503 SISTEMA_NO_DISPONIBLE / SISTEMA_TIEMPO_SUPERADO
+    IllegalArgument / NotReadable / TipoErroneo -> 400 DATOS_INVALIDOS
+    HttpMediaTypeNotSupportedException -> 415 CONTENIDO_NO_ACEPTADO (D35)
+    generic Exception -> 500 ERROR_INTERNO
+  }
+  class SimulacionControlador {
+    --
+    GET/POST /api/integracion/simulacion escriben en el
+    RegistroSimulacion del dominio (NUNCA tocan adaptadores:
+    ArchUnit prohibe que web dependa de adaptador)
+  }
+  IntegracionControlador ..> IntegracionServicio : solo el contrato InteropFacade
+  SimulacionControlador ..> RegistroSimulacion : dominio compartido
+  IntegracionManejadorErrores ..> ApiError : cuerpo comun (common.shared)
+}
+
+package "iso2-integracion (configuracion)" {
+  class IntegracionProperties <<@ConfigurationProperties iso2.integracion>> {
+    + modos iniciales por sistema (NORMAL por defecto)
+    + latenciaMs, timeoutMs, reintentos por defecto
+  }
+  class IntegracionConfiguracion <<@Configuration>> {
+    --
+    beans: 4 adaptadores, RegistroSimulacion,
+    AuditoriaIntegracion, IntegracionServicio
+  }
+  IntegracionConfiguracion ..> IntegracionProperties
+}
+
+package "ensamblado en iso2-server-app (0.2.0-SNAPSHOT)" {
+  class Permiso <<enum, iso2-seguridad>> {
+    INTEGRACION_LEER ("integracion:leer")
+    INTEGRACION_ESCRIBIR ("integracion:escribir")
+  }
+  class MatrizPermisos <<iso2-seguridad>> {
+    solo ADMINISTRADOR (EnumSet.allOf las cubre)
+  }
+  class ConfigSeguridad <<server>> {
+    --
+    GET /api/integracion/** -> hasAuthority("integracion:leer")
+    POST /api/integracion/** -> hasAuthority("integracion:escribir")
+    resto /api/integracion/** autenticado
+  }
+  note right of ConfigSeguridad
+    MEDICO, TECNICO, CELADOR y RECEPCIONISTA reciben 403;
+    el anonimo 401 en el filtro JWT de CDU17.
+    Iso2ServerApplication ya escanea es.uclm.iso2: los
+    @Component/@Bean de integracion se ensamblan solos.
+  end note
+}
+
+note bottom of AuditoriaIntegracion
+  Reglas ArchUnit (ArquitecturaIntegracionTest):
+  - dominio: sin Spring, sin JPA, sin capas superiores
+  - puerto: no depende de adaptador/servicio/web
+  - adaptador: no depende de servicio/web
+  - servicio: no depende de web ni de adaptador (solo puertos)
+  - web: solo toca InteropFacade y el RegistroSimulacion, jamas adaptador
+  - common: jamas mira hacia iso2-integracion
+end note
+
+note bottom of IntegracionServicio
+  Ping degradado (decision del spike): pingRis/pingPacs
+  NUNCA lanzan excepcion; un sistema caido devuelve
+  EstadoSistema(disponible=false) y el controlador
+  responde 200. El monitor necesita pintar el estado,
+  no recibir 5xx. El login y el sincronizar SI propagan 503.
+end note
+
+@enduml

@@ -1,0 +1,108 @@
+@startuml cdu19-clases-analisis
+' CDU19 (Iter6/CFG-06) - Clases de analisis (conceptos del dominio de integraciones)
+' Autor: agente (diseno previo al codigo, issue #44) - fuentes PlantUML (D31)
+title CDU19 - Clases de analisis: sesion SSO, historia externa, huella, ping y modo degradado
+
+class "Sistema externo" as SISTEMA {
+  - nombre (SSO, HCE, RIS, PACS)
+  - tipo (identidad, historia, imagen)
+  --
+  ?esta disponible?: si/no
+  tiempo de respuesta observado : ms
+}
+
+class "Politica de simulacion" as POLITICA {
+  - modo (NORMAL, LENTO, LENTO_TIMEOUT, CAIDO)
+  - latencia simulada (ms)
+  - tiempo de espera maximo (ms)
+  - reintentos permitidos
+  --
+  ?falla ahora?: si (CAIDO)
+  ?agotara el tiempo?: si (LENTO y latencia > espera)
+  ?cuantos intentos?: 1 + reintentos
+}
+
+class "Sesion SSO" as SESION {
+  - sujeto (identidad externa)
+  - rol externo
+  - caducidad
+  --
+  ?expira? : si/no
+  (OJO: NO es el JWT de CDU17; el spike lo registra,\npero la API propia sigue autenticando con JWT)
+}
+
+class "Paciente externo" as PACIENTE {
+  - identificador externo (ej. api-paciente-ok)
+  --
+  ?existe en el HCE?: si/no (si no: HISTORIA_NO_ENCONTRADA)
+}
+
+class "Historia clinica externa" as HISTORIA {
+  - paciente externo
+  - registros (codigo, fecha, detalle)
+  - instante de obtencion
+  --
+  forma canonica del contenido : texto
+  huella de contenido : SHA-256(forma canonica)
+}
+
+class "Instantanea sincronizada" as SNAPSHOT {
+  - huella del contenido
+  - registros guardados
+  - ultima sincronizacion
+  --
+  ?reutiliza? : si (huella igual)\nno (huella distinta -> se actualiza)
+}
+
+class "Estudio (baseline 1.0.0)" as ESTUDIO {
+  - accessionNumber
+  - paciente, prueba, estado
+  - (contrato EstudioDTO congelado en 1.0.0)
+}
+
+class "Registro de auditoria" as AUDITORIA {
+  - secuencia
+  - accion (SSO_LOGIN, HCE_SINCRONIZAR, PING,\nESTUDIO_IMPORTAR, SIMULACION)
+  - actor y sistema
+  - resultado (OK, FALLO_CREDENCIALES, SISTEMA_CAIDO, ...)
+  - hash del registro anterior y hash propio (SHA-256)
+  --
+  ?enlaza con el anterior?: si
+  ?la cadena sigue integra?: si/no
+}
+
+class "Motor de integracion" as MOTOR {
+  --
+  autenticar(con credenciales) : sesion / credenciales invalidas / sistema no disponible
+  sincronizarHistoria(paciente externo) : historia + ?reutilizada?
+  estadoDe(sistema) : disponible + motivo (nunca error)
+}
+
+SISTEMA "1" *-- "1" POLITICA : el spike la lleva\npuesto que no hay\nsistemas reales
+MOTOR ..> SISTEMA : pregunta el estado
+MOTOR ..> POLITICA : decide reintentos,\ntiempos de espera y fallos\n(el modo del adaptador gana a la credencial)
+SESION ..> SISTEMA : la emite el SSO
+PACIENTE "1" -- "0..1" HISTORIA : la tiene si existe en el HCE
+HISTORIA "1" -- "1" SNAPSHOT : su huella decide\nreutilizar o actualizar
+HISTORIA "1" -- "0..*" ESTUDIO : los estudios importados\nproceden del RIS/PACS
+MOTOR ..> PACIENTE : sincroniza por id externo
+AUDITORIA ..> MOTOR : toda accion deja rastro\nencadenado (en memoria en el spike)
+SISTEMA "1" -- "0..*" AUDITORIA : trazas de su estado
+
+note bottom of MOTOR
+  Conceptos que el spike trae nuevos:
+  - huella de contenido para que sincronizar dos veces
+    no duplique la historia (idempotencia)
+  - ping que responde estado, no excepcion: el monitor
+    necesita pintar "caido" sin un 5xx
+  - politica de simulacion que hace repetibles los TCs
+    de modo degradado (CAIDO/LENTO/TIEMPO SUPERADO)
+end note
+
+note right of AUDITORIA
+  Mismo patron de hash encadenado que catalogo (CFG-01),
+  agendas (CFG-03) y citas (CFG-05), pero en memoria:
+  el spike no anade tabla ni migracion Flyway.
+end note
+
+@enduml
