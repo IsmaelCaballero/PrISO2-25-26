@@ -790,10 +790,11 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     0 omitidos**; JaCoCo de `iso2-integracion` **88,2 % de líneas** (cota del módulo `0.70`, puerta de CFG-06
     ≥ 60 %).
   - **Suspendido y reanudado por dos incidencias (15/11):** el reinicio del equipo vació el almacenamiento local
-    de OpenCode (perdido el historial, no el trabajo) y entre las 11:29 y las 11:49 trabajó en paralelo otra
-    sesión sobre el mismo árbol y la misma rama. No hubo conflicto de `git` y su trabajo quedó contenido en
-    `f5411c1`, que la sesión 22 **verificó ejecutando** en lugar de reescribir. Cerrada la otra sesión, **desde
-    las 11:49 hay un solo agente**; la regla práctica es **una rama y un árbol por sesión**.
+    de OpenCode (perdido el historial, no el trabajo) y la otra sesión trabajó en paralelo sobre el **mismo
+    árbol y la misma rama en dos olas**: 11:29-11:49 y 12:37-13:54. No hubo conflicto de `git`; la primera ola
+    quedó contenida en `f5411c1` y la segunda dejó sin subir el spec TDOP y sus CSV. La sesión 22 **verificó**
+    ambos tramos ejecutando en lugar de reescribir. Tras las 13:54:41 la otra sesión no volvió a escribir nada:
+    **queda un solo agente**; la regla práctica es **una rama y un árbol por sesión**.
   - **Hecho por esta sesión 22:** comprobar que Ismael ya había fusionado el PR #43 y cerrado #40, poner el
     **tag anotado `cfg-iter05`** (objeto `005476e`) sobre `cbb1901` siguiendo la receta de
     `docs/mapa-configuraciones.md`, y dejar este sync documental. **Queda la parte b del DoD:** `docs/test/iter06/`
@@ -801,3 +802,34 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     `docs/tc/cdu19-tc-humanos.md`, **informe de spike** `docs/informes/spike-cdu19.md`, wiki
     `Iter6-CDU19-integracion` y PR a `develop` (lo fusiona y cierra #44 Ismael, D29); sobre esa fusión, el tag
     **`cfg-iter06`** y el hito **`v0.2.0-alpha`**, que se publica materializando **`release/R1` → `main`** (D30).
+
+### Prompt 22b — Tarde del 15/11: forense de la doble sesión, verificación de la matriz TDOP e integridad [✔ ejecutado]
+
+**Prompt (15/11 13:55):** «ya estoy aqui de nuevo; antes de nada, mira a ver que ha pasado con las dos sesiones
+paralelas y si la que estaba en paralelo sigue trabajando». **Prompt (15/11 14:05):** «¿puedes asegurarme que el
+estado del proyecto es consistente? Sigue tú a partir de ahora y arregla lo necesario para la integridad… y
+respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración, con mi máquina a 59,1 tok/s».
+
+**Hecho:**
+
+- **Forense de sesiones:** con el servicio de OpenCode sin API utilizable (auth borrada otra vez), se consultó la
+  base `~\.local\share\opencode\opencode.db` en solo lectura. La sesión paralela (524 mensajes) tuvo **dos olas**
+  —11:29-11:49 y 12:37-13:54— y cerró idle a las **13:54:41** con resultado bueno tras su último `pairwise.py`;
+  **desde entonces no ha vuelto a tocar el repo** (0 commits nuevos después de `a81b85b`).
+- **Verificación del trabajo paralelo antes de commitear:** los CSV de la matriz se regeneraron con
+  `tools/pairwise.py` en un directorio temporal → **16 ficheros byte a byte idénticos** a los del árbol; la
+  herramienta reporta las coberturas declaradas (A 21/21, C 26/26, D 12/12, F 87/87, B 7, E 16, G 14, 13
+  estados) y los estados/tokenes casan con `IntegracionManejadorErrores` y `SetupSimulacion`. Se aceptan
+  **tal cual, sin reescribir**.
+- **Commit `a81b85b`** `test(tdop - Iter6/CFG-06)`: spec + 8 CSV de `docs/test/iter06/` + 8 espejos en
+  `iso2-integracion/src/test/resources/tdop/` (17 ficheros, +935), con la **procedencia** de la otra sesión en
+  el cuerpo del mensaje. Subido: remoto == local.
+- **Corrección del registro:** `STATUS.md` y este fichero decían «desde las 11:49 hay un solo agente», que era
+  **falso** (hubo una segunda ola); quedan corregidos con la cronología real y la deuda nº 21 actualizada.
+- **Veredicto sobre dos agentes en paralelo (pregunta de Ismael):** máquina a **59,1 tok/s compartidas** → cada
+  agente bajaría a ~30 tok/s; la ganancia real no es 2× sino **~30-45 %** de tiempo real, y en este repo dos
+  iteraciones completas chocan de forma garantizada en `Permiso.java`, los `pom.xml`, la cadena de versiones
+  Flyway, `iso2-common` (Iter6 congela 1.1.0 / Iter7 pide 1.2.0-SNAPSHOT) y los registros de un solo fichero
+  (`STATUS.md`, `TASADEFECTOS.md`). **No recomendado** para iteraciones enteras; sí, con `git worktree` aparte,
+  para el trabajo puramente aditivo de Iter7 (diagramas `docs/modelo/iter07/` y spec TDOP `docs/test/iter07/`),
+  que no roza ningún punto de conflicto ni `~/.m2`.

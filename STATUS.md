@@ -7,16 +7,18 @@ fusionó (**PR #43 → merge `cbb1901`**, ya en `develop`) y el agente puso el t
 ese merge. Arranca **Iter6 · CDU19 (CFG-06)** en la rama `feature/iter06-cdu19-integracion` sobre la **issue
 #44**: modelo PlantUML (D31) + módulo `iso2-integracion` 1.1.0 con `InteropFacade` y adaptadores simulados +
 **77 pruebas en el módulo** (9 clases, con el contrato del baseline 1.0.0 blindado). Reactor medido sobre `f5411c1`: **BUILD SUCCESS, 713 tests,
-0 fallos, 0 omitidos**. Quedan la parte b del DoD (matriz D33 leída de CSV, TC humanos de CDU19, informe de
-spike, wiki y PR).
-Prompts 17 a 22)
+0 fallos, 0 omitidos**. La tarde del 15/11 se añadió además la **especificación TDOP de la matriz (125 casos,
+spec + 16 CSV verificables y reproducibles)**, subida en **`a81b85b`**. Quedan de la parte b: el test
+`Cdu19MatrizTdopTest` que ejecuta esa matriz, los TC humanos de CDU19, el informe de spike, la wiki y el PR.
+Rama `feature/iter06-cdu19-integracion` en **`a81b85b`** = remoto, árbol limpio y **nada sin subir**; registro
+cronológico en `PROMPTS.md` (Prompts 17 a 22).
 
 ## Estado global
 
 | Fase | Estado |
 |---|---|
 | Inicio (Iter0) | ✔ **Completada, etiquetada y publicada** — PR #7 fusionado a `develop` (`641e72d`), tag `cfg-iter00`; **R0 publicada en `main`**: PR #19 fusionado (merge `e165622`) con el tag anotado **`v0.1.0`** (regla **D30**: release desde `release/R0`) |
-| Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) CERRADA EL 15/11**: código fusionado por Ismael con el **PR #42** (merge `08a7ed8`) y matriz D33 de 172 casos con el **PR #43** (merge `cbb1901`), **tip actual de `develop` = `cbb1901`**, tag anotado **`cfg-iter05` → `cbb1901`** y **#40 cerrada a mano** (D29). **Iter6 (CDU19 / CFG-06) EN CURSO** en `feature/iter06-cdu19-integracion` (issue **#44**): modelo + módulo `iso2-integracion` + 77 pruebas (9 clases) hechos; faltan la matriz D33 leída de CSV, los TC humanos, el informe de spike, la wiki y el PR. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
+| Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) CERRADA EL 15/11**: código fusionado por Ismael con el **PR #42** (merge `08a7ed8`) y matriz D33 de 172 casos con el **PR #43** (merge `cbb1901`), **tip actual de `develop` = `cbb1901`**, tag anotado **`cfg-iter05` → `cbb1901`** y **#40 cerrada a mano** (D29). **Iter6 (CDU19 / CFG-06) EN CURSO** en `feature/iter06-cdu19-integracion` (issue **#44**, tip `a81b85b`): modelo + módulo `iso2-integracion` + 77 pruebas (9 clases) + **spec TDOP de 125 casos con sus 16 CSV verificada y subida** (`a81b85b`); faltan la clase `Cdu19MatrizTdopTest` que lee esa matriz, los TC humanos, el informe de spike, la wiki y el PR. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
 | Construcción (Iter7–20) | ⏳ Pendiente |
 | Transición (Iter21) | ⏳ Pendiente — cierre 14/12, entrega 15/12 |
 
@@ -185,7 +187,7 @@ técnicas, la D33 y sus TC humanos.
   del agente (sin scope `read:project`): queda a la revisión visual de Ismael.
 - **Estado de ramas e instantáneas a 15/11 (sesión 22):** `origin/develop` = **`cbb1901`** (merge del PR #43),
   `origin/main` = `d12388b` (la desviación ya documentada en D30, sigue sin tocar), `origin/docs/config-opencode`
-  = `2a2f0a8` y `origin/feature/iter06-cdu19-integracion` = **`f5411c1`**, con el árbol local idéntico al remoto y
+  = `2a2f0a8` y `origin/feature/iter06-cdu19-integracion` = **`a81b85b`**, con el árbol local idéntico al remoto y
   **nada sin subir**. Tags en el remoto: `cfg-iter00`…`cfg-iter05` y `v0.1.0`. La rama
   `feature/iter05-cdu12-citas` sigue **viva en remoto** con `b912554` y `9457972` ya alcanzables desde `develop`;
   borrarla tras el cierre es trabajo de Ismael.
@@ -195,12 +197,17 @@ técnicas, la D33 y sus TC humanos.
   `STATUS.md` y GitHub, y ahí apareció que Ismael ya había **fusionado el PR #43 y cerrado #40**: solo quedaba
   el tag `cfg-iter05` y este sync. Regla aplicada desde entonces: **nada se queda sin subir** y el registro son
   `STATUS.md` + `PROMPTS.md`, no la sesión de la herramienta.
-- **Incidencia 2 — dos agentes escribiendo a la vez sobre `f5411c1` (15/11, 11:29-11:49):** abrió en paralelo
-  otra sesión que trabajaba la misma issue sobre el **mismo árbol de trabajo y la misma rama**. No llegó a
-  haber conflicto de `git` (un solo HEAD y un solo índice) y su trabajo quedó contenido en el propio **`f5411c1`**
-  (11:49), que esta sesión **verificó en lugar de reescribir**: compila, pasa las **713 pruebas** del reactor y
-  deja intactos los módulos de la Iter5. La otra sesión quedó cerrada y **desde las 11:49 solo hay un agente**.
-  Regla práctica: una rama y un árbol por sesión, y comprobar HEAD + `git status` antes de escribir.
+- **Incidencia 2 — dos agentes escribiendo a la vez sobre el mismo árbol y la misma rama (15/11, en dos
+  olas):** tras el reinicio, la otra sesión se reanimó **dos veces**: entre **11:29 y 11:49** y otra vez entre
+  **12:37 y 13:54**. No hubo conflicto de `git` (un solo HEAD y un solo índice), pero sí dos tramos de trabajo:
+  la primera ola quedó contenida en **`f5411c1`** (las 77 pruebas del CDU19) y esta sesión lo **verificó ejecu-
+  tando** en lugar de reescribirlo: compila y pasa las **713 pruebas** del reactor. La segunda ola dejó en el
+  árbol, **sin commitear**, el spec TDOP y los 16 CSV de `docs/test/iter06/` (mtimes 12:37-13:53): esta sesión
+  los regeneró con `tools/pairwise.py` — **los 16 ficheros salen byte a byte iguales** a los del árbol — los
+  validó contra `IntegracionManejadorErrores` y `SetupSimulacion`, y los subió tal cual en **`a81b85b`**,
+  dejando la procedencia en el cuerpo del mensaje. Su última actividad registrada fue **13:54:41** y desde
+  entonces no ha vuelto a tocar nada: **el único agente activo es esta sesión**, y ya no hay dos. Regla
+  práctica: **una rama y un árbol por sesión**, y comprobar `HEAD` + `git status` antes de escribir.
 - Identidad git del repo: IsmaelCaballero@users.noreply.github.com (cambiar si se prefiere el correo UCLM).
 
 ## Registro de sesiones
@@ -303,9 +310,10 @@ técnicas, la D33 y sus TC humanos.
     mismos que ejecuta `Cdu12MatrizTdopTest`) más la preparación del entorno. Al ejecutarlos sobre el
     sistema en marcha, anotar el resultado y cerrarlos como se hizo con los de CDU16 (PR #37).
 21. **Iter6 · CDU19 (CFG-06) — parte b del DoD, lo único que queda de iteración** (issue #44, rama
-    `feature/iter06-cdu19-integracion` sobre `f5411c1`): (a) evidencia TDOP en `docs/test/iter06/`
-    (`tdop-cdu19-espec.json` + CSVs de la matriz en `iso2-integracion/src/test/resources/tdop/`, generados con
-    `tools/pairwise.py`) + la clase **`Cdu19MatrizTdopTest`** que los lee y ejecuta, y **proyección a
+    `feature/iter06-cdu19-integracion` sobre `a81b85b`): (a1) **hecho 15/11 por la tarde** — evidencia TDOP en
+    `docs/test/iter06/` (`tdop-cdu19-espec.json` + los 16 CSV, también versionados en
+    `iso2-integracion/src/test/resources/tdop/`, generados con `tools/pairwise.py` y verificados byte a byte),
+    subida en `a81b85b`; **queda** la clase **`Cdu19MatrizTdopTest`** que los lee y ejecuta y la **proyección a
     `docs/tc/cdu19-tc-humanos.md`** con `tools/tc_plantillas.py`;
     (b) **informe de spike** en `docs/informes/spike-cdu19.md` (la carpeta aún no existe) con el veredicto de
     viabilidad del SSO y de la sincronización y los riesgos que ve R1; (c) **wiki `Iter6-CDU19-integracion`**
@@ -329,17 +337,18 @@ anotado **`cfg-iter05`** (`005476e`) ya apunta a `cbb1901`. Solo le quedan los *
 Deuda nº 20) y borrar la rama fusionada (Deuda nº 23).
 
 **El punto de continuación es la parte b de la Iter6 / CDU19 (CFG-06)**, rama `feature/iter06-cdu19-integracion`
-sobre **`f5411c1`** (= `origin/feature/iter06-cdu19-integracion`, árbol limpio y todo subido). Está hecho el
-modelo, el módulo, el puerto, los adaptadores simulados, el RBAC y las **77 pruebas del módulo** repartidas en
-9 clases; reactor medido **713 tests, 0 fallos, 0 omitidos**. Queda, en este orden:
+sobre **`a81b85b`** (= `origin/feature/iter06-cdu19-integracion`, árbol limpio y todo subido). Está hecho el
+modelo, el módulo, el puerto, los adaptadores simulados, el RBAC, las **77 pruebas del módulo** repartidas en
+9 clases y la **especificación TDOP de 125 casos con los 16 CSV** (verificadas el 15/11 por la tarde: los CSV
+regen con `tools/pairwise.py` salen byte a byte iguales y los 13 estados esperados casan con
+`IntegracionManejadorErrores`). Reactor medido **713 tests, 0 fallos, 0 omitidos**. Queda, en este orden:
 
-1. **Evidencia TDOP** (D33, calcando lo hecho en la Iter5): `docs/test/iter06/tdop-cdu19-espec.json` con las
-   variables, sus clases de equivalencia y sus valores límite; los CSV que genera `tools/pairwise.py`
-   (`…-listado/-huecos/-esperados/-conjetura/-operaciones/…` como en `docs/test/iter05/`), que se versionan
-   **también** en `iso2-integracion/src/test/resources/tdop/cdu19-*.csv`; y la clase nueva
-   **`Cdu19MatrizTdopTest`** que los lee con `@ParameterizedTest` (patrón: `Cdu12MatrizTdopTest` de
-   `iso2-citas`), con JavaDoc y `@DisplayName` con el id del caso. Las 77 pruebas ya escritas se quedan como
-   están; la matriz se suma y sube el total del módulo.
+1. **Clase `Cdu19MatrizTdopTest`** que lea los CSV ya versionados en
+   `iso2-integracion/src/test/resources/tdop/cdu19-*.csv` con `@ParameterizedTest` (patrón:
+   `Cdu12MatrizTdopTest` de `iso2-citas`), con JavaDoc y `@DisplayName` con el id del caso. El spec
+   `docs/test/iter06/tdop-cdu19-espec.json` y los CSV de `docs/test/iter06/` **ya están subidos** en `a81b85b`.
+   Las 77 pruebas ya escritas se quedan como están; la matriz se suma y sube el total del módulo. Ojo con la
+   fila de setup `NINGUNO`: no debe pasar por `SetupSimulacion.desdeToken`, es "llamar sin setup previo".
 2. **Proyección a TC humanos**: `docs/tc/cdu19-tc-humanos.md` con `tools/tc_plantillas.py` (D33: los mismos
    casos, proyectados tales cuales, sin inventar nada).
 3. **Informe de spike** `docs/informes/spike-cdu19.md` (la carpeta `docs/informes/` aún no existe): veredicto de
@@ -581,18 +590,25 @@ hoy tip de `develop`)** y **cerrado #40 a mano**. Con eso:
   `SimulacionControladorTest` 8 · `ArquitecturaIntegracionTest` 6 · `AuditoriaIntegracionTest` 6 ·
   `SetupSimulacionTest` 4 · `RegistroSimulacionTest` 4 · `ContratoBaselineTest` 1. **Todavía no hay matriz D33
   leída de CSV ni `Cdu19MatrizTdopTest`**: eso es la parte b, con `tools/pairwise.py`.
-* **Incidencia registrada (dos agentes a la vez):** entre las 11:29 y las 11:49 del 15/11 trabajó en paralelo otra
-  sesión sobre el **mismo árbol y la misma rama** con la intención de hacer la matriz TDOP. No hubo conflicto de
-  `git` (un solo HEAD, un solo índice) y su trabajo quedó contenido en `f5411c1`; esta sesión lo **verificó
-  ejecutando** en lugar de reescribirlo y esa otra sesión quedó cerrada. Desde las 11:49 hay un solo agente, y la
-  regla práctica que se saca es **una rama y un árbol por sesión**, comprobando `HEAD` y `git status` antes de
-  escribir.
+* **Incidencia registrada (dos agentes a la vez, en dos olas):** entre las 11:29 y las 11:49 del 15/11, y otra
+  vez entre las 12:37 y las 13:54, trabajó en paralelo otra sesión sobre el **mismo árbol y la misma rama** con
+  la intención de hacer la matriz TDOP. No hubo conflicto de `git` (un solo HEAD, un solo índice). La primera
+  ola quedó contenida en `f5411c1` y esta sesión lo **verificó ejecutando** en lugar de reescribirlo; la segunda
+  dejó el spec TDOP y sus 16 CSV **sin commitear** en el árbol, y tras regenerarlos y comprobar que salían
+  **byte a byte iguales** se subieron en `a81b85b` con su procedencia en el mensaje del commit. Desde las
+  13:54:41 esa sesión no ha vuelto a escribir nada: **queda un solo agente**, y la regla práctica que se saca
+  es **una rama y un árbol por sesión**, comprobando `HEAD` y `git status` antes de escribir.
 * **Deuda nueva de esta sesión (nº 21, 22 y 23)** y revalidación **D37** aplazada al cierre de CFG-06: el tramo ya
   arrastra **1 defecto F4 de código fugado** (`IntegracionProperties` sin `@ConfigurationProperties` pese a que el
   `.puml` de la iteración sí lo prometía → el contexto del `server-app` moría al arrancar; arreglado en `f5411c1`).
-* **Cierre de jornada 15/11/2026:** `develop` = `cbb1901` con **cfg-iter05 puesto**, `main` = `d12388b` sin tocar
+* **Cierre de jornada 15/11/2026 (mañana):** `develop` = `cbb1901` con **cfg-iter05 puesto**, `main` = `d12388b` sin tocar
   (D30), rama de Iter6 en `f5411c1` con el árbol local idéntico al remoto y **nada sin subir**, ningún proceso
   `java`/`mvn` suelto y ningún PR abierto. Avance del plan: **Iter0-Iter5 = 192 h de 612 h ≈ 31,4 %** (6 de 22
   iteraciones fusionadas y tagueadas). Regla que se queda: **nada se queda sin subir** y el registro del proyecto
   son `STATUS.md` + `PROMPTS.md`, no la sesión de la herramienta.
+* **Continuación de tarde (sesión 22):** la otra sesión volvió a trabajar entre 12:37 y 13:54 (ver Incidencia 2) y
+  dejó el spec TDOP y los CSV sin subir. Esta sesión **verificó** ese trabajo antes de tocar nada — regen
+  `pairwise.py` byte a byte igual, 125 casos en 7 tablas con 13 estados, coherentes con el código real— y lo subió
+  tal cual en **`a81b85b`**. Con eso el árbol vuelve a estar idéntico al remoto y **la parte b queda lanzada**: a
+  continuación `Cdu19MatrizTdopTest`, proyección de TC humanos, informe de spike, wiki y PR borrador.
 
