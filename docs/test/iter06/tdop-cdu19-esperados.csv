@@ -1,0 +1,14 @@
+estado;http;codigoError;descripcion
+OK;200;-;peticion atendida con cuerpo del contrato (historia, sesion, estado de sistema, estudio o politica)
+INVALIDOS;400;DATOS_INVALIDOS;identificador en blanco, modo desconocido o cifras ausentes/negativas: los IAE del dominio y de los controladores tienen consejo propio
+CUERPO_ILEGIBLE;400;DATOS_INVALIDOS;el cuerpo JSON no se puede leer o no se puede convertir: HttpMessageNotReadableException -> 400 con cuerpo ApiError
+CREDENCIALES;401;CREDENCIALES_INVALIDAS;el IdP simulado rechaza el par usuario/contrasena (solo con credenciales completas: si falta alguna es 400)
+NO_ENCONTRADA;404;HISTORIA_NO_ENCONTRADA;el paciente no existe en la HCE simulada
+ESTUDIO_PERDIDO;404;ESTUDIO_NO_ENCONTRADO;el numero de acceso no esta entre ACC-0001 y ACC-0004 del RIS simulado
+SISTEMA_DESCONOCIDO;404;SISTEMA_NO_ENCONTRADO;el codigo de la ruta o del cuerpo de la simulacion no es sso, hce, ris ni pacs
+RUTA_INEXISTENTE;404;-;Spring resuelve la ruta antes de llamar al controlador: el consejo del modulo no interviene y no hay cuerpo ApiError
+CAIDO;503;SISTEMA_NO_DISPONIBLE;el sistema externo esta en modo CAIDO: el adaptador lo comprueba antes de mirar la peticion
+LENTO_TIMEOUT;503;SISTEMA_TIEMPO_SUPERADO;la latencia simulada desborda el tiempo de espera y la llamada real jamas se ejecuta
+TIPO_ERRONEO;400;DATOS_INVALIDOS;la clave numerica llega con un valor que no se puede convertir a long/int: la conversacion la absorbe HttpMessageNotReadableException
+CONTENIDO;415;CONTENIDO_NO_ACEPTADO;Content-Type no JSON en un endpoint con @RequestBody: HttpMediaTypeNotSupportedException -> 415 con cuerpo ApiError
+METODO;405;-;metodo no mapeado o ruta heredada del contrato que el CDU19 no implementa: lo resuelve Spring y no pasa por el consejo del modulo
