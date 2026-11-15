@@ -1,0 +1,114 @@
+[
+ {
+  "paso": "huecos libres medico 13/11 (params LocalDate correctos)",
+  "metodo": "GET",
+  "ruta": "/api/citas/huecos?profesionalId=medico&desde=2026-11-13&hasta=2026-11-13&duracionMinutos=30",
+  "status": 200,
+  "cuerpo": "[{\"profesionalId\":\"medico\",\"inicio\":\"2026-11-13T08:00:00\",\"fin\":\"2026-11-13T08:30:00\",\"duracionMinutos\":30},{\"profesionalId\":\"medico\",\"inicio\":\"2026-11-13T09:00:00\",\"fin\":\"2026-11-13T10:00:00\",\"duracionMinutos\":60},{\"pro"
+ },
+ {
+  "paso": "huecos con desde mal tipado (date-time)",
+  "metodo": "GET",
+  "ruta": "/api/citas/huecos?profesionalId=medico&desde=2026-11-13T00:00:00&hasta=2026-11-13&duracionMinutos=30",
+  "status": 500,
+  "cuerpo": "{\"codigo\":\"ERROR_INTERNO\",\"mensaje\":\"fallo interno de citas\",\"instante\":\"2026-11-15T19:15:45.607082200Z\"}"
+ },
+ {
+  "paso": "GET integracion ruta inexistente [con token]",
+  "metodo": "GET",
+  "ruta": "/api/integracion/no-existe",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.611082Z\"}"
+ },
+ {
+  "paso": "POST integracion ruta solo-lectura [con token]",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sistemas",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.614082200Z\"}"
+ },
+ {
+  "paso": "GET integracion doble barra [con token]",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas//ping",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.615585700Z\"}"
+ },
+ {
+  "paso": "GET historias sincronizar (solo POST) [con token]",
+  "metodo": "GET",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.638256900Z\"}"
+ },
+ {
+  "paso": "GET citas ruta inexistente [con token]",
+  "metodo": "GET",
+  "ruta": "/api/citas/no-existe",
+  "status": 404,
+  "cuerpo": "{\"codigo\":\"CITA_NO_ENCONTRADA\",\"mensaje\":\"no hay cita con el id no-existe\",\"instante\":\"2026-11-15T19:15:45.642254600Z\"}"
+ },
+ {
+  "paso": "DELETE citas ruta inexistente [con token]",
+  "metodo": "DELETE",
+  "ruta": "/api/citas/xx",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.646256Z\"}"
+ },
+ {
+  "paso": "GET rutas fuera de modulo [con token]",
+  "metodo": "GET",
+  "ruta": "/api/no-existe",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.649255Z\"}"
+ },
+ {
+  "paso": "GET integracion ruta inexistente [sin token]",
+  "metodo": "GET",
+  "ruta": "/api/integracion/no-existe",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.651257200Z\"}"
+ },
+ {
+  "paso": "POST integracion ruta solo-lectura [sin token]",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sistemas",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.652254700Z\"}"
+ },
+ {
+  "paso": "GET integracion doble barra [sin token]",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas//ping",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.654254600Z\"}"
+ },
+ {
+  "paso": "GET historias sincronizar (solo POST) [sin token]",
+  "metodo": "GET",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.667797500Z\"}"
+ },
+ {
+  "paso": "GET citas ruta inexistente [sin token]",
+  "metodo": "GET",
+  "ruta": "/api/citas/no-existe",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.668802400Z\"}"
+ },
+ {
+  "paso": "DELETE citas ruta inexistente [sin token]",
+  "metodo": "DELETE",
+  "ruta": "/api/citas/xx",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.683518200Z\"}"
+ },
+ {
+  "paso": "GET rutas fuera de modulo [sin token]",
+  "metodo": "GET",
+  "ruta": "/api/no-existe",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:15:45.699044Z\"}"
+ }
+]

@@ -377,3 +377,28 @@ Responsable final: los 6 miembros del grupo. La IA propone; el humano decide y a
 - **Situación de partida (11/11/2026):** 13 defectos en 101 commits (12,9/100); 6 F1, 3 F2, 2 F3, **2 F4**
   (2,0/100: DEF-05/D35 en Iter1 y `ae79d7e` en Iter3); 11 fugados y 2 detectados en local; 0 roturas llegan a
   CI. Veredicto provisional y lectura de la serie en §6 de `TASADEFECTOS.md`.
+
+## D38. El agente hace el cierre material de la iteración (fusión, tag, cierre de issue y TC humanos por HTTP) sin tocar la reserva de validación de la D28 ni los hitos de release - ACEPTADA (15/11/2026, Ismael)
+
+- **Contexto:** la D29 reserva a Ismael el `merge` de PR, el tag de configuración y el cierre de la issue, y la
+  D28 reserva a Ismael los TC humanos. En el cierre de la Iter6 (sesión 24) ese reparto se está convirtiendo en
+  esperas y en gestos mecánicos que no añaden garantía: el `merge` va detrás de un PR revisado y con CI verde, y
+  los TC humanos de CDU19 son llamadas HTTP a endpoints que la matriz D33 ya cubre. Ismael decide delegar:
+  «iter06/CFG-06 cerrado. **haz tú lo que queda**».
+- **Decisión:** el agente puede hacer, **por encargo expreso y por iteración** (nunca por defecto): fusionar el PR
+  de la rama de iteración en `develop`, poner el **tag anotado `cfg-iterNN` sobre ese merge de cierre**, **cerrar
+  la issue CFG-NN** con su DoD y los contadores D37, y **ejecutar los TC humanos** contra el servidor real. Cuando
+  el agente los ejecuta, **publica evidencia HTTP versionada** en `docs/tc/evidencia/<cdu>/` (guía + scripts
+  re-ejecutables + JSON crudos de petición/respuesta, con el JWT redactado) y fija el resultado en la sección
+  **`## Ejecución real de estos TC`** del propio `docs/tc/<cdu>-tc-humanos.md`, colocada **antes** del bloque
+  `<!-- TDOP:BEGIN -->`/`<!-- TDOP:END -->` para que regenerar la proyección (D33) siga siendo un no-op.
+- **Lo que NO cambia:** la **D28 sigue vigente en su fondo** —la *validación* de que el flujo sirva para el
+  trabajo real del rol sigue siendo de Ismael, que puede refrendar o rechazar lo ejecutado—; siguen siendo de
+  Ismael **abrir y cerrar releases** y materializar los hitos (`release/R1` → `main` con `v0.2.0-alpha`, D30); y
+  para fusionar sigue haciendo falta **CI de la rama en verde** (D29). La delegación **no es un cambio de
+  protocolo permanente**: cada iteración se dice quién cierra.
+- **Efectos:** nace la carpeta **`docs/tc/evidencia/`** con evidencia re-ejecutable, no solo contada; en
+  `STATUS.md` queda registrado **quién** hizo cada gesto del cierre, para que la trazabilidad de la D37 no se
+  rompa; y los TC humanos montados encuentran lo que la matriz aislada no mira: **D-09** (rutas sin mapear → 401
+  con `ApiError` incluso con token válido) y **D-10** (la matriz de módulo espera 500 donde la aplicación montada
+  devuelve 400), que es justo el argumento a favor de mantener los TC humanos aunque los ejecute el agente.

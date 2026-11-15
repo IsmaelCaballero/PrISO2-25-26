@@ -1,0 +1,632 @@
+[
+ {
+  "tc": "setup",
+  "paso": "login admin",
+  "metodo": "POST",
+  "ruta": "/api/auth/login",
+  "status": 200,
+  "ms": 93,
+  "cuerpo": "{\"usuario\":\"admin\",\"rol\":\"ADMINISTRADOR\",\"token\":\"<JWT-omitido>\",\"caducidad\":\"2026-11-15T20:03:27.882567200Z\"}"
+ },
+ {
+  "tc": "TC19-01",
+  "paso": "login SSO IdP correcto",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sso/login",
+  "status": 400,
+  "ms": 46,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"usuario y contrasena son obligatorios\",\"instante\":\"2026-11-15T19:03:27.929090700Z\"}"
+ },
+ {
+  "tc": "TC19-01",
+  "paso": "login SSO contrasena err6nea",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sso/login",
+  "status": 400,
+  "ms": 15,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"usuario y contrasena son obligatorios\",\"instante\":\"2026-11-15T19:03:27.954132100Z\"}"
+ },
+ {
+  "tc": "TC19-01",
+  "paso": "login SSO sin contrasena",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sso/login",
+  "status": 400,
+  "ms": 31,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"usuario y contrasena son obligatorios\",\"instante\":\"2026-11-15T19:03:27.980138500Z\"}"
+ },
+ {
+  "tc": "TC19-01",
+  "paso": "login SSO clave= alt",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sso/login",
+  "status": 200,
+  "ms": 31,
+  "cuerpo": "{\"sujeto\":\"idp-admin\",\"rolExterno\":\"radiologia\",\"caducaEn\":\"2026-11-15T20:03:28.005140700Z\"}"
+ },
+ {
+  "tc": "TC19-02",
+  "paso": "sincronizar api-paciente-ok",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 200,
+  "ms": 46,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-ok\",\"reutilizado\":false,\"huella\":\"f74eba00917c960014d92c77b49a45c54912de3f144cda192212e1dd64e05d4a\",\"sincronizadaEn\":\"2026-11-15T19:03:28.057141Z\",\"registros\":[{\"codigo\":\"ENF-HTA\",\"fecha\":\"2024-03-12\",\"detalle\":\"Hipertension arterial diagnostica\"},{\"codigo\":\"ALG-PENI\",\"fecha\":\"2023-11-02\",\"detalle\":\"Alergia a penicilina\"}]}"
+ },
+ {
+  "tc": "TC19-02",
+  "paso": "auditoria",
+  "metodo": "GET",
+  "ruta": "/api/integracion/auditoria",
+  "status": 200,
+  "ms": 15,
+  "cuerpo": "{\"cadenaIntegra\":true,\"totalRegistros\":2,\"ultimoHash\":\"ce2f63e4a1efff722c573cf7a280431e20acd2616ac517fee0c8ede8a9e973cf\",\"eslabones\":[{\"secuencia\":1,\"accion\":\"SSO_LOGIN\",\"sistema\":\"sso\",\"resultado\":\"OK\",\"actor\":\"admin\",\"instante\":\"2026-11-15T19:03:28.005140700Z\",\"hashAnterior\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"hash\":\"381c198ba1df542219761aabf97218f4a7e832025d3b711ec977c3f6ab18b6a4\"},{\"secuencia\":2,\"accion\":\"HCE_SINCRONIZAR\",\"sistema\":\"hce\",\"resultado\":\"OK_ACTUALIZADA\",\"actor\":\"admin\",\"instante\":\"2026-11-15T19:03:28.057141Z\",\"hashAnterior\":\"381c198ba1df542219761aabf97218f4a7e832025d3b711ec977c3f6ab18b6a4\",\"hash\":\"ce2f63e4a1efff722c573cf7a280431e20acd2616ac517"
+ },
+ {
+  "tc": "TC19-03",
+  "paso": "estudio ACC-0001",
+  "metodo": "GET",
+  "ruta": "/api/integracion/estudios/ACC-0001",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"accessionNumber\":\"ACC-0001\",\"pacienteId\":\"HC-1001\",\"fechaEstudio\":\"2025-09-14\",\"numeroSeries\":3}"
+ },
+ {
+  "tc": "TC19-03",
+  "paso": "estudio acc-0001 minusculas",
+  "metodo": "GET",
+  "ruta": "/api/integracion/estudios/acc-0001",
+  "status": 200,
+  "ms": 30,
+  "cuerpo": "{\"accessionNumber\":\"ACC-0001\",\"pacienteId\":\"HC-1001\",\"fechaEstudio\":\"2025-09-14\",\"numeroSeries\":3}"
+ },
+ {
+  "tc": "TC19-03",
+  "paso": "estudio ACC-9999",
+  "metodo": "GET",
+  "ruta": "/api/integracion/estudios/ACC-9999",
+  "status": 404,
+  "ms": 47,
+  "cuerpo": "{\"codigo\":\"ESTUDIO_NO_ENCONTRADO\",\"mensaje\":\"el estudio ACC-9999 no existe en el RIS\",\"instante\":\"2026-11-15T19:03:28.162499800Z\"}"
+ },
+ {
+  "tc": "TC19-03",
+  "paso": "listado sistemas",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "[{\"nombre\":\"sso\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":20},{\"nombre\":\"hce\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":20},{\"nombre\":\"ris\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":20},{\"nombre\":\"pacs\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":20}]"
+ },
+ {
+  "tc": "TC19-03",
+  "paso": "ping pacs",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas/pacs/ping",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"nombre\":\"pacs\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":20}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "ris CAIDO",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 30,
+  "cuerpo": "{\"modo\":\"CAIDO\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "pacs CAIDO",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"modo\":\"CAIDO\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "ping ris caido",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas/ris/ping",
+  "status": 200,
+  "ms": 14,
+  "cuerpo": "{\"nombre\":\"ris\",\"disponible\":false,\"motivo\":\"CAIDO\",\"latenciaMediaMs\":20}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "estudio con ris caido",
+  "metodo": "GET",
+  "ruta": "/api/integracion/estudios/ACC-0001",
+  "status": 503,
+  "ms": 15,
+  "cuerpo": "{\"codigo\":\"SISTEMA_NO_DISPONIBLE\",\"mensaje\":\"el sistema ris esta caido\",\"instante\":\"2026-11-15T19:03:28.252512200Z\"}"
+ },
+ {
+  "tc": "setup",
+  "paso": "login admin",
+  "metodo": "POST",
+  "ruta": "/api/auth/login",
+  "status": 200,
+  "ms": 62,
+  "cuerpo": "{\"usuario\":\"admin\",\"rol\":\"ADMINISTRADOR\",\"token\":\"<JWT-omitido>\",\"caducidad\":\"2026-11-15T20:03:28.313759900Z\"}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "catalogo pruebas",
+  "metodo": "GET",
+  "ruta": "/api/catalogo/pruebas",
+  "status": 200,
+  "ms": 31,
+  "cuerpo": "[{\"codigo\":\"SEM-RM-RODILLA\",\"nombre\":\"Resonancia magnetica de rodilla\",\"categoria\":\"RM\",\"requiereCita\":true,\"duracionMinutos\":30,\"activa\":true,\"protocolo\":{\"preparacion\":\"retirar objetos metalicos\",\"ayunoHoras\":0,\"contraindicaciones\":\"marcapasos o clips metalicos\"},\"politica\":{\"plazoCancelacionHoras\":48,\"maxCancelaciones\":2}},{\"codigo\":\"SEM-RX-TORAX\",\"nombre\":\"Radiografia de torax\",\"categoria\":\"RX\",\"requiereCita\":false,\"duracionMinutos\":10,\"activa\":true,\"protocolo\":{\"preparacion\":\"sin preparacion especifica\",\"ayunoHoras\":0,\"contraindicaciones\":\"embarazo (radiacion)\"},\"politica\":{\"plazoCancelacionHoras\":24,\"maxCancelaciones\":3}}]"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "agendas",
+  "metodo": "GET",
+  "ruta": "/api/agendas",
+  "status": 200,
+  "ms": 14,
+  "cuerpo": "[{\"profesionalId\":\"medico\",\"franjas\":[{\"id\":1,\"dia\":\"2026-11-09\",\"inicio\":\"08:00:00\",\"fin\":\"15:00:00\"},{\"id\":2,\"dia\":\"2026-11-11\",\"inicio\":\"08:00:00\",\"fin\":\"15:00:00\"},{\"id\":3,\"dia\":\"2026-11-13\",\"inicio\":\"08:00:00\",\"fin\":\"15:00:00\"}],\"festivos\":[{\"id\":1,\"dia\":\"2026-11-10\",\"motivo\":\"dia natural del centro\"}]},{\"profesionalId\":\"tecnico\",\"franjas\":[{\"id\":4,\"dia\":\"2026-11-10\",\"inicio\":\"09:00:00\",\"fin\":\"14:00:00\"},{\"id\":5,\"dia\":\"2026-11-12\",\"inicio\":\"09:00:00\",\"fin\":\"14:00:00\"}],\"festivos\":[]}]"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "citas sin solicitud",
+  "metodo": "POST",
+  "ruta": "/api/citas",
+  "status": 409,
+  "ms": 31,
+  "cuerpo": "{\"codigo\":\"CONFLICTO_FUERA_DE_FRANJA\",\"mensaje\":\"el hueco 2026-11-30T09:00 - 2026-11-30T09:30 no cabe en ninguna franja de medico (el dia puede ser festivo o estar fuera de jornada)\",\"instante\":\"2026-11-15T19:03:28.383326600Z\"}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "ris NORMAL",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 14,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "pacs NORMAL",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-05",
+  "paso": "hce LENTO 250/100 r0",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 14,
+  "cuerpo": "{\"modo\":\"LENTO\",\"latenciaMs\":250,\"timeoutMs\":100,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-05",
+  "paso": "sincronizar con LENTO",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 200,
+  "ms": 265,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-ok\",\"reutilizado\":true,\"huella\":\"f74eba00917c960014d92c77b49a45c54912de3f144cda192212e1dd64e05d4a\",\"sincronizadaEn\":\"2026-11-15T19:03:28.057141Z\",\"registros\":[{\"codigo\":\"ENF-HTA\",\"fecha\":\"2024-03-12\",\"detalle\":\"Hipertension arterial diagnostica\"},{\"codigo\":\"ALG-PENI\",\"fecha\":\"2023-11-02\",\"detalle\":\"Alergia a penicilina\"}]}"
+ },
+ {
+  "tc": "TC19-05",
+  "paso": "hce LENTO_TIMEOUT 250/100 r1",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"modo\":\"LENTO_TIMEOUT\",\"latenciaMs\":250,\"timeoutMs\":100,\"reintentos\":1}"
+ },
+ {
+  "tc": "TC19-05",
+  "paso": "sincronizar con LENTO_TIMEOUT",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 503,
+  "ms": 500,
+  "cuerpo": "{\"codigo\":\"SISTEMA_TIEMPO_SUPERADO\",\"mensaje\":\"el sistema hce no respondio en 100 ms tras 2 intentos\",\"instante\":\"2026-11-15T19:03:29.213836100Z\"}"
+ },
+ {
+  "tc": "TC19-05",
+  "paso": "ver politica",
+  "metodo": "GET",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"HCE\":{\"modo\":\"LENTO_TIMEOUT\",\"latenciaMs\":250,\"timeoutMs\":100,\"reintentos\":1},\"PACS\":{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0},\"SSO\":{\"modo\":\"NORMAL\",\"latenciaMs\":20,\"timeoutMs\":800,\"reintentos\":0},\"RIS\":{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}}"
+ },
+ {
+  "tc": "TC19-05",
+  "paso": "hce NORMAL",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 30,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-05",
+  "paso": "sincronizar recuperado",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-ok\",\"reutilizado\":true,\"huella\":\"f74eba00917c960014d92c77b49a45c54912de3f144cda192212e1dd64e05d4a\",\"sincronizadaEn\":\"2026-11-15T19:03:28.057141Z\",\"registros\":[{\"codigo\":\"ENF-HTA\",\"fecha\":\"2024-03-12\",\"detalle\":\"Hipertension arterial diagnostica\"},{\"codigo\":\"ALG-PENI\",\"fecha\":\"2023-11-02\",\"detalle\":\"Alergia a penicilina\"}]}"
+ },
+ {
+  "tc": "TC19-06",
+  "paso": "sincronizar estable 1",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-ok\",\"reutilizado\":true,\"huella\":\"f74eba00917c960014d92c77b49a45c54912de3f144cda192212e1dd64e05d4a\",\"sincronizadaEn\":\"2026-11-15T19:03:28.057141Z\",\"registros\":[{\"codigo\":\"ENF-HTA\",\"fecha\":\"2024-03-12\",\"detalle\":\"Hipertension arterial diagnostica\"},{\"codigo\":\"ALG-PENI\",\"fecha\":\"2023-11-02\",\"detalle\":\"Alergia a penicilina\"}]}"
+ },
+ {
+  "tc": "TC19-06",
+  "paso": "sincronizar estable 2",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-ok\",\"reutilizado\":true,\"huella\":\"f74eba00917c960014d92c77b49a45c54912de3f144cda192212e1dd64e05d4a\",\"sincronizadaEn\":\"2026-11-15T19:03:28.057141Z\",\"registros\":[{\"codigo\":\"ENF-HTA\",\"fecha\":\"2024-03-12\",\"detalle\":\"Hipertension arterial diagnostica\"},{\"codigo\":\"ALG-PENI\",\"fecha\":\"2023-11-02\",\"detalle\":\"Alergia a penicilina\"}]}"
+ },
+ {
+  "tc": "TC19-06",
+  "paso": "sincronizar estable 3",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-ok\",\"reutilizado\":true,\"huella\":\"f74eba00917c960014d92c77b49a45c54912de3f144cda192212e1dd64e05d4a\",\"sincronizadaEn\":\"2026-11-15T19:03:28.057141Z\",\"registros\":[{\"codigo\":\"ENF-HTA\",\"fecha\":\"2024-03-12\",\"detalle\":\"Hipertension arterial diagnostica\"},{\"codigo\":\"ALG-PENI\",\"fecha\":\"2023-11-02\",\"detalle\":\"Alergia a penicilina\"}]}"
+ },
+ {
+  "tc": "TC19-06",
+  "paso": "auditoria tras 3",
+  "metodo": "GET",
+  "ruta": "/api/integracion/auditoria",
+  "status": 200,
+  "ms": 14,
+  "cuerpo": "{\"cadenaIntegra\":true,\"totalRegistros\":17,\"ultimoHash\":\"e5fac5e9645967f906dd20329d5a9a9aabb0cd7acf1ede7d990a2512df5702d0\",\"eslabones\":[{\"secuencia\":1,\"accion\":\"SSO_LOGIN\",\"sistema\":\"sso\",\"resultado\":\"OK\",\"actor\":\"admin\",\"instante\":\"2026-11-15T19:03:28.005140700Z\",\"hashAnterior\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"hash\":\"381c198ba1df542219761aabf97218f4a7e832025d3b711ec977c3f6ab18b6a4\"},{\"secuencia\":2,\"accion\":\"HCE_SINCRONIZAR\",\"sistema\":\"hce\",\"resultado\":\"OK_ACTUALIZADA\",\"actor\":\"admin\",\"instante\":\"2026-11-15T19:03:28.057141Z\",\"hashAnterior\":\"381c198ba1df542219761aabf97218f4a7e832025d3b711ec977c3f6ab18b6a4\",\"hash\":\"ce2f63e4a1efff722c573cf7a280431e20acd2616ac51"
+ },
+ {
+  "tc": "TC19-06",
+  "paso": "sincronizar rotativo 1",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-rotativo/sincronizar",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-rotativo\",\"reutilizado\":false,\"huella\":\"ad8c104762b575e3f4cd69b365f9e0a2ebb2c43d580a9e090c993e200343ac12\",\"sincronizadaEn\":\"2026-11-15T19:03:29.273634200Z\",\"registros\":[{\"codigo\":\"ENF-DII\",\"fecha\":\"2025-01-20\",\"detalle\":\"Diabetes tipo II en control\"}]}"
+ },
+ {
+  "tc": "TC19-06",
+  "paso": "sincronizar rotativo 2",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-rotativo/sincronizar",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-rotativo\",\"reutilizado\":false,\"huella\":\"64b6264682b2ed9e336e5f6b3c4f83c6938653bcc868f028f2abc2e66ae7e57c\",\"sincronizadaEn\":\"2026-11-15T19:03:29.292643200Z\",\"registros\":[{\"codigo\":\"ENF-DII\",\"fecha\":\"2025-01-20\",\"detalle\":\"Diabetes tipo II en control\"},{\"codigo\":\"INF-RAD\",\"fecha\":\"2025-06-05\",\"detalle\":\"Informe de radiografia de torax\"}]}"
+ },
+ {
+  "tc": "TC19-06",
+  "paso": "auditoria tras rotativo",
+  "metodo": "GET",
+  "ruta": "/api/integracion/auditoria",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"cadenaIntegra\":true,\"totalRegistros\":19,\"ultimoHash\":\"b57818664025310cffc27d89cee12f79ac1df458e4410f7a03362c3941bb2de5\",\"eslabones\":[{\"secuencia\":1,\"accion\":\"SSO_LOGIN\",\"sistema\":\"sso\",\"resultado\":\"OK\",\"actor\":\"admin\",\"instante\":\"2026-11-15T19:03:28.005140700Z\",\"hashAnterior\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"hash\":\"381c198ba1df542219761aabf97218f4a7e832025d3b711ec977c3f6ab18b6a4\"},{\"secuencia\":2,\"accion\":\"HCE_SINCRONIZAR\",\"sistema\":\"hce\",\"resultado\":\"OK_ACTUALIZADA\",\"actor\":\"admin\",\"instante\":\"2026-11-15T19:03:28.057141Z\",\"hashAnterior\":\"381c198ba1df542219761aabf97218f4a7e832025d3b711ec977c3f6ab18b6a4\",\"hash\":\"ce2f63e4a1efff722c573cf7a280431e20acd2616ac51"
+ },
+ {
+  "tc": "TC19-07",
+  "paso": "sincronizar con HCE NORMAL",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"pacienteExternoId\":\"api-paciente-ok\",\"reutilizado\":true,\"huella\":\"f74eba00917c960014d92c77b49a45c54912de3f144cda192212e1dd64e05d4a\",\"sincronizadaEn\":\"2026-11-15T19:03:28.057141Z\",\"registros\":[{\"codigo\":\"ENF-HTA\",\"fecha\":\"2024-03-12\",\"detalle\":\"Hipertension arterial diagnostica\"},{\"codigo\":\"ALG-PENI\",\"fecha\":\"2023-11-02\",\"detalle\":\"Alergia a penicilina\"}]}"
+ },
+ {
+  "tc": "TC19-07",
+  "paso": "hce CAIDO",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"modo\":\"CAIDO\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-07",
+  "paso": "resincronizar con copia local",
+  "metodo": "POST",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 503,
+  "ms": 30,
+  "cuerpo": "{\"codigo\":\"SISTEMA_NO_DISPONIBLE\",\"mensaje\":\"el sistema hce esta caido\",\"instante\":\"2026-11-15T19:03:29.322755900Z\"}"
+ },
+ {
+  "tc": "TC19-07",
+  "paso": "hce NORMAL otra vez",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "setup",
+  "paso": "login medico",
+  "metodo": "POST",
+  "ruta": "/api/auth/login",
+  "status": 200,
+  "ms": 46,
+  "cuerpo": "{\"usuario\":\"medico\",\"rol\":\"MEDICO\",\"token\":\"<JWT-omitido>\",\"caducidad\":\"2026-11-15T20:03:29.374884300Z\"}"
+ },
+ {
+  "tc": "setup",
+  "paso": "login tecnico",
+  "metodo": "POST",
+  "ruta": "/api/auth/login",
+  "status": 200,
+  "ms": 78,
+  "cuerpo": "{\"usuario\":\"tecnico\",\"rol\":\"TECNICO\",\"token\":\"<JWT-omitido>\",\"caducidad\":\"2026-11-15T20:03:29.446170600Z\"}"
+ },
+ {
+  "tc": "setup",
+  "paso": "login recepcionista",
+  "metodo": "POST",
+  "ruta": "/api/auth/login",
+  "status": 200,
+  "ms": 63,
+  "cuerpo": "{\"usuario\":\"recepcionista\",\"rol\":\"RECEPCIONISTA\",\"token\":\"<JWT-omitido>\",\"caducidad\":\"2026-11-15T20:03:29.509676500Z\"}"
+ },
+ {
+  "tc": "setup",
+  "paso": "login celador",
+  "metodo": "POST",
+  "ruta": "/api/auth/login",
+  "status": 200,
+  "ms": 46,
+  "cuerpo": "{\"usuario\":\"celador\",\"rol\":\"CELADOR\",\"token\":\"<JWT-omitido>\",\"caducidad\":\"2026-11-15T20:03:29.559989100Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "medico GET sistemas",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas",
+  "status": 403,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.563988700Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "medico GET ping hce",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas/hce/ping",
+  "status": 403,
+  "ms": 31,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.585271700Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "medico POST simulacion",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 403,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.587270700Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "tecnico GET sistemas",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas",
+  "status": 403,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.588269500Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "tecnico GET ping hce",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas/hce/ping",
+  "status": 403,
+  "ms": 14,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.600803500Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "tecnico POST simulacion",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 403,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.601803800Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "recepcionista GET sistemas",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas",
+  "status": 403,
+  "ms": 15,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.615843200Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "recepcionista GET ping hce",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas/hce/ping",
+  "status": 403,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.616844500Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "recepcionista POST simulacion",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 403,
+  "ms": 16,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.631156700Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "celador GET sistemas",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas",
+  "status": 403,
+  "ms": 14,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.646298500Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "celador GET ping hce",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas/hce/ping",
+  "status": 403,
+  "ms": 16,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.662928400Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "celador POST simulacion",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 403,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"FORBIDDEN\",\"mensaje\":\"El rol del token no tiene permiso para este recurso\",\"instante\":\"2026-11-15T19:03:29.664932200Z\"}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "admin GET sistemas",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "[{\"nombre\":\"sso\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":20},{\"nombre\":\"hce\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":75},{\"nombre\":\"ris\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":20},{\"nombre\":\"pacs\",\"disponible\":true,\"motivo\":null,\"latenciaMediaMs\":0}]"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "admin POST simulacion",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-08",
+  "paso": "auditoria sin token",
+  "metodo": "GET",
+  "ruta": "/api/integracion/auditoria",
+  "status": 401,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:03:29.670438500Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "sistema vacio",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 400,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"el sistema es obligatorio\",\"instante\":\"2026-11-15T19:03:29.671438300Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "sistema espacios",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 400,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"el sistema es obligatorio\",\"instante\":\"2026-11-15T19:03:29.673440700Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "sistema volador",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 404,
+  "ms": 30,
+  "cuerpo": "{\"codigo\":\"SISTEMA_NO_ENCONTRADO\",\"mensaje\":\"el sistema volador no es un sistema externo conocido\",\"instante\":\"2026-11-15T19:03:29.693968400Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "modo IMPOSIBLE",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 400,
+  "ms": 16,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"modo de simulacion desconocido: IMPOSIBLE\",\"instante\":\"2026-11-15T19:03:29.708509500Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "latencia negativa",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 400,
+  "ms": 14,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"la latencia y el tiempo de espera no pueden ser negativos\",\"instante\":\"2026-11-15T19:03:29.724317200Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "latencia ausente",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 400,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"latenciaMs, timeoutMs y reintentos son obligatorios\",\"instante\":\"2026-11-15T19:03:29.739482900Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "sso cuerpo null",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sso/login",
+  "status": 400,
+  "ms": 15,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"el cuerpo JSON no es legible\",\"instante\":\"2026-11-15T19:03:29.741578800Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "sso texto plano",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sso/login",
+  "status": 415,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"CONTENIDO_NO_ACEPTADO\",\"mensaje\":\"el Content-Type enviado no esta soportado\",\"instante\":\"2026-11-15T19:03:29.744578600Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "sistemas//ping",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas//ping",
+  "status": 401,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:03:29.750578700Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "POST sistemas",
+  "metodo": "POST",
+  "ruta": "/api/integracion/sistemas",
+  "status": 401,
+  "ms": 31,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:03:29.776872800Z\"}"
+ },
+ {
+  "tc": "TC19-09",
+  "paso": "GET sincronizar",
+  "metodo": "GET",
+  "ruta": "/api/integracion/historias/api-paciente-ok/sincronizar",
+  "status": 401,
+  "ms": 0,
+  "cuerpo": "{\"codigo\":\"AUTENTICACION_REQUERIDA\",\"mensaje\":\"Hace falta un token JWT valido en la cabecera Authorization (Bearer ...)\",\"instante\":\"2026-11-15T19:03:29.780878500Z\"}"
+ }
+]
