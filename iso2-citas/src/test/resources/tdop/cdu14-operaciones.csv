@@ -1,0 +1,31 @@
+id;operacion;estadoEntrada;inicio;setup;esperadoStatus;esperadoCodigo;nota
+TC14-C01;DETALLE_ESPERA;ACTIVA;-;SEM-ESTADO:ACTIVA;OK;-;lectura de entrada activa con su posicion calculada sobre la cola del mundo sembrado
+TC14-C02;DETALLE_ESPERA;ASIGNADA;-;SEM-ESTADO:ASIGNADA;OK;-;las terminales tambien se leen: la trazabilidad no se borra al cerrar la entrada, la cita enlazada vive en 09:00 (INICIO_FIJO) para no pisar AUT (13:00)
+TC14-C03;DETALLE_ESPERA;RETIRADA;-;SEM-ESTADO:RETIRADA;OK;-;la retirada deja motivoFin y estado, nunca borra la fila
+TC14-C04;DETALLE_ESPERA;NINGUNA;-;SEMILLA-VACIA;NO_ENCONTRADA;LISTA_ESPERA_NO_ENCONTRADA;esperaId bien formado que no existe: 404 propio, no el 404 de ruta de Spring
+TC14-C05;AUDITORIA_ESPERA;ACTIVA;-;SEM-ESTADO:ACTIVA;OK;-;cadena de la entrada: GENESIS + ALTA
+TC14-C06;AUDITORIA_ESPERA;ASIGNADA;-;SEM-ESTADO:ASIGNADA;OK;-;GENESIS + ALTA + ASIGNACION: la asignacion deja su eslabon apuntando a la cita
+TC14-C07;AUDITORIA_ESPERA;RETIRADA;-;SEM-ESTADO:RETIRADA;OK;-;GENESIS + ALTA + RETIRADA con el motivo en el eslabon
+TC14-C08;AUDITORIA_ESPERA;NINGUNA;-;SEMILLA-VACIA;NO_ENCONTRADA;LISTA_ESPERA_NO_ENCONTRADA;auditar una entrada inexistente no devuelve cadena vacia: 404
+TC14-C09;AUDITORIA_VERIFICABLE;ACTIVA;-;SEM-ESTADO:ACTIVA;OK;-;verificacion de la cadena completa de la tabla espera_auditoria: true en mundo limpio (el campo verificable del JSON lo comprueba el TC a mano)
+TC14-C10;AUDITORIA_VERIFICABLE;ASIGNADA;-;SEM-ESTADO:ASIGNADA;OK;-;tres eslabones encadenados siguen verificando: cada huella parte de la anterior
+TC14-C11;PRIORIDAD;ACTIVA;-;SEM-ESTADO:ACTIVA,SEM-PRI:SUBIR;OK;-;reubicacion feliz sobre entrada activa (el orden resultante lo afirman las filas de la tabla D, que llevan la cola esperada escrita)
+TC14-C12;PRIORIDAD;ASIGNADA;-;SEM-ESTADO:ASIGNADA;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;reubicar una entrada ya asignada no tiene sentido: su hueco ya esta cogido
+TC14-C13;PRIORIDAD;RETIRADA;-;SEM-ESTADO:RETIRADA;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;estado terminal: la maquina manda antes que cualquier otra consideracion
+TC14-C14;PRIORIDAD;NINGUNA;-;SEMILLA-VACIA;NO_ENCONTRADA;LISTA_ESPERA_NO_ENCONTRADA;404 antes que cualquier regla de estado
+TC14-C15;PRIORIDAD;ASIGNADA;-;SEM-ESTADO:ASIGNADA,REDUNDANTE;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;PRECEDENCIA fijada: estado gana a redundancia, si se mirase primero la redundancia el Administrativo recibira un codigo que no explica que la entrada ya esta cerrada
+TC14-C16;RETIRAR;ACTIVA;-;SEM-ESTADO:ACTIVA;OK;-;retirada feliz con motivo en el cuerpo
+TC14-C17;RETIRAR;ASIGNADA;-;SEM-ESTADO:ASIGNADA;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;retirar la entrada que ya tiene cita no deshace la cita: se prohibe, no se revierte
+TC14-C18;RETIRAR;RETIRADA;-;SEM-ESTADO:RETIRADA;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;segunda retirada sobre la misma entrada
+TC14-C19;RETIRAR;RETIRADA;-;SEM-ESTADO:RETIRADA,REDUNDANTE;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;PRECEDENCIA: el doble clic de retirar sobre entrada ya retirada devuelve UN solo codigo (ENTRADA_NO_ACTIVA, regla de estado primero), y asi el TC del doble clic es determinista
+TC14-C20;RETIRAR;NINGUNA;-;SEMILLA-VACIA;NO_ENCONTRADA;LISTA_ESPERA_NO_ENCONTRADA;404 antes que estado
+TC14-C21;ASIGNAR;ACTIVA;AUT;SEM-ESTADO:ACTIVA;ASIGNADO;-;asignacion feliz: 201 con la cita, la entrada pasa a ASIGNADA con citaId y deja eslabon ASIGNACION
+TC14-C22;ASIGNAR;ASIGNADA;AUT;SEM-ESTADO:ASIGNADA;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;tercera capa del doble clic sobre la maquina: la entrada ya asignada no se reasigna por esta via
+TC14-C23;ASIGNAR;RETIRADA;AUT;SEM-ESTADO:RETIRADA,SEM-HUECO-DEST:EXACTO;NO_ACTIVA;CONFLICTO_ENTRADA_NO_ACTIVA;PRECEDENCIA: estado gana a hueco ocupado, el hueco esta sembrado a proposito para demostrar que ni se consulta
+TC14-C24;ASIGNAR;NINGUNA;AUT;SEMILLA-VACIA;NO_ENCONTRADA;LISTA_ESPERA_NO_ENCONTRADA;404 antes que estado
+TC14-C25;ASIGNAR;ACTIVA;AUT;SEM-ESTADO:ACTIVA,ENLAZE:CITADA,SEM-HUECO-DEST:LIBRE;SOLICITUD_NO_APTA;CONFLICTO_SOLICITUD_NO_APTA;la solicitud enlazada ya tiene cita detras: CDU14 aplica su propia guarda fail-fast (apta: CREADA, no aptas: CITADA, PRESCRITA o enlace nulo) antes de consultar la agenda
+TC14-C26;ASIGNAR;ACTIVA;AUT;SEM-ESTADO:ACTIVA,ENLAZE:CITADA,SEM-HUECO-DEST:EXACTO;SOLICITUD_NO_APTA;CONFLICTO_SOLICITUD_NO_APTA;PRECEDENCIA reordenada tras el informe de factibilidad del agente B: la aptitud de la solicitud se comprueba antes de llamar a huecosDisponibles, con la precedencia antigua esta fila habria dado HUECO_OCUPADO
+TC14-C27;ASIGNAR;ACTIVA;AUT;SEM-ESTADO:ACTIVA,ENLAZE:NINGUNA;SOLICITUD_NO_APTA;CONFLICTO_SOLICITUD_NO_APTA;entrar en cola sin solicitud es legal (RF14.1), pero asignarle una cita a quien no tiene prescripcion no lo es: la guarda incluye solicitudId nula
+TC14-C28;ASIGNAR;ACTIVA;AUT;SEM-ESTADO:ACTIVA,SEM-HUECO-DEST:EXACTO;HUECO_OCUPADO;CONFLICTO_HUECO_OCUPADO;hueco sembrado exactamente sobre el inicio que pide la propia fila: CitaConflicto HUECO_OCUPADO propagado por el facade
+TC14-C29;ASIGNAR;ACTIVA;PASADA_CIERRE;SEM-ESTADO:ACTIVA;FUERA_DE_FRANJA;CONFLICTO_FUERA_DE_FRANJA;15:00 en punto: el inicio cae fuera del rango [08:00,15:00) de la franja falsa de PruebasCitas y el fin de 30 minutos desborda ancora mas
+TC14-C30;ASIGNAR;ACTIVA;PASADA_CIERRE;SEM-ESTADO:ACTIVA,SEM-HUECO-DEST:EXACTO;FUERA_DE_FRANJA;CONFLICTO_FUERA_DE_FRANJA;PRECEDENCIA: huecosDisponibles comprueba la franja antes de las colisiones, asi que gana FUERA_DE_FRANJA aunque el hueco este ocupado
