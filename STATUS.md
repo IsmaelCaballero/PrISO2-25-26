@@ -392,7 +392,13 @@ técnicas, la D33 y sus TC humanos.
     el rollback solo deshace conversación y las instantáneas ya guardadas no se borran. Contrapartida: se pierde el
     `/undo` de ficheros, algo aceptable mientras el agente trabaje con **commit + push inmediato**. No se ha
     aplicado: cambia la configuración global de la máquina y le corresponde a Ismael (el agente puede hacerlo si se
-    lo pide).
+    lo pide). **Decisión tomada el 15/11: se queda como está, sin tocar la config**; así que el wiping no se corta y
+    la única defensa sigue siendo el orden **escribir → verificar en disco → `git add` → commit → push inmediato**.
+26. **Alcance del agente B de la Iter7 (decidido por Ismael el 15/11)**: se autoriza un segundo agente en un
+    *worktree* aparte (`C:\ProgIA\PrISO2-iter07`, creado desde `develop`) **solo sobre `docs/modelo/iter07/` y
+    `docs/test/iter07/`**: diagramas `.puml` + sus PNG y la especificación/matriz TDOP con sus CSV. **No toca `src/`,
+    ni `pom.xml`, ni `STATUS.md`/`PROMPTS.md`, ni `main`/`develop`**, y abre su propio PR a `develop` cuando el #45 ya
+    esté fusionado, para no pisar la integración de la CDU19.
 
 ## Punto exacto de continuación para la próxima sesión
 

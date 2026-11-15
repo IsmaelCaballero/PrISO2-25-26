@@ -916,3 +916,10 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   borrador a `develop`: #45** *(91 ficheros, `Ref: #44`, **sin `Closes`**)*. **Queda de Ismael**: ejecutar los TC humanos de
   CDU19 (D28), fusionar el PR y cerrar **#44** (D29), poner el tag `cfg-iter06` sobre la fusión y materializar
   `release/R1` → `main` con `v0.2.0-alpha` (D30).
+- **Dos decisiones recogidas de Ismael al cierre**: **no se desactivan las snapshots**, de modo que la Deuda nº 25
+  queda abierta, el agente no toca la configuración global de la máquina y el wiping se cubre igual con el orden
+  escribir → verificar → `git add` → commit → push; y el **agente B de la Iter7** queda acotado a
+  `docs/modelo/iter07/` y `docs/test/iter07/` en el *worktree* `C:\ProgIA\PrISO2-iter07`, sin tocar `src/`, los
+  `pom.xml` ni `STATUS.md`/`PROMPTS.md`, y sin abrir PR hasta que el #45 esté fusionado. Tras esto se re-sincroniza el
+  cuerpo del **#45** con el tip y se comprueba por API: `draft=True`, `head=c78e6ab`, 18 commits.
+
