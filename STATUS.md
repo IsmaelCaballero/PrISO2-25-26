@@ -1,17 +1,19 @@
 # STATUS.md — Estado vivo del proyecto
 
-**Última actualización:** 2026-11-09 (sesión 17 · **Iter1 · CDU16 / CFG-01 CERRADA por completo**: método **D33**
-aplicado (issue **#35**, PR **#36** → merge `f43721c`) y **TC humanos de CDU16 ejecutados y documentados**
-(PR **#37** → merge `3601fd6`); tag **`cfg-iter01` reanotado** sobre el mismo commit `df09bca`; wiki de la Iter1
-actualizada (merge `7b36c5c`); **#35 cerrada a mano por Ismael**; **limpiadas 12 ramas remotas y 12 locales**.
-Sesión 16: cierre de Iter4 + D33/D34/D35. Prompts 15 y 16)
+**Última actualización:** 2026-11-15 (sesión 21 · **Iter5 · CDU12 / CFG-05 en cierre de cierre**: Ismael
+fusionó el **PR #42** (merge `08a7ed8`, 14/11 22:25) con los 12 commits de código y **cerró #40 a mano**
+(D29), pero la **matriz D33 de 172 casos** (`Cdu12MatrizTdopTest`, `b912554`) se pusheó después del merge y
+**no entró en `develop`**: va por una **segunda rama de cierre** igual que el PR #32 de la Iter4, y sobre su
+fusión se pondrá el tag `cfg-iter05`. Cifras ya medidas con Docker: `mvn -B -ntp clean verify` **637 tests /
+0 saltados**; **wiki `Iter5-CDU12-citas` publicada**; `TASADEFECTOS.md` al día (D37: Iter5 cierra **sin
+defectos nuevos**). Sesión 20: libro `TASADEFECTOS.md` + decisión **D37**. Prompts 17 a 21)
 
 ## Estado global
 
 | Fase | Estado |
 |---|---|
 | Inicio (Iter0) | ✔ **Completada, etiquetada y publicada** — PR #7 fusionado a `develop` (`641e72d`), tag `cfg-iter00`; **R0 publicada en `main`**: PR #19 fusionado (merge `e165622`) con el tag anotado **`v0.1.0`** (regla **D30**: release desde `release/R0`) |
-| Elaboración (Iter1–6) | 🟡 En curso — **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU17/CDU13/CDU06** y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
+| Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) fusionada el 14/11 por Ismael (PR #42 → merge `08a7ed8`)** con los 12 commits de código (D34 ya estaba en `develop` por el PR #41 → `d4749e3`), **#40 cerrada a mano**; la **matriz D33 de 172 casos** (`Cdu12MatrizTdopTest`) se pusheó tras ese merge y va en un **PR de cierre aparte** (como el #32 de la Iter4) con el tag `cfg-iter05` sobre su fusión; wiki ya publicada. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
 | Construcción (Iter7–20) | ⏳ Pendiente |
 | Transición (Iter21) | ⏳ Pendiente — cierre 14/12, entrega 15/12 |
 
@@ -22,26 +24,35 @@ del esfuerzo** (5 de 22 iteraciones). **Cerradas del todo, con TC humanos hechos
 Iter0 (CFG-00) e Iter1 (CFG-01) = 62 h ≈ 10,1 %.** En calendario vamos por delante: el plan ponía Iter1-3 del
 09/11 al 13/11 e Iter4-6 del 16/11 al 20/11, y la Iter4 ya estaba fusionada el 08/11.
 
-**Iteración en curso:** **Iter5 · CDU12 citas (CFG-05) — aún sin arrancar**. El 09/11 (sesión 17) se cerró
-**del todo la Iter1 · CDU16 / CFG-01**, que es la primera que completa el ciclo entero: diseño → código →
-puertas técnicas → **D33** → **TC humanos** → issue cerrada a mano → wiki al día. Sus dos trabajos de la sesión
-fueron la issue **#35** (método **D33** sobre las pruebas de CDU16: PR **#36** → merge `f43721c`) y la
-ejecución de los **TC humanos de CDU16** (PR **#37** → merge `3601fd6`). Antes, en la sesión 16, se cerró
-**Iter4 · CDU06 (CFG-04)**: rama `feature/iter04-cdu06-solicitudes` con 4 commits (diseño PlantUML `cce3af2` →
-servidor `71ce94b` → fix doclint `7f85678` → cliente `b4c4e27`) **fusionada por Ismael con el PR #31 (merge
-`a3fe109`)** y el PR de docs **#32** (merge `3b02718`), tag **`cfg-iter04`** sobre `a3fe109`, wiki
-`Iter4-CDU06-solicitudes` y **#30 cerrada a mano** por Ismael (19:01, D29 por adelantado).
+**Iteración en curso:** **Iter5 · CDU12 citas (CFG-05) — fusionada; queda el PR de cierre con la matriz
+D33**. El 15/11 (sesión 21) se completó CFG-05 en `feature/iter05-cdu12-citas` con **13 commits
+(`6feabdf..b912554`)**: diseño PlantUML `a7b88e8` (D31) → módulo `iso2-citas` 1.1.0 + Flyway dual `V1.5.0`
+→ RBAC y `CitasApiTest` → parte b del contrato (cliente JavaFX) → **matriz D33 de 172 casos**
+(`Cdu12MatrizTdopTest`, `b912554`). Ismael **fusionó el PR #42 el 14/11 (merge `08a7ed8`)** llevándose los
+12 commits de código y **cerró #40 a mano** esa misma noche (D29), pero la matriz D33 se pusheó **después**
+del merge y se quedó fuera de `develop`: viaja en un **PR de cierre aparte** (el mismo patrón de la Iter4:
+PR #31 de código + PR #32 de docs) junto con `TASADEFECTOS.md` y `STATUS.md`, y el tag anotado
+**`cfg-iter05`** se pondrá sobre la fusión de ese PR de cierre. Cifras ya medidas: `mvn -B -ntp clean
+verify` con Docker arriba **637 tests, 0 saltados**; wiki **`Iter5-CDU12-citas`** publicada; D37 al día
+(**Iter5 cierra sin defectos nuevos**). Después llegan los **TC humanos de CDU12** (D28) e **Iter6 · CDU19
+(CFG-06)** con el hito `v0.2.0-alpha`. La **capa D34 de persistencia MySQL** que también era de esta
+iteración se fusionó antes en `develop` por su propia rama (PR #41 → merge `d4749e3`, issue #34 cerrada
+el 11/11). Antes, el 09/11 (sesión 17), se cerró **del todo la Iter1 · CDU16 / CFG-01**, que es la primera
+que completa el ciclo entero: diseño → código → puertas técnicas → **D33** → **TC humanos** → issue cerrada
+a mano → wiki al día, y en la sesión 16 se cerró **Iter4 · CDU06 (CFG-04)** (PR #31 → merge `a3fe109`,
+tag `cfg-iter04`, wiki y **#30 cerrada a mano** por Ismael).
 
 **Dos cambios de enfoque pedidos por Ismael el 08/11:** (1) el **método D33** de pruebas — clases de
 equivalencia + teorema del valor límite + conjetura de errores compuestos con **pairwise**, ejecutados con
 **JUnit/Maven** y proyectados tales cuales a las **plantillas de TC humanos**, con JavaDoc en los ficheros de
-test y la **clase probada** identificada en la wiki; **ya aplicado a la Iter1/CDU16** (evidencia en
-`docs/test/iter01/`), pendiente de extender a Iter2/CDU17 e Iter3/CDU13. (2) La **capa de persistencia MySQL**
+test y la **clase probada** identificada en la wiki; **ya aplicado a la Iter1/CDU16 y a la Iter5/CDU12**
+(evidencia en `docs/test/iter01/` y `docs/test/iter05/`), pendiente de extender a Iter2/CDU17 e Iter3/CDU13. (2) La **capa de persistencia MySQL**
 con Docker (MySQL + phpMyAdmin) y los patrones **DAO** y **Agente** (`AgenteMySQL`) — **D34 aceptada y
 redactada**, con los cinco puntos ya decididos por Ismael (Testcontainers con MySQL 8, Flyway dual
 `db/migration/h2` + `db/migration/mysql`, `gestoroperaciones` solo DML con usuario DDL aparte para Flyway,
 `com.mysql:mysql-connector-j` sobre MySQL 8.4 con volumen, y rama propia `feature/iter05-persistencia-mysql`) y
-**la implementación pendiente** (issue **#34**). Iter2 e Iter3 cerradas también con sus tags (`cfg-iter02` →
+**la implementación ya fusionada a `develop` el 11/11** (rama `feature/iter05-persistencia-mysql`, PR #41 →
+merge `d4749e3`, issue **#34** cerrada). Iter2 e Iter3 cerradas también con sus tags (`cfg-iter02` →
 `870524e`, `cfg-iter03` → `b072b34`). Lo que mantiene abiertas **CFG-02/CFG-03/CFG-04**: los **TC humanos**
 (D28) y, en CFG-02/CFG-03, **extenderles el método D33**. **CFG-01 ya no está abierta**: cerradas las puertas
 técnicas, la D33 y sus TC humanos.
@@ -252,24 +263,27 @@ técnicas, la D33 y sus TC humanos.
     decidió Ismael); **Testcontainers con `mysql:8.4`** en la puerta (3 tests) y reactor verde **356 tests,
     0 saltados**. Queda de Ismael: **fusionar el PR** a `develop` y **cerrar #34 a mano** (D29). El aviso de
     seguimiento (cierre de #34 del 09/11 sin trabajo detrás) quedó zanjado reabriendo la issue el 11/11.
+20. **TC humanos de CDU12 (D28) — pendientes de Ismael tras fusionar el PR de cierre de CFG-05**: plantilla en
+    `docs/tc/cdu12-tc-humanos.md` con los **172 casos TDOP generados** por el método D33 (tablas A–F, los
+    mismos que ejecuta `Cdu12MatrizTdopTest`) más la preparación del entorno. Al ejecutarlos sobre el
+    sistema en marcha, anotar el resultado y cerrarlos como se hizo con los de CDU16 (PR #37).
 
 ## Punto exacto de continuación para la próxima sesión
 
-**Arrancar en la rama `feature/iter05-cdu12-citas`** (PR **#42** abierta como borrador hacia `develop`, issue
-**#40** abierta, `Ref: #40`). Estado a 14/11: **módulo `iso2-citas` verde** (66 ejecuciones, puerta JaCoCo
-0,80 superada), **RBAC de citas cableado** (`cita:leer`/`cita:escribir` en `Permiso`/`MatrizPermisos`/
-`ConfigSeguridad` + `CitasApiTest` 18 ejecuciones), **D36 aceptada por Ismael** y reporte **D37** de mitad de
-tramo commiteado. Parte b del contrato (cliente): **`ApiClienteCitas` + `VistaGestionCitas` (recepcionista/
-administrador) + `VistaConsultaCitas` (médico) + predicates de `NavegacionPorRol` + `VERSION` 0.1.5-SNAPSHOT**,
-cliente verde (80 ejecuciones) y servidor sin regresiones (90 ejecuciones, 3 skip de Testcontainers sin
-Docker). **Lo que queda, en orden:** (1) método **D33 de CDU12** — spec `docs/test/iter05/tdop-cdu12-espec.json`
-→ `python tools/pairwise.py` → CSVs en `iso2-citas/src/test/resources/tdop/` → `Cdu12MatrizTdopTest` → bloque
-gestionado de `docs/tc/cdu12-tc-humanos.md` (previos dos ajustes genéricos en `tools/tc_plantillas.py`:
-paquete `tdop` derivado del módulo de la spec y mapa `operaciones` por CDU); (2) wiki **`Iter5-CDU12-citas.md`**
-nombrando la clase probada + enlace en `Home.md` (pushear a `master` de la wiki, D30); (3) levantar **Docker
-Desktop** y `mvn -B -ntp clean verify` completo (puerta D34); (4) quitar el borrador al PR #42 y comentario
-final con la línea de 6 contadores D37 + cierre de `TASADEFECTOS.md`; (5) **Ismael fusiona #42, etiqueta
-`cfg-iter05` y cierra #40 a mano** (D29). Tras eso queda **Iter6 · CDU19 (CFG-06)** con el hito `v0.2.0-alpha`.
+**La parte del agente de la Iter5/CFG-05 está TERMINADA** (15/11, sesión 21). Ya en `develop`: los 12
+commits de código de CFG-05, **fusionados por Ismael con el PR #42 (merge `08a7ed8`, 14/11 22:25)** y
+**#40 cerrada a mano** esa misma noche (D29). **Lo que sigue sin fusionar es la matriz D33**: el commit
+`b912554` (172 filas de `Cdu12MatrizTdopTest` + evidencia `docs/test/iter05/` + `docs/tc/cdu12-tc-humanos.md`)
+se pusheó **después** del merge de #42 y es el único commit de la rama que no está en `develop`; sube en un
+**PR de cierre aparte** (`feature/iter05-cdu12-citas` → `develop`) junto con este `TASADEFECTOS.md` y
+`STATUS.md`, igual que el PR #32 hizo con los docs de la Iter4. Cifras ya medidas sobre `b912554`:
+`Cdu12MatrizTdopTest` **172/172**, `mvn -B -ntp clean verify` con Docker arriba **BUILD SUCCESS con 637
+tests y 0 saltados** (los 3 Testcontainers de MySQL corren), wiki **`Iter5-CDU12-citas` publicada** (merge
+`0809425` en `master` de la wiki + fila en `Home.md` + 4 PNG). **Lo que queda es solo de Ismael (D29):**
+(1) **fusionar el PR de cierre** de CFG-05; (2) **tag anotado `cfg-iter05`** sobre ese commit de fusión
+(receta en `docs/mapa-configuraciones.md`); (3) borrar la rama `feature/iter05-cdu12-citas` tras fusionar;
+(4) **TC humanos de CDU12** (D28, pendiente 20). Tras eso, **Iter6 · CDU19 (CFG-06)** con el hito
+**`v0.2.0-alpha`**: Ismael abre la issue con su prompt y la sesión arranca por los diagramas (D31).
 
 ### 0) Arranque en el equipo nuevo (10/11/2026)
 
@@ -364,11 +378,13 @@ sesión de `STATUS.md` lleva la línea con los 6 contadores `commits · F1 · F2
 plantilla en §7 de ese fichero) y el **flujo diseño-primero** (editar el `.puml` antes que el código cuando
 cambia un invariante).
 
-**Datos de defectos al 11/11/2026 (D37):** 101 commits (94 en `develop` + 7 en la rama de Iter5) → **13
-defectos** = 6 F1 proceso + 3 F2 entorno + 2 F3 contrato + **2 F4 código** · 11 fugados · 12,9 por 100 commits
-(F4 solo 2,0). Iter0 2, Iter1 3, Iter2 0, Iter3 3, Iter4 2, tramo D33/D34 2, Iter5 en curso 1. CI: 64/66 en
-verde, los 2 rojos son la puerta JaCoCo planificada de `iso2-citas` sin tests. Detalle y receta de recálculo en
-`TASADEFECTOS.md`.
+**Datos de defectos al 15/11/2026 (D37, corte de cierre de CFG-05):** 107 commits (94 en `develop` + 13 en
+la rama de Iter5 `6feabdf..b912554`) → **13 defectos** = 6 F1 proceso + 3 F2 entorno + 2 F3 contrato +
+**2 F4 código** · 11 fugados · 12,1 por 100 commits (F4 solo 1,9). Iter0 2, Iter1 3, Iter2 0, Iter3 3,
+Iter4 2, tramo D33/D34 2, Iter5 1 (DEF-13, F2 fugado; **Iter5 no añade ningún DEF nuevo**, ver §2 de
+`TASADEFECTOS.md`). CI en el PR #42: 72 ejecuciones, 69 verdes; los 3 rojos son la puerta JaCoCo
+planificada de `iso2-citas` en commits intermedios sin tests (ya superada: 238 tests, 95,8 %). Detalle y
+receta de recálculo en `TASADEFECTOS.md`.
 
 Datos para volver a ejecutar TC por HTTP: `mvn spring-boot:run -pl iso2-server-app` deja el servidor en
 `http://localhost:8080` con H2 en `./data`; login con campo **`password`** y semillas `admin/iso2-admin`,
@@ -423,4 +439,30 @@ Desde ahora, en cada cierre de CFG se actualiza `TASADEFECTOS.md` y el registro 
 la línea de 6 contadores (plantilla en §7 de `TASADEFECTOS.md`). Cifra de partida: 12,9 defectos por 100
 commits, de los que solo 2,0 son de código; los 2 rojos de CI son la puerta JaCoCo planificada de `iso2-citas`.
 Nota: en el punto anterior `HEAD` figura como `e44f7c1`, pero el punta real de la rama es `7abea47`.
+
+**Trabajo de la sesión 21 (15/11/2026, cierre de Iter5/CFG-05: D33 de CDU12 + wiki + D37 - Prompt 21):**
+primera mitad de la sesión, cerrar el **método D33 sobre CDU12**: spec TDOP de seis tablas en
+`docs/test/iter05/tdop-cdu12-espec.json` → `python tools/pairwise.py` → **172 casos** en los CSVs de
+`iso2-citas/src/test/resources/tdop/` → **`Cdu12MatrizTdopTest` 172/172 en verde** (A38 alta, B31
+reprogramación, C29 huecos, D27 listado, E34 estado, F13 conjetura) → evidencia `docs/test/iter05/tdop-cdu12.md`
+y bloque gestionado proyectado **tal cual** a `docs/tc/cdu12-tc-humanos.md` con `tools/tc_plantillas.py`
+(dos ajustes genéricos previos en la herramienta: paquete `tdop` derivado de la spec y mapa `operaciones`
+por CDU). Récord D33: **CDU16 115 casos + CDU12 172 casos = 287 casos pairwise ejecutados**. Segunda
+mitad, cerrar CFG-05: **D34 en la puerta** (puerta JaCoCo de `iso2-citas` superada), wiki
+**`Iter5-CDU12-citas.md` publicada** en `master` de la wiki (merge **`0809425`**: página + 4 PNG
+`iter05-cdu12-*` + fila en `Home.md`, D30) nombrando clase probada `Cdu12MatrizTdopTest`; **revalidación
+D37** en `TASADEFECTOS.md` (corte `b912554`: **Iter5 cierra sin DEF nuevos**, no hay DEF-14 porque el
+modelo ya fijaba `reprogramar` como `POST` y nunca prometió PUT/PATCH → sin desviación de contrato; el
+único defecto del tramo es el F2 ya fugado DEF-13); `mvn -B -ntp clean verify` con Docker Engine arriba
+= **BUILD SUCCESS, 637 tests, 0 saltados** (los 3 Testcontainers de `mysql:8.4` corriendo de verdad); y
+**PR #42 fusionado por Ismael (merge `08a7ed8`, 14/11 22:25)** con los 12 commits de código y **#40 cerrada
+a mano** (14/11 22:24, D29); la matriz D33 `b912554`, pusheada justo después del merge, sube con estos docs
+en un **PR de cierre aparte** y sobre su fusión irá el tag `cfg-iter05`.
+
+**Datos de defectos Iter5/CFG-05:** commits `6feabdf..b912554` = 13 · F1 proceso 0 · F2 entorno 1 ·
+F3 contrato 0 · F4 código 0 · total 1 (fugados 1) · **7,7 por 100 commits** · detalle en
+`TASADEFECTOS.md` (DEF-13). Serie total al corte: **107 commits, 13 defectos, 12,1 por 100, solo 1,9 de
+código**. Queda de Ismael (D29): fusionar el PR de cierre (lleva `b912554` + estos docs), poner el tag
+`cfg-iter05` sobre esa fusión y borrar la rama; luego TC humanos de CDU12
+(D28) e **Iter6 · CDU19 (CFG-06)** con el hito `v0.2.0-alpha`.
 
