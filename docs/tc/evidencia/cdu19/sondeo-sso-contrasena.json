@@ -1,0 +1,22 @@
+[
+ {
+  "paso": "contrasena erronea (clave correcta)",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"CREDENCIALES_INVALIDAS\",\"mensaje\":\"el IdP ha rechazado las credenciales\",\"instante\":\"2026-11-15T19:15:45.892570700Z\"}"
+ },
+ {
+  "paso": "usuario IdP inexistente",
+  "status": 401,
+  "cuerpo": "{\"codigo\":\"CREDENCIALES_INVALIDAS\",\"mensaje\":\"el IdP ha rechazado las credenciales\",\"instante\":\"2026-11-15T19:15:45.916034400Z\"}"
+ },
+ {
+  "paso": "usuario vacio",
+  "status": 400,
+  "cuerpo": "{\"codigo\":\"DATOS_INVALIDOS\",\"mensaje\":\"usuario y contrasena son obligatorios\",\"instante\":\"2026-11-15T19:15:45.953649Z\"}"
+ },
+ {
+  "paso": "dos factores correctos repetidos",
+  "status": 200,
+  "cuerpo": "{\"sujeto\":\"idp-admin\",\"rolExterno\":\"radiologia\",\"caducaEn\":\"2026-11-15T20:15:46.000545600Z\"}"
+ }
+]

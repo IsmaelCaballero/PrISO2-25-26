@@ -1,0 +1,119 @@
+[
+ {
+  "tc": "setup",
+  "paso": "login admin",
+  "metodo": "POST",
+  "ruta": "/api/auth/login",
+  "status": 200,
+  "ms": 61,
+  "cuerpo": "{\"usuario\":\"admin\",\"rol\":\"ADMINISTRADOR\",\"token\":\"<JWT-omitido>\",\"caducidad\":\"2026-11-15T20:06:33.191884900Z\"}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "simulacion hce CAIDO",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"modo\":\"CAIDO\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "simulacion ris CAIDO",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 14,
+  "cuerpo": "{\"modo\":\"CAIDO\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "simulacion pacs CAIDO",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"modo\":\"CAIDO\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "agendar cita 13/11 09:00 con integracion caida",
+  "metodo": "POST",
+  "ruta": "/api/citas",
+  "status": 201,
+  "ms": 46,
+  "cuerpo": "{\"citaId\":\"f95b5190-02a6-4717-8888-b541a9e2a1db\",\"solicitudId\":null,\"inicio\":\"2026-11-13T09:00:00\",\"fin\":\"2026-11-13T09:30:00\",\"estado\":\"programada\"}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "repetir cita mismo hueco (doble clic)",
+  "metodo": "POST",
+  "ruta": "/api/citas",
+  "status": 409,
+  "ms": 16,
+  "cuerpo": "{\"codigo\":\"CONFLICTO_HUECO_OCUPADO\",\"mensaje\":\"el hueco de medico a las 2026-11-13T09:00 ya lo ocupa la cita f95b5190-02a6-4717-8888-b541a9e2a1db\",\"instante\":\"2026-11-15T19:06:33.288118100Z\"}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "huecos libres medico 13/11",
+  "metodo": "GET",
+  "ruta": "/api/citas/huecos?profesionalId=medico&desde=2026-11-13T00:00:00&hasta=2026-11-14T00:00:00&duracionMinutos=30",
+  "status": 500,
+  "ms": 30,
+  "cuerpo": "{\"codigo\":\"ERROR_INTERNO\",\"mensaje\":\"fallo interno de citas\",\"instante\":\"2026-11-15T19:06:33.321749400Z\"}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "estudio RIS con caida activa",
+  "metodo": "GET",
+  "ruta": "/api/integracion/estudios/ACC-0001",
+  "status": 503,
+  "ms": 16,
+  "cuerpo": "{\"codigo\":\"SISTEMA_NO_DISPONIBLE\",\"mensaje\":\"el sistema ris esta caido\",\"instante\":\"2026-11-15T19:06:33.323750100Z\"}"
+ },
+ {
+  "tc": "TC19-04",
+  "paso": "ping HCE con caida activa",
+  "metodo": "GET",
+  "ruta": "/api/integracion/sistemas/hce/ping",
+  "status": 200,
+  "ms": 14,
+  "cuerpo": "{\"nombre\":\"hce\",\"disponible\":false,\"motivo\":\"CAIDO\",\"latenciaMediaMs\":75}"
+ },
+ {
+  "tc": "setup",
+  "paso": "simulacion hce NORMAL",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "setup",
+  "paso": "simulacion ris NORMAL",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 15,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "setup",
+  "paso": "simulacion pacs NORMAL",
+  "metodo": "POST",
+  "ruta": "/api/integracion/simulacion",
+  "status": 200,
+  "ms": 0,
+  "cuerpo": "{\"modo\":\"NORMAL\",\"latenciaMs\":0,\"timeoutMs\":0,\"reintentos\":0}"
+ },
+ {
+  "tc": "setup",
+  "paso": "cancelar cita creada",
+  "metodo": "POST",
+  "ruta": "/api/citas/f95b5190-02a6-4717-8888-b541a9e2a1db/cancelar",
+  "status": 200,
+  "ms": 16,
+  "cuerpo": "{\"citaId\":\"f95b5190-02a6-4717-8888-b541a9e2a1db\",\"solicitudId\":null,\"inicio\":\"2026-11-13T09:00:00\",\"fin\":\"2026-11-13T09:30:00\",\"estado\":\"cancelada\"}"
+ }
+]

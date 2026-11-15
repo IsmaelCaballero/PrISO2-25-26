@@ -923,3 +923,58 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   `pom.xml` ni `STATUS.md`/`PROMPTS.md`, y sin abrir PR hasta que el #45 esté fusionado. Tras esto se re-sincroniza el
   cuerpo del **#45** con el tip y se comprueba por API: `draft=True`, `head=c78e6ab`, 18 commits.
 
+### Prompt 24 — Iter6/CFG-06 cerrada por el agente (merge, tag, issue y TC humanos por HTTP) + diseño de conjuntos de prueba y arranque de la Iter7 [✔ ejecutado]
+
+> Prompt lanzado por Ismael (15/11/2026, noche, **texto literal**): «iter06/CFG-06 cerrado. **haz tú lo que
+> queda**. A partir de ahora, diseña tú (o el agente B) los TC de lo que haga falta, generando los casos de
+> pruebas con clases de equivalencias, conjetura de errores y teoría pesada de los valores límite. Usa *pairwise*
+> para diseñar los conjuntos de casos de pruebas. Realiza un informe detallado del diseño de los conjuntos de
+> casos de pruebas (tiene su valor pedagógico). Y cuando hayas hecho esto, arranca la Iter7».
+
+- **Decisión nueva que esto supone — D38**: el cierre operativo (fusión del PR de la iteración a `develop`, **tag
+  anotado `cfg-iterNN` sobre ese merge**, cierre de la issue CFG-NN y ejecución de los **TC humanos contra el
+  servidor real con su evidencia HTTP versionada**) pasa al agente **por encargo expreso de cada iteración**. **No
+  cambia la D28 en su fondo** —la validación desde el punto de vista del usuario sigue siendo de Ismael— **ni la
+  D30** —el hito `v0.2.0-alpha` (`release/R1` → `main`) sigue siendo de Ismael—, y sigue haciendo falta **CI de la
+  rama en verde** para fusionar (D29).
+- **Hecho del cierre de la Iter6**: **PR #45 fusionado** (merge **`0ef4f1a`**, CI `construir` verde), **rama
+  `feature/iter06-cdu19-integracion` borrada** en remoto y local, **9 TC humanos de CDU19 ejecutados** con el
+  servidor real en `http://localhost:8080` (H2 de fichero, login real por `POST /api/auth/login`), **tabla manual
+  rellena** y sección **`## Ejecución real de estos TC`** añadida **antes** del bloque `<!-- TDOP:BEGIN -->` de
+  `docs/tc/cdu19-tc-humanos.md` (regenerar la proyección sigue siendo un no-op, comprobado).
+- **Evidencia HTTP versionada**, carpeta nueva **`docs/tc/evidencia/cdu19/`**: `README.md` + 5 scripts Python
+  re-ejecutables (`tc19_http.py`, `tc19_cita.py`, `tc19_sonda_rutas.py`, `tc19_sso_sonda.py`, `tc19_auditoria.py`) +
+  5 JSON crudos. Dos lecciones prácticas: `POST /api/integracion/sso/login` usa **`contrasena`** (con `password`
+  da 400) y **no hay que sanear el JWT en la capa HTTP**, solo al escribir el JSON (ese bug ya obligó a corregir
+  `tc19_auditoria.py` a mitad de sesión). Los JSON llevan cuerpos recortados a 700 caracteres salvo
+  `auditoria-cdu19.json`, que se guarda entero a propósito: **39 eslabones** tras tres sincronizaciones y **41**
+  tras el rotativo de sistemas, `cadenaIntegra: true`, eslabón #1 `SSO_LOGIN` con génesis de 64 ceros y las ramas
+  `OK_REUTILIZADA`/`OK_ACTUALIZADA` de la idempotencia.
+- **Deuda nueva del cierre, renumerada sin huecos**: **D-08** `iso2-common` al **0 %** de cobertura (0 de 139
+  líneas y 0 de 46 ramas) y sin puerta en su `pom.xml`; **D-09** las rutas sin mapear devuelven **401
+  `AUTENTICACION_REQUERIDA` con cuerpo `ApiError`** incluso con token válido; **D-10** una matriz aislada de módulo
+  puede esperar **un código distinto del de la aplicación montada** (los TC12-C04/C21/D03 esperan 500 por el
+  `TypeMismatchException` de `/api/citas/huecos` y montado da **400 `DATOS_INVALIDOS`**, porque el
+  `GlobalExceptionHandler` de `iso2-common` sí tiene consejo y la matriz local solo carga `CitaManejadorErrores`).
+  **No se toca código en el cierre** ni se abre fix: las tres son deuda de prueba/contrato.
+- **Revalidación D37 escrita en `TASADEFECTOS.md`** (§1-§7): libro hasta **DEF-15**; fila Iter6
+  `cfg-iter05..cfg-iter06` = **22 commits, 0 F1, 1 F2, 0 F3, 1 F4, 2 intraiter, 9,1 por 100**; total **129 · 11,6**.
+  Las **métricas de apoyo se miden** en vez de repetirse: reactor **839 pruebas / 0 saltados / 0 fallos**, JaCoCo
+  de reactor **1.744/2.005 líneas (87,0 %) y 512/675 ramas (75,9 %)** con desglose por módulo (peor en ramas
+  **`iso2-common` 0 de 46**), LOC **13.343 en `src/main`** y **10.646 en `src/test`** (ratio **0,80**), CI **83
+  ejecuciones = 80 `success` + 3 `failure`** (las 3, la puerta JaCoCo planificada de Iter5) y matriz CDU19 contada
+  fila a fila: **126**. **Veredicto: no se pide un modelo más potente**, se tapa el hueco con la prueba de arranque
+  con YAML (D-02) y la puerta JaCoCo de `iso2-common` (D-08); la decisión de cambiar de modelo en la Iter7 es de
+  Ismael. Corrección de datos encontrada al medir: las puertas que caen sobre la Iter7 son las de **R2 (27/11)**
+  — línea **≥ 70 %**, rama **≥ 55 %**, RBAC por endpoint nuevo, trazabilidad **12/20** —; el **≥ 85 % en `iso2-citas`**
+  es la puerta de **R5 final**.
+- **Registros**: deudas **21/22/23 cerradas**, **24** reescrita con **D-01..D-10**, **25** intacta (no se
+  desactivan las *snapshots*), **26** actualizada (el #45 ya está fusionado: el *worktree* del agente B puede
+  crearse); apartado **2-ter** nuevo en `STATUS.md` con las condiciones de la Iter7 y los 5 primeros pasos.
+- **Materialización del cierre en Git**: **un solo commit de docs** en la rama `docs/iter06-cierre` → PR **#46** a
+  `develop` → fusión → **tag anotado `cfg-iter06` sobre ese merge de cierre** (igual que `cfg-iter05` sobre
+  `cbb1901`) → **cierra la issue #44** con su DoD y los datos D37 → borra la rama. El conte del tramo queda en
+  **22 commits**, que es el número ya escrito en la tabla D37.
+- **Lo que se pide para delante en pruebas** (y se estrena en la Iter7): los TC los diseña el agente con **clases
+  de equivalencia + conjetura de errores + valores límite + *pairwise***, y hay que escribir un **informe
+  detallado del diseño** de esos conjuntos porque tiene valor pedagógico → `docs/informes/diseno-conjuntos-prueba.md`.
