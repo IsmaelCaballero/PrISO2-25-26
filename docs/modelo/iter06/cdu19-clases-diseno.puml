@@ -320,9 +320,10 @@ package "iso2-integracion (configuracion)" {
   }
   class IntegracionConfiguracion <<@Configuration>> {
     --
-    beans: IntegracionProperties (metodo
-    @ConfigurationProperties, sin PropertiesScan
-    en el repo), RegistroSimulacion y
+    beans: IntegracionProperties (record con
+    binding por constructor enlazado por
+    @EnableConfigurationProperties, sin
+    PropertiesScan en el repo), RegistroSimulacion y
     AuditoriaIntegracion. Los 4 adaptadores son
     @Component y el servicio es @Service: el scan
     de es.uclm.iso2 los recoge solo.
@@ -340,9 +341,10 @@ package "ensamblado en iso2-server-app (0.2.0-SNAPSHOT)" {
   }
   class ConfigSeguridad <<server>> {
     --
-    GET /api/integracion/** -> hasAuthority("integracion:leer")
-    POST /api/integracion/** -> hasAuthority("integracion:escribir")
-    resto /api/integracion/** autenticado
+    GET /api/integracion/** -> hasRole("ADMINISTRADOR")
+    resto /api/integracion/** -> hasRole("ADMINISTRADOR")
+    (la cadena del repo se rige por rol desde
+    CDU13/CDU12, no por authority suelta)
   }
   note right of ConfigSeguridad
     MEDICO, TECNICO, CELADOR y RECEPCIONISTA reciben 403;

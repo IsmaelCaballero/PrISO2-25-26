@@ -42,6 +42,10 @@ import java.time.Instant;
  *       RECEPCIONISTA); TECNICO y CELADOR quedan fuera por matriz.</li>
  *   <li>Agendar/reprogramar/cancelar citas: solo {@code ADMINISTRADOR} y
  *       {@code RECEPCIONISTA} ({@code cita:escribir}, actor Administrativo del CDU12).</li>
+ *   <li>Integracion (CDU19, spike): solo {@code ADMINISTRADOR}, lectura y escritura
+ *       ({@code integracion:leer}/{@code integracion:escribir}). El spike decide que
+ *       la API de sistemas externos, la simulacion de fallos y la auditoria de
+ *       integracion no se abren al resto de roles: son herramientas de administracion.</li>
  *   <li>{@code /h2-console/**}: solo {@code ADMINISTRADOR}. Como el navegador no puede
  *       enviar la cabecera {@code Authorization} en la navegación HTML, la consola se
  *       usa en desarrollo con herramientas que sí pueden (curl/scripts) adjuntando el
@@ -92,6 +96,12 @@ public class ConfigSeguridad {
                         // RECEPCIONISTA (cita:escribir, actor Administrativo del CDU12).
                         .requestMatchers(HttpMethod.GET, "/api/citas/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
                         .requestMatchers("/api/citas/**").hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
+                        // CDU19 (Iter6/CFG-06, spike): la API de integracion es solo de
+                        // ADMINISTRADOR (integracion:leer la GET, integracion:escribir la
+                        // POST). El resto de roles no monitoriza sistemas externos ni cambia
+                        // la simulacion de fallos ni lee la auditoria del subdominio.
+                        .requestMatchers(HttpMethod.GET, "/api/integracion/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/api/integracion/**").hasRole("ADMINISTRADOR")
                         // D34 (Iter5): el diagnostico de persistencia revela estructura interna
                         // de la base (tablas y registros), solo para ADMINISTRADOR.
                         .requestMatchers("/api/persistencia/**").hasRole("ADMINISTRADOR")

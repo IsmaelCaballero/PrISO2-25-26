@@ -42,6 +42,12 @@ public enum Permiso {
     /** Asignar, reprogramar y cancelar citas (actor Administrativo del CDU12). */
     CITA_ESCRIBIR("cita:escribir"),
 
+    /** Consultar el estado de los sistemas externos y la auditoria de integracion (llega con CDU19). */
+    INTEGRACION_LEER("integracion:leer"),
+
+    /** Login SSO de prueba, sincronizar historias y cambiar simulacion (spike CDU19, solo ADMINISTRADOR). */
+    INTEGRACION_ESCRIBIR("integracion:escribir"),
+
     /** Gestionar usuarios y roles (llega completo con CDU18). */
     USUARIO_GESTIONAR("usuario:gestionar");
 
