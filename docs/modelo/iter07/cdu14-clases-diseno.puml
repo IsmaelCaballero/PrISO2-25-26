@@ -1,11 +1,11 @@
 @startuml cdu14-clases-diseno
-' CDU14 (Iter7) - Clases de diseno: iso2-citas 1.2.0 + contrato comun 1.1.0 + ripple server 0.3.0
+' CDU14 (Iter7) - Clases de diseno: contrato comun 1.2.0 + iso2-citas 1.2.0 + ripple server 0.3.0
 ' Autor: agente (diseno previo al codigo, issue #47) - fuentes PlantUML (D31)
 title CDU14 - Clases de diseno previstas (iso2-citas 1.2.0-SNAPSHOT, apps 0.3.0-SNAPSHOT)
 
 skinparam classAttributeIconSize 0
 
-package "iso2-common 1.1.0 (contrato: baseline congelado + extension MINOR CDU14)" {
+package "iso2-common 1.2.0 (baseline CDU12 1.1.0 congelado + extension MINOR CDU14)" {
   interface ListaEsperaFacade {
     + darDeAlta(AltaEsperaDTO) : EntradaEsperaDTO
     + cola(String pruebaCodigo, String profesionalId,
@@ -72,21 +72,28 @@ package "iso2-common 1.1.0 (contrato: baseline congelado + extension MINOR CDU14
     + totalAsientos : long
     + hashUltimo : String
   }
-  class ListaEsperaException <<RuntimeException, nuevo>> {
+  class ListaEsperaNoEncontradaException <<RuntimeException, nuevo>> {
     (404 LISTA_ESPERA_NO_ENCONTRADA)
   }
-  class ListaEsperaConflictException <<RuntimeException, nuevo>> {
-    + codigo() : String
+  class ListaEsperaConflictoException <<RuntimeException, nuevo>> {
+    + codigo() : Conflicto
   }
-  enum "ListaEsperaConflictException.Codigo" as CodConf {
-    CONFLICTO_ALTA_DUPLICADA
-    CONFLICTO_REUBICACION_REDUNDANTE
-    CONFLICTO_ENTRADA_NO_ACTIVA
+  enum "ListaEsperaConflictoException.Conflicto" as CodConf {
+    ALTA_DUPLICADA
+    REUBICACION_REDUNDANTE
+    ENTRADA_NO_ACTIVA
+    ..
+    nombres desnudos: el manejador anade el
+    prefijo CONFLICTO_ (canon de CitaConflicto)
   }
   enum Prioridad <<CDU06, ya existe>> #D9D9D9 {
-    URGENTE; ALTA; NORMAL; BAJA
-    + peso() : int
-    {static} + desdeNombre(String) : Prioridad
+    ORDINARIA
+    PREFERENTE
+    URGENTE
+    {static} + desdeNombre(String) : Optional~Prioridad~
+    ..
+    La declaracion ES la escala: la cola ordena
+    con reverseOrder(), sin metodo peso()
   }
   interface CitaFacade <<CDU12, ya existe>> #D9D9D9 {
     + agendar(CitaNuevaDTO) : CitaDTO
@@ -154,13 +161,12 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       ..
       canon: accion | esperaId | antes->despues |
       usuario | motivo | instante | hashAnterior
-      el primer eslabon firma con un hashAnterior de
-      64 ceros (criterio de la iteracion 7; CDU12 usa
-      el literal GENESIS con hashAnterior null y el
-      issue #47 habla de GENESIS: se cierra al
-      programar y se refleja en este .puml). La
-      cadena de la cola es independiente de la de
-      cita_auditoria
+      el primer eslabon firma con el literal
+      GENESIS y hashAnterior null: mismo canon
+      que AuditoriaCitas.GENESIS (decision
+      cerrada en la fase de diseno, issue #47).
+      La cadena de la cola es independiente de la
+      de cita_auditoria
     }
   }
   package repositorio {
@@ -228,8 +234,8 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       cambian por las acciones de la cola
     }
     class ListaEsperaManejadorErrores <<@RestControllerAdvice, nuevo>> {
-      ListaEsperaException -> 404 LISTA_ESPERA_NO_ENCONTRADA
-      ListaEsperaConflictException -> 409 CONFLICTO_ALTA_DUPLICADA /
+      ListaEsperaNoEncontradaException -> 404 LISTA_ESPERA_NO_ENCONTRADA
+      ListaEsperaConflictoException -> 409 CONFLICTO_ALTA_DUPLICADA /
       CONFLICTO_REUBICACION_REDUNDANTE / CONFLICTO_ENTRADA_NO_ACTIVA
       CitaNoEncontradaException -> 404 CITA_NO_ENCONTRADA (heredado)
       CitaConflictoException -> 409 CONFLICTO_HUECO_OCUPADO /
@@ -281,17 +287,18 @@ package "iso2-server-app 0.3.0" {
   }
 }
 
-package "iso2-seguridad 1.1.0 (RBAC ampliado en CDU14)" {
+package "iso2-seguridad 1.2.0 (RBAC ampliado en CDU14: permisos nuevos, MINOR)" {
   enum Permiso {
     ...catalogo/agenda/usuario/solicitud/cita...
-    LISTA_ESPERA_LEER; LISTA_ESPERA_ESCRIBIR (nuevos)
+    LISTA_ESPERA_LEER("lista_espera:leer")
+    LISTA_ESPERA_ESCRIBIR("lista_espera:escribir")
     + codigo() : String
   }
   class MatrizPermisos <<final>> {
     {static} + tienePermiso(Rol, Permiso) : boolean
     ..
-    RECEPCIONISTA: listaespera:leer + listaespera:escribir
-    MEDICO: listaespera:leer
+    RECEPCIONISTA: lista_espera:leer + lista_espera:escribir
+    MEDICO: lista_espera:leer
     ADMINISTRADOR: todo (allOf)
     CELADOR y TECNICO: sin permisos de cola
   }
@@ -312,9 +319,9 @@ ListaEsperaServicio ..> ListaEspera : reglas en el dominio
 ListaEsperaServicio ..> AuditoriaEspera : asienta cada movimiento
 ListaEsperaServicio ..> CitaFacade : reutiliza registrar (CDU12)
 ListaEsperaServicio ..> Prioridad : valida y ordena
-ListaEsperaServicio ..> ListaEsperaException : lanza
-ListaEsperaServicio ..> ListaEsperaConflictException : lanza
-ListaEsperaConflictException --> CodConf
+ListaEsperaServicio ..> ListaEsperaNoEncontradaException : lanza
+ListaEsperaServicio ..> ListaEsperaConflictoException : lanza
+ListaEsperaConflictoException --> CodConf
 ListaEspera --> Estado
 ListaEspera --> Prioridad
 AuditoriaEspera --> AccionAud

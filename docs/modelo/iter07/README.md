@@ -29,7 +29,7 @@ alcance modelado es dominio + servicio + REST + Flyway + RBAC.
 | --- | --- |
 | `cdu14-casos-uso.puml` | Casos de uso de CDU14: dar de alta en la cola (UC14.1), consultar la cola ordenada con filtros (UC14.2), reubicar la prioridad (UC14.3), retirar con motivo (UC14.4), asignar un hueco desde la cola (UC14.5), verificar la auditoria de la cola (UC14.6) y ver el detalle de una entrada (UC14.7), con `<<include>>` de CDU17 (autenticar y autorizar) y del canon de auditoria hash-chain de CDU12, y `<<extend>>` de UC12.2 (agendar sobre hueco libre). Actores: Administrativo (RECEPCIONISTA o ADMINISTRADOR), Medico solo lectura y el Sistema como ejecutor de las reglas duras |
 | `cdu14-clases-analisis.puml` | Conceptos del dominio, sin infraestructura: `ListaEspera` (paciente, prueba, profesional opcional, prioridad, fechaSolicitud y estado ACTIVA/ASIGNADA/RETIRADA), `AuditoriaEspera` como traza encadenada de la cola, el **criterio de orden de la cola** como regla de dominio con tres niveles, y los conceptos ya existentes reutilizados (Paciente, Prueba de CDU16, Profesional, Solicitud de CDU06, Cita y HuecoDisponible de CDU12/CDU13, Prioridad de `iso2-common`), con las reglas de duplicidad, redundancia, no reentrada y un hueco = una cita |
-| `cdu14-clases-diseno.puml` | Implementacion prevista: `ListaEsperaFacade` en `iso2-common` 1.1.0 con sus records nuevos (`AltaEsperaDTO`, `EntradaEsperaDTO` con `posicion` y `total`, `ReubicacionDTO`, `AsignacionEsperaDTO`, `RetiradaEsperaDTO`, `AsignacionResultadoDTO`, `VerificacionAuditoriaDTO`) y dos excepciones nuevas; en `iso2-citas` 1.2.0-SNAPSHOT la entidad `ListaEspera` (tabla `lista_espera`, `claveDuplicada` UNIQUE con NULL en terminal) con `{static} porOrdenDeEspera()`, `AuditoriaEspera` (tabla `espera_auditoria`), `ListaEsperaRepositorio` y `AuditoriaEsperaRepositorio`, `ListaEsperaServicio` (`cambiarPrioridad(esperaId, prioridad, motivo, usuario)`, `asignarDesdeCola(esperaId, inicio, duracionMinutos)`), `ListaEsperaControlador` + `ListaEsperaManejadorErrores`, el bloque gris de CDU12 que se reutiliza sin tocar, `ConfigSeguridad` y Flyway `V1.6.0` en `iso2-server-app` 0.3.0-SNAPSHOT y los permisos `listaespera:leer`/`listaespera:escribir` en `iso2-seguridad` |
+| `cdu14-clases-diseno.puml` | Implementacion prevista: `ListaEsperaFacade` en `iso2-common` 1.2.0-SNAPSHOT con sus records nuevos (`AltaEsperaDTO`, `EntradaEsperaDTO` con `posicion` y `total`, `ReubicacionDTO`, `AsignacionEsperaDTO`, `RetiradaEsperaDTO`, `AsignacionResultadoDTO`, `VerificacionAuditoriaDTO`) y dos excepciones nuevas; en `iso2-citas` 1.2.0-SNAPSHOT la entidad `ListaEspera` (tabla `lista_espera`, `claveDuplicada` UNIQUE con NULL en terminal) con `{static} porOrdenDeEspera()`, `AuditoriaEspera` (tabla `espera_auditoria`), `ListaEsperaRepositorio` y `AuditoriaEsperaRepositorio`, `ListaEsperaServicio` (`cambiarPrioridad(esperaId, prioridad, motivo, usuario)`, `asignarDesdeCola(esperaId, inicio, duracionMinutos)`), `ListaEsperaControlador` + `ListaEsperaManejadorErrores`, el bloque gris de CDU12 que se reutiliza sin tocar, `ConfigSeguridad` y Flyway `V1.6.0` en `iso2-server-app` 0.3.0-SNAPSHOT y los permisos `lista_espera:leer`/`lista_espera:escribir` en `iso2-seguridad` 1.2.0-SNAPSHOT |
 | `cdu14-secuencia.puml` | Flujos reales de los TCs: ver la cola (medico, 200 con posicion 1..n), alta feliz (201 con `posicion` y `total`), alta repetida (409 `CONFLICTO_ALTA_DUPLICADA`, sin eslabon nuevo), reubicacion feliz (200 con posicion antes/despues), doble clic en reubicar (409 `CONFLICTO_REUBICACION_REDUNDANTE` y cadena sin cambios), retirar sin motivo (400 `DATOS_INVALIDOS`) y retirar dos veces (409 `CONFLICTO_ENTRADA_NO_ACTIVA`), **dos hilos asignando el mismo hueco desde la cola** (par: 201 con una cita + 409 `CONFLICTO_HUECO_OCUPADO` heredado de CDU12, y al final 1 cita, 1 fila de `cita_hueco` y 1 eslabon `ASIGNACION`), reasignar una entrada ya asignada (409), id inexistente (404 `LISTA_ESPERA_NO_ENCONTRADA`), `GET /api/listas-espera/auditoria-verificable` con la cadena integra, y los 403/401 de la matriz RBAC |
 
 Convencion de las fuentes: ASCII puro en comentarios y etiquetas de PlantUML (sin
@@ -92,9 +92,10 @@ Dos detalles que importan:
 Las decisiones que fija este diagrama (y que luego sujetan los tests):
 
 - **El contrato comun se extiende en MINOR**: `ListaEsperaFacade` y sus records nuevos
-  entran en `iso2-common` 1.1.0-SNAPSHOT; `CitaFacade` (CDU12) queda congelado e
-  intocado. Las dos excepciones nuevas (`ListaEsperaException` para 404 y
-  `ListaEsperaConflictException` con codigo para 409) siguen el patron de
+  entran en `iso2-common` 1.2.0-SNAPSHOT; `CitaFacade` (CDU12) queda congelado e
+  intocado. Las dos excepciones nuevas (`ListaEsperaNoEncontradaException` para 404 y
+  `ListaEsperaConflictoException` con enum anidado `Conflicto` para 409) siguen el
+  patron de
   `CitaNoEncontradaException` / `CitaConflictoException`.
 - **Orden determinista con tres niveles**: `ListaEspera.porOrdenDeEspera()` es
   `prioridad DESC, fechaSolicitud ASC, esperaId ASC` y `ListaEsperaRepositorio.cola`
@@ -123,12 +124,12 @@ Las decisiones que fija este diagrama (y que luego sujetan los tests):
   cita, un eslabon de asignacion**.
 - **Auditoria encadenada de la cola**: canon
   `accion|esperaId|antes->despues|usuario|motivo|instante|hashAnterior` con acciones
-  `ALTA` / `REUBICACION` / `ASIGNACION` / `RETIRADA`, eslabon genesis con
-  `hashAnterior` de 64 ceros y cadena **independiente** de `cita_auditoria`.
-  Pendiente de cerrar al programar: el cuerpo del issue #47 habla de `GENESIS` +
-  `hashAnterior` y `AuditoriaCitas` usa el literal `GENESIS` con `hashAnterior` nulo,
-  asi que la decision (64 ceros o literal `GENESIS`) se toma en la fase de codigo y
-  se refleja en este `.puml`.
+  `ALTA` / `REUBICACION` / `ASIGNACION` / `RETIRADA`, eslabon genesis con el
+  literal `GENESIS` y `hashAnterior` nulo, y cadena **independiente** de
+  `cita_auditoria`.
+  Decidido: el eslabon genesis usa el literal `GENESIS` con `hashAnterior` nulo, el
+  mismo canon de `AuditoriaCitas.GENESIS`; asi las dos cadenas comparten criterio y
+  CDU18 (Iter15) podra unirlas sin sorpresas.
 - **RBAC y ensamblado**: `Permiso.LISTA_ESPERA_LEER` (ADMINISTRADOR, MEDICO,
   RECEPCIONISTA) y `LISTA_ESPERA_ESCRIBIR` (ADMINISTRADOR, RECEPCIONISTA) con sus
   reglas en `ConfigSeguridad`; migracion `V1.6.0__cdu14_listas_espera.sql` en `h2/`
@@ -156,15 +157,18 @@ El diagrama de diseno describe el codigo **aun por implementar** (la rama de cod
 sera `feature/iter07-cdu14-listas-espera`, issue #47; este modelo vive en
 `docs/iter07-modelo`). Lo que se compromete a construir:
 
-- `iso2-common` 1.1.0-SNAPSHOT: `ListaEsperaFacade` con sus records y las excepciones
-  `ListaEsperaException` y `ListaEsperaConflictException` (codigo anidado).
+- `iso2-common` 1.2.0-SNAPSHOT (elevado de 1.1.0 por la fachada nueva, D23):
+  `ListaEsperaFacade` con sus records y las excepciones
+  `ListaEsperaNoEncontradaException` y `ListaEsperaConflictoException`
+  (enum anidado `Conflicto`).
   Extension aditiva: el baseline de CDU12 no se toca.
 - `iso2-citas` 1.2.0-SNAPSHOT (elevado de 1.1.0 por CDU14, D23): `ListaEspera`,
   `ListaEspera.Estado`, `AuditoriaEspera`, `ListaEsperaRepositorio`,
   `AuditoriaEsperaRepositorio`, `ListaEsperaServicio`, `ListaEsperaControlador` y
   `ListaEsperaManejadorErrores`. La cota propia del modulo sigue en **0,80 de linea**
   y el reactor sigue por encima de la puerta R2 (linea >= 70 %, rama >= 55 %).
-- `iso2-seguridad` 1.1.0: `Permiso.LISTA_ESPERA_LEER` / `LISTA_ESPERA_ESCRIBIR` en la
+- `iso2-seguridad` 1.2.0-SNAPSHOT (elevado de 1.1.0 por los permisos nuevos, D23):
+  `Permiso.LISTA_ESPERA_LEER` / `LISTA_ESPERA_ESCRIBIR` en la
   matriz y su reparto en `MatrizPermisos`.
 - `iso2-server-app` 0.3.0-SNAPSHOT: reglas `/api/listas-espera/**` en
   `ConfigSeguridad` (GET para ADMINISTRADOR, MEDICO y RECEPCIONISTA; POST de alta,

@@ -74,9 +74,12 @@ class HuecoDisponible <<concepto, ya existe (CDU12/CDU13)>> #D9D9D9 {
   - fin : Instant
 }
 
-class Prioridad <<concepto, ya existe (CDU17/common)>> #D9D9D9 {
-  URGENTE > ALTA > NORMAL > BAJA
-  + peso() : int (mayor peso = antes en la cola)
+class Prioridad <<concepto, ya existe (CDU06/common)>> #D9D9D9 {
+  ORDINARIA < PREFERENTE < URGENTE
+  {static} + desdeNombre(String) : Optional~Prioridad~
+  ..
+  No hay metodo peso(): el orden de la cola lo
+  fija el comparador total de ListaEspera
 }
 
 class "Criterio de orden de la cola" as Orden <<regla de dominio>> #99FF99 {

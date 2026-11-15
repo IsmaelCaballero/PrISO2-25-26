@@ -52,7 +52,7 @@ ADMIN -> CTRL : POST /api/listas-espera\n{pacienteId: "P-142", pruebaCodigo: "RX
 CTRL -> SVC : darDeAlta(AltaEsperaDTO)
 SVC -> ESP : findByClaveDuplicada("P-142|RX_TORAX")
 ESP --> SVC : ya existe una entrada ACTIVA
-SVC --> CTRL : ListaEsperaConflictException\n(CONFLICTO_ALTA_DUPLICADA)
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_ALTA_DUPLICADA)
 CTRL --> ADMIN : 409 + ApiError(CONFLICTO_ALTA_DUPLICADA)
 note right of AUD
   No se escribe ningun eslabon: un rechazo no
@@ -81,7 +81,7 @@ ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/prioridad\n{prioridad: "URGEN
 CTRL -> SVC : cambiarPrioridad(...)
 SVC -> ESP : prioridad actual URGENTE
 SVC -> SVC : la nueva prioridad deja la entrada\nen la MISMA posicion (1 de 4)
-SVC --> CTRL : ListaEsperaConflictException\n(CONFLICTO_REUBICACION_REDUNDANTE)
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_REUBICACION_REDUNDANTE)
 CTRL --> ADMIN : 409 + ApiError(CONFLICTO_REUBICACION_REDUNDANTE)
 note right of AUD
   La cadena sigue con los mismos eslabones:
@@ -106,7 +106,7 @@ CTRL --> ADMIN : 200 + EntradaEsperaDTO(estado "retirada")
 ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/retirar\n{motivo: "otra vez"}
 CTRL -> SVC : retirar(esperaId, motivo)
 SVC -> ESP : esMismaUbicacionQue / esTerminal(): RETIRADA
-SVC --> CTRL : ListaEsperaConflictException\n(CONFLICTO_ENTRADA_NO_ACTIVA)
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_ENTRADA_NO_ACTIVA)
 CTRL --> ADMIN : 409 + ApiError(CONFLICTO_ENTRADA_NO_ACTIVA)
 
 == Dos hilos asignando el mismo hueco desde la cola ==
@@ -142,11 +142,11 @@ end note
 ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/asignar\n{inicio: "2026-11-20T09:00"} (de nuevo)
 CTRL -> SVC : asignarDesdeCola(...)
 SVC -> ESP : estaActiva() es falso (ASIGNADA, citaId "C-77")
-SVC --> CTRL : ListaEsperaConflictException\n(CONFLICTO_ENTRADA_NO_ACTIVA)
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_ENTRADA_NO_ACTIVA)
 CTRL --> ADMIN : 409 + ApiError(CONFLICTO_ENTRADA_NO_ACTIVA)
-ADMIN2 -> CTRL : POST /api/listas-espera/no-existe/prioridad
-CTRL -> SVC : cambiarPrioridad("no-existe", ...)
-SVC --> CTRL : ListaEsperaException
+ADMIN2 -> CTRL : POST /api/listas-espera/{esperaId}/prioridad
+CTRL -> SVC : cambiarPrioridad(uuid bien formado y nunca sembrado, ...)
+SVC --> CTRL : ListaEsperaNoEncontradaException
 CTRL --> ADMIN2 : 404 + ApiError(LISTA_ESPERA_NO_ENCONTRADA)
 
 == Verificar la cadena de la cola ==
@@ -158,11 +158,10 @@ SVC -> SVC : cadenaIntegra(): recomputar cada hash\ncon el canon y comparar hash
 SVC --> CTRL : VerificacionAuditoriaDTO(CADENA_INTEGRAL,\ntotalAsientos 4, hashUltimo)
 CTRL --> ADMIN : 200 + VerificacionAuditoriaDTO(JSON)
 note right of AUD
-  El primer eslabon de esta cadena firma con un
-  hashAnterior de 64 ceros (criterio de la iteracion
-  7; CDU12 deja hashAnterior null y usa el literal
-  GENESIS, y el issue #47 menciona GENESIS: queda
-  pendiente de cerrar al programar). La cadena de
+  El primer eslabon de esta cadena firma con el
+  literal GENESIS y hashAnterior null: el mismo
+  canon de AuditoriaCitas.GENESIS, decision cerrada
+  en el diseno (issue #47). La cadena de
   espera_auditoria no comparte
   eslabones con cita_auditoria, asi que manipular
   la cola no rompe la trazabilidad de CDU12 y al
