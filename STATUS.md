@@ -199,12 +199,14 @@ técnicas, la D33 y sus TC humanos.
 - **Estado de ramas e instantáneas a 15/11 (sesión 23):** `origin/develop` = **`cbb1901`** (merge del PR #43),
   `origin/main` = `d12388b` (la desviación ya documentada en D30, sigue sin tocar), `origin/docs/config-opencode`
   = `2a2f0a8` y `origin/feature/iter06-cdu19-integracion` = **el último docs de la sesión 23** (tras `a470584`
-  van `e1d418c` del sync del PR #45, `6606d81` de la wiki y el docs forense de ramas), con el árbol local idéntico
-  al remoto y **nada sin subir** (**17** commits de Iter6 sobre `cbb1901`: `db075c0` modelo, `687c624` contrato
+  van `e1d418c` del sync del PR #45, `6606d81` de la wiki, `a2fc906` del forense de ramas y el docs de la causa del
+  wipe), con el árbol local idéntico
+  al remoto y **nada sin subir** (**18** commits de Iter6 sobre `cbb1901`: `db075c0` modelo, `687c624` contrato
   `InteropFacade`, `7a03e0c` módulo `iso2-integracion`, `9ca712f` refino del diseño, `a22e654` RBAC y ensamblado,
   `f5411c1` 77 pruebas y arreglo del `@ConfigurationProperties`, `a81b85b` spec TDOP, `a86d1f4` + `a532992` registro de
   la sesión 22, `c104d78` matriz verde, `ec7f228` evidencia + TC humanos, `86f68ff` fixes de docs, `2388b7e` informe
-  del spike, `a470584` + `e1d418c` + `6606d81` cierre documental de la sesión 23 y el docs forense). Tags en el
+  del spike, `a470584` + `e1d418c` + `6606d81` cierre documental de la sesión 23, `a2fc906` el forense y el docs de la
+  causa del wipe). Tags en el
   remoto: `cfg-iter00`…`cfg-iter05` y `v0.1.0`. La rama `feature/iter05-cdu12-citas` **ya no existe**: el remoto la
   borró el **15/11 a las 08:52** (`DeleteEvent`, justo al
   fusionar el PR #43) y en local tampoco está; sus dos commits del cierre, `b912554` y `5771a38`, están contenidos en
@@ -379,6 +381,18 @@ técnicas, la D33 y sus TC humanos.
     `/api/integracion`; **D-06** auditoría de integración persistente (implica reabrir la puerta a Flyway, que la
     issue cerraba); **D-07** `HuellaContenido` (2/4 líneas) y el record `IntegracionProperties.SistemaOverride`
     (0/1) sin cubrir.
+25. **Configurar el entorno OpenCode para cortar el wipe (decisión de Ismael; la causa ya está investigada)**: el
+    borrado de ficheros **no trackeados** que ha venido sufriendo el árbol coincide literalmente con cómo funciona
+    el `undo`/`Revert` de las **snapshots** de OpenCode: el rollback restaura las rutas atribuidas a los pasos del
+    asistente posteriores a la frontera elegida y **elimina un fichero creado por esos pasos si antes no existía**;
+    además captura ficheros no trackeados no ignorados de hasta 2 MiB. El almacén está en
+    `%USERPROFILE%\.local\share\opencode\snapshot` (ahora 16,6 MB de un solo proyecto) y **no** es lo mismo que el
+    apagón del 15/11, que vació el almacenamiento de sesiones. La pieza que lo desactiva es `"snapshots": false` en
+    `~/.config/opencode/opencode.jsonc` (o en el `opencode.json` del proyecto): deja de capturar estado de ficheros,
+    el rollback solo deshace conversación y las instantáneas ya guardadas no se borran. Contrapartida: se pierde el
+    `/undo` de ficheros, algo aceptable mientras el agente trabaje con **commit + push inmediato**. No se ha
+    aplicado: cambia la configuración global de la máquina y le corresponde a Ismael (el agente puede hacerlo si se
+    lo pide).
 
 ## Punto exacto de continuación para la próxima sesión
 
@@ -401,7 +415,7 @@ queda es de Ismael**, en este orden:
 1. **Fusionar el PR borrador #45** (`feature/iter06-cdu19-integracion` → `develop`, `Ref: #44`, **sin `Closes`**):
    lo fusiona y cierra **#44** Ismael (D29); sobre esa fusión van el tag **`cfg-iter06`** y el hito
    **`v0.2.0-alpha`**, que se materializa publicando **`release/R1` → `main`** (D30), no en esta rama. Avisos del
-   PR: son **17 commits de código + docs** (el inventario exacto lo da la pestaña *Commits* del PR), la puerta JaCoCo
+   PR: son **18 commits de código + docs** (el inventario exacto lo da la pestaña *Commits* del PR), la puerta JaCoCo
    del módulo mide **96,5 %** (no el 88,2 % caducado), las fichas Javadoc de `iso2-integracion` **solo se publican al
    fusionar** (hoy dan 404, por eso la wiki enlaza
    esas clases al fuente) y el RBAC real es **solo rol `ADMINISTRADOR`**.
@@ -738,7 +752,11 @@ que esta sesión cierra la parte b del DoD de la **#44** y deja la fusión, el t
 * **Riesgo activo y cómo se mitigó**: el árbol se limpia a veces y **solo sobrevive lo commiteado y pusheado**. Se
   cambió el orden de trabajo a **escribir → verificar en disco → `git add` inmediato → commit → push sin demora**, y
   las herramientas de recuento se guardaron en el temp (`reactor_verify.log`, `reactor_tally.py`, `cobertura2.py`,
-  `jacoco_integracion.py`).
+  `jacoco_integracion.py`). **Causa encontrada en la sesión 23**: son las **snapshots** de OpenCode, que guardan el
+  estado del árbol en un repo Git interno (`%USERPROFILE%\.local\share\opencode\snapshot`) y al hacer `undo`/`Revert`
+  **borran el fichero creado por los pasos revertidos si en la frontera no existía** —exactamente los ficheros nuevos
+  aún sin `git add`. La llave para desactivarlo es `"snapshots": false` en la config; queda como **Deuda nº 25**
+  porque es un cambio en la configuración global de la máquina y no lo aplica el agente.
 * **Cierre de jornada 15/11/2026 (noche):** rama `feature/iter06-cdu19-integracion` en **`a470584`** = remoto, con los
   14 commits `db075c0`, `687c624`, `7a03e0c`, `9ca712f`, `a22e654`, `f5411c1`, `a81b85b`, `a86d1f4`, `a532992`,
   `c104d78`, `ec7f228`, `86f68ff`, `2388b7e` y `a470584` sobre `cbb1901`. [Aviso de la propia sesión 23: aquí se había

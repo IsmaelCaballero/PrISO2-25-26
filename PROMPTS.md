@@ -901,10 +901,18 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   **`9457972` no es un commit de este repo** (`git cat-file` lo rechaza, la API de GitHub da 422); los dos commits
   reales del cierre de la Iter5 son `b912554` y `5771a38`, contenidos en `develop`. El dato falso venía de un
   `git branch -r` sin `fetch` previo, y en `STATUS.md` se anota la corrección sin reescribir lo que ya se había dicho.
+- **Causa del wipe investigada (Deuda nº 25)**: las **snapshots** de OpenCode capturan el árbol en un repo Git interno
+  de su directorio de datos y, al revertir, **eliminan el fichero creado por los pasos revertidos si en la frontera no
+  existía**; capturan también ficheros no trackeados no ignorados de hasta 2 MiB. Esto explica que desaparezcan just
+  o los ficheros nuevos todavía sin `git add`. Se desactiva con `"snapshots": false` en la config global
+  (`~/.config/opencode/opencode.jsonc`) o en el `opencode.json` del proyecto; el almacén actual es
+  `%USERPROFILE%\.local\share\opencode\snapshot` (16,6 MB). No se ha tocado la config de Ismael: queda anotado como
+  decisión suya.
 - **Commits de la sesión, todos subidos**: `c104d78` (matriz verde) → `ec7f228` (evidencia TDOP + TC humanos) →
   `86f68ff` (fix de docs/arranque) → `2388b7e` (informe del spike) → `a470584` (cierre de este registro) →
-  `e1d418c` (sync del PR #45) → `6606d81` (wiki publicada, cierra la parte b) → **el docs forense de ramas**, que
-  además **pone al día el inventario de la rama: 17 commits sobre `cbb1901`**. **PR
+  `e1d418c` (sync del PR #45) → `6606d81` (wiki publicada, cierra la parte b) → `a2fc906` (forense de ramas) →
+  **el docs de la causa del wipe**, que además **pone al día el inventario de la rama: 18 commits sobre
+  `cbb1901`**. **PR
   borrador a `develop`: #45** *(91 ficheros, `Ref: #44`, **sin `Closes`**)*. **Queda de Ismael**: ejecutar los TC humanos de
   CDU19 (D28), fusionar el PR y cerrar **#44** (D29), poner el tag `cfg-iter06` sobre la fusión y materializar
   `release/R1` → `main` con `v0.2.0-alpha` (D30).
