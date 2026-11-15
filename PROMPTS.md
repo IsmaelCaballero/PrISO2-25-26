@@ -779,7 +779,9 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     re-render.
   - **`a22e654`** RBAC **`INTEGRACION_LEER`/`INTEGRACION_ESCRIBIR`** + `IntegracionApiTest` + salto de tren de
     release: apps **0.2.0-SNAPSHOT** y modelo `iso2.version`/`common` en **1.1.0**. Es la iteración que trae el
-    hito **`v0.2.0-alpha`** (ALFA-1 / **R1, 20/11**).
+    hito **`v0.2.0-alpha`** (ALFA-1 / **R1, 20/11**). **[Corregido en la sesión 23: ese par de roles nunca llegó a
+    existir; el RBAC real de los 7 endpoints de `/api/integracion` es solo el rol `ADMINISTRADOR`, como ya avisaba
+    la propia issue al describir el spike.]**
   - **`f5411c1`** **77 pruebas del CDU19** en 9 clases (`AdaptadorSimuladoTest` 15, `IntegracionServicioTest` 20,
     `IntegracionControladorTest` 13, `SimulacionControladorTest` 8, `ArquitecturaIntegracionTest` 6,
     `AuditoriaIntegracionTest` 6, `SetupSimulacionTest` 4, `RegistroSimulacionTest` 4, `ContratoBaselineTest` 1)
@@ -788,7 +790,9 @@ podría ejecutar el proyecto de principio a fin pegando estos prompts en sesione
     `TASADEFECTOS.md` en la revalidación D37 del cierre.
   - **Medido sobre `f5411c1`:** `mvn -B -ntp test` en el reactor = **BUILD SUCCESS, 713 tests, 0 fallos,
     0 omitidos**; JaCoCo de `iso2-integracion` **88,2 % de líneas** (cota del módulo `0.70`, puerta de CFG-06
-    ≥ 60 %).
+    ≥ 60 %). **[Corregido en la sesión 23: esa cifra estaba caducada, porque `report`/`check` están enlazados a la
+    fase `verify` del pom padre y el `jacoco.csv` no se reescribe con `mvn test`; la medida real del módulo es
+    96,5 % de líneas y 78,4 % de ramas.]**
   - **Suspendido y reanudado por dos incidencias (15/11):** el reinicio del equipo vació el almacenamiento local
     de OpenCode (perdido el historial, no el trabajo) y la otra sesión trabajó en paralelo sobre el **mismo
     árbol y la misma rama en dos olas**: 11:29-11:49 y 12:37-13:54. No hubo conflicto de `git`; la primera ola
@@ -833,3 +837,54 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   (`STATUS.md`, `TASADEFECTOS.md`). **No recomendado** para iteraciones enteras; sí, con `git worktree` aparte,
   para el trabajo puramente aditivo de Iter7 (diagramas `docs/modelo/iter07/` y spec TDOP `docs/test/iter07/`),
   que no roza ningún punto de conflicto ni `~/.m2`.
+
+### Prompt 23 — Iter6 · CDU19 parte b: matriz TDOP verde, TC humanos, informe de spike y cierre de sesión [✔ ejecutado]
+
+> Prompt lanzado por Ismael (15/11/2026, tarde, **texto resumido**): continuar **en solitario** y cerrar la parte b
+> del DoD de la **#44** — «sigue tú a partir de ahora, y arregla lo que sea necesario para asegurar la integridad
+> del proyecto» — dejando **siempre evidencia duradera** (commits y push) porque el árbol de trabajo se pierde.
+
+- **Matriz TDOP ejecutada y en verde** (`c104d78`): **`Cdu19MatrizTdopTest`** con **126 casos** leídos de los CSV de
+  `iso2-integracion/src/test/resources/tdop/`, `@ParameterizedTest` + `@SpringBootTest(classes =
+  Cdu19MatrizTdopTest.ConfigTdopWeb.class)` y `@AutoConfigureMockMvc` sobre un `@SpringBootConfiguration` interno
+  con `@ComponentScan("es.uclm.iso2.integracion")` — **sin starter de seguridad, para que no aparezcan 401/403
+  falsos**. Los estados→HTTP se leen del CSV `cdu19-esperados.csv`.
+- **Criterio E10 corregido y la matriz crece de 125 a 126**: con segmento vacío, `/api/integracion/sistemas//ping`
+  da **404 sin `ApiError`** (lo resuelve Spring, no el controlador), así que **E10 pasa a `RUTA_INEXISTENTE`** y se
+  añade **E17** (alias `ESPACIOS`, `"   "` → `SISTEMA_NO_ENCONTRADO`). Spec y CSV **regenerados con
+  `tools/pairwise.py`** — los ids son posicionales, por eso E17 sale al final — y recompilado el módulo.
+- **Trabajo forense**: el «`mvn test` de 90 casos con 7 fallos» de sesiones previas **nunca existió** (no había
+  clase ni CSV en Git), pero los hallazgos sí eran reales y se confirmaron leyendo el código:
+  `AdaptadorSimulado.proteger()` evalúa la **política antes que la petición** (503 gana a 400/401/404) e
+  `IntegracionServicio.sincronizarHistoriaClinica()` llama a `hce.buscarHistoria()` **antes** que a sus
+  `snapshots` → con HCE caído no se sirve la copia local (B04/B05 en 503). Son los hallazgos **H1..H15** del informe.
+- **Cobertura corregida y metodología fijada**: con `mvn -B -ntp -pl iso2-integracion verify` sobre `2388b7e`,
+  **líneas 361/374 = 96,5 %**, **ramas 134/171 = 78,4 %**, instrucciones 94,7 %, puerta `jacoco.line.min=0.70` en
+  verde. **El `jacoco.csv` solo lo escribe la fase `verify`** (en el pom padre `report`/`check` están enlazados a
+  `verify`); leerlo tras `mvn test` da cifras caducadas — así es como el **88,2 %** se había quedado clavado en
+  `STATUS.md` y en este fichero. Sin cubrir: `IntegracionProperties.SistemaOverride` (0/1) y `HuellaContenido`
+  (2/4); ramas débiles: `IntegracionProperties` 11/30.
+- **Pruebas del módulo y del reactor**: `iso2-integracion` **203 pruebas en 10 clases, 0 fallos, 0 errores, 0
+  omitidos**; reactor completo `mvn -B -ntp verify` sobre `2388b7e` = **BUILD SUCCESS, 839 tests** en 14 módulos
+  (13 con tests) y **13 puertas JaCoCo verdes**.
+- **TC humanos** (`ec7f228`): `docs/tc/cdu19-tc-humanos.md` proyectado **tal cual** con `tools/tc_plantillas.py`
+  (TC19-01…09 + bloque de 126 filas). Parches acotados a la herramienta para no romper las plantillas ya
+  ejecutadas de iter01/iter05: `OPERACIONES_EXTRA["iso2-integracion"]`, petición derivada de `metodo`+`ruta`,
+  `titulo_de` sin prefijo si no hay `operacion`, `previo` ignora `-`, y **solo las tablas sin `factores`** (B y G)
+  proyectan sus columnas como pares.
+- **Informe del spike** (`2388b7e`, ficha en `docs/informes/spike-cdu19.md`): veredicto por integración, decisión
+  **FHIR STU3 en JSON sobre la REST existente** (la huella SHA-256 canónica ya da la idempotencia), **HL7v2/MLLP
+  descartado**, PACS encajado hacia **DICOMweb (`qido-rs`/`wado-rs`)** y recomendación de **no escribir un visor
+  DICOM propio en Iter16**; **15 hallazgos**, deudas **D-01..D-07** y riesgos para `v0.2.0-alpha`. Además `86f68ff`
+  corrigiendo modos y acciones reales en la documentación de arranque.
+- **Corrección al registro**: el RBAC real de `/api/integracion` es **solo rol `ADMINISTRADOR`** (no existen
+  `INTEGRACION_LEER/ESCRIBIR`) y los modos reales del spike son `NORMAL`/`LENTO`/`LENTO_TIMEOUT`/`CAIDO`; anotado
+  en `STATUS.md` y en la entrada del Prompt 22.
+- **Regla de trabajo nueva de esta sesión**: **escribir → verificar en disco → `git add` → commit → push sin
+  demora**, y guardar las herramientas de recuento fuera del árbol (`reactor_verify.log`, `reactor_tally.py`,
+  `cobertura2.py`, `jacoco_integracion.py` en el temp), porque **solo sobrevive lo commiteado y pusheado**.
+- **Commits de la sesión, todos subidos**: `c104d78` (matriz verde) → `ec7f228` (evidencia TDOP + TC humanos) →
+  `86f68ff` (fix de docs/arranque) → `2388b7e` (informe del spike). **PR borrador a `develop`: #___** *(se anota en
+  el commit de cierre; base `develop`, `Ref: #44`, sin `Closes`)*. **Queda de Ismael**: ejecutar los TC humanos de
+  CDU19 (D28), fusionar el PR y cerrar **#44** (D29), poner el tag `cfg-iter06` sobre la fusión y materializar
+  `release/R1` → `main` con `v0.2.0-alpha` (D30).

@@ -99,7 +99,7 @@ JaCoCo solo lo escribe la fase `verify`: leer el CSV tras un `mvn test` da cifra
 | Reglas ArchUnit | 6, en verde |
 | TC humanos | 9 (TC19-01..TC19-09) + bloque TDOP de 126 en `docs/tc/cdu19-tc-humanos.md`, pendientes de ejecutar |
 | Espec TDOP | `docs/test/iter06/tdop-cdu19-espec.json` + 7 CSV (par generados por `tools/pairwise.py`) |
-| Reactor completo | se revalida con la subida del PR (ver `STATUS.md`) |
+| Reactor completo | `mvn -B -ntp verify` en `2388b7e`: **BUILD SUCCESS, 839 tests** en 14 módulos (13 con tests), 0 fallos/errores/omitidos y **13 puertas JaCoCo en verde** |
 
 **Lo que queda sin cubrir** (registrado para el ciclo de defectos): el record
 `IntegracionProperties.SistemaOverride` (0/1 línea) y `HuellaContenido` (2/4). La línea está casi
