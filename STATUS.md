@@ -292,6 +292,7 @@ técnicas, la D33 y sus TC humanos.
 | 16 | 08/11/2026 | **Cierre de Iter4 en GitHub + nueva estrategia de pruebas (D33) y arranque de la persistencia MySQL (Prompt 14):** Ismael fusiona **PR #31** (merge `a3fe109`) y **PR #32** (merge `3b02718`), CI verde. El agente crea y sube el tag anotado **`cfg-iter04` sobre `a3fe109`** (el merge del código, no el documental posterior) y borra la rama `feature/iter04-cdu06-solicitudes` (remoto y local). Wiki: página nueva **`Iter4-CDU06-solicitudes.md`** con 4 PNG en `images/` y `Home.md` enlazado (merge `5207bae` del repo wiki). Creada la plantilla que faltaba, **`docs/tc/cdu06-tc-humanos.md`** (14 casos TC06-01…TC06-14 sobre la superficie real: `POST /api/solicitudes`, `GET /mias`, `GET /{id}`, `GET /{id}/integridad`, semillas `SEM-RX-TORAX`/`SEM-RM-RODILLA`). Detectada **nueva desviación de D30**: el PR #29 fusionó `develop` → `main` (merge `d12388b`, 19:01) sin etiqueta de release. Nuevas directrices de Ismael: **D33** — diseñar los casos con **clases de equivalencia + teorema del valor límite + conjetura de errores**, composarlos con **pairwise**, ejecutarlos con **JUnit/Maven** y usar **esos mismos casos** en las plantillas de TC humanos; el agente genera casos y plantillas; se empieza por **las pruebas de la Iteración 1**, con **JavaDoc** en los ficheros de test y la wiki al día **identificando la clase probada**; y **persistencia MySQL** con **Docker (MySQL + phpMyAdmin)**, usuario `gestoroperaciones` y patrones **DAO** y **Agente** particularizado en **`AgenteMySQL`** (ADR **D34** al implementarse) | — |
 | 17 | 09/11/2026 | **Iter1/CFG-01 cerrada del todo: método D33 sobre CDU16 + TC humanos (Prompts 15 y 16):** rama `feature/iter01-pruebas-d33` desde `develop`. Primero la **spec** (`355ade9`): `docs/test/iter01/tdop-cdu16-espec.json` con las clases de equivalencia, los puntos límite y la conjetura de errores de CDU16, y dos generadores nuevos en `tools/` — **`pairwise.py`** (compone con pairwise sobre restricciones y generadores de valores, sin librerías) y **`tc_plantillas.py`** (proyecta la matriz a la plantilla de TC humanos entre `<!-- TDOP:BEGIN -->`/`<!-- TDOP:END -->`). Matrices generadas: **A33 + B15 + C36 + D9 + E22 = 115 casos** en `docs/test/iter01/tdop-cdu16.md` y en `iso2-catalogo/src/test/resources/tdop/`. Rojo real: **16 fallos** sobre 115, que destaparon los huecos de D35 y **dos discrepancias de spec** (`CODIGO_DUPLICADO`, y el 400 por tamaño de página) → **se arregla la spec, no el test**. Fixes (`b2f7356`, D35): `LímitesCatalogo` valida las cotas en el servicio devolviendo 400 en vez de reventar contra la BD, y se valida `pagina`/`tamano`; antes, **el `.puml` de iter01** (`3a17a9a`, D31). Verde (`f73ac80`): **115/115 TDOP** y **139 tests en `iso2-catalogo`**, **JaCoCo 97,5 % líneas (195/200) y 82,5 % ramas (33/40)** sobre la puerta real `jacoco.line.min=0.60`. **PR #36 → `develop` fusionado por Ismael** (merge `f43721c`), CI verde. Wiki rehecha (merge `7b36c5c`) con la matriz, la clase probada y los 16 fallos del rojo. **TC humanos de CDU16 rellenados y ejecutados por el agente** (excepción puntual a D28, anotada en el doc): TC16-01…06 en 16 pasos, 5 asientos de auditoría nuevos y el doc corregido (decía 5 TC, son 6) → **PR #37 fusionado** (commit `e70bc50`, merge `3601fd6`, tip de `develop`). Tag **`cfg-iter01` reanotado** sobre `df09bca` (objeto `af95aff` → `429d67f`, `--force-with-lease`) con el bloque «Reanotado el 09/11/2026». Comentario de cierre en **#35** (Ismael la había cerrado a mano a las 00:26). **Borradas 12 ramas remotas y 12 locales** fusionadas. Detectado: **#34 quedó cerrada a la vez (00:26) sin trabajo de D34 detrás**. BD H2 local `./data/iso2-server` **conservada** con las filas `TC16H-*` y los asientos de auditoría | — |
 | 18 | 11/11/2026 | **D34 implementada: MySQL 8.4 en Docker + Flyway dual + capa DAO/Agente (Prompt 17, issue #34 reabierta):** rama `feature/iter05-persistencia-mysql` desde `develop` (`737b932`, merge del PR #38). Commits: `b15d927` (`docker/`: `mysql:8.4` en host **3307** + phpMyAdmin **8081** + volumen `iso2-mysql-datos` + `init/01-usuarios.sql` con `gestoroperaciones` solo DML y `iso2_flyway` con DDL; root `Iso2Curso25-26-Root`), `64e92eb` (Flyway **dual** `db/migration/h2` + `db/migration/mysql` elegida **por perfil** — descartado `{vendor}` porque Flyway 11 escanea ambas subcarpetas y produce versiones duplicadas; perfil `mysql` en el `application.yml`; `mysql-connector-j` + `flyway-mysql`; apps subidas a **0.1.5-SNAPSHOT**, tren de la release CFG-05), `ae40ad7` (diseño-primero D31: `docs/modelo/iter05/persistencia-clases.{puml,png}` + README **antes** del código) y `bba56f8` (paquete **nuevo** `es.uclm.iso2.server.persistencia`: interfaz `Agente` + `AgenteH2`/`AgenteMySQL` elegidos por `DatabaseMetaData.getDatabaseProductName()`, DAO JDBC `DiagnosticoPersistenciaDao`, REST `GET /api/persistencia/diagnostico` solo ADMINISTRADOR (regla nueva en `ConfigSeguridad`), 9 tests de API en H2 + 3 Testcontainers contra `mysql:8.4` real, incluido TC-D34-MY-03: `gestoroperaciones` no puede hacer DDL → error 1142). **Incidente Testcontainers/Docker:** el BOM de Boot 3.5.4 gestiona TC 1.21.3, que habla la API Docker 1.32, y Docker Engine 29 rechaza clientes < 1.40 → HTTP 400 → los tests se **saltaban en silencio**; fix = importar **`testcontainers-bom` 1.21.4 ANTES** de `spring-boot-dependencies` en el padre (la propiedad `testcontainers.version` no vale con BOM importado) + JaCoCo del padre **0.8.12 → 0.8.15** (Java 25). Decisión de Ismael sobre el punto suelto de D34: **JPA sigue siendo el acceso primario del dominio; DAO + Agente es capa nueva en `iso2-server-app`**, no sustituye a los `Repository`. Puertas en verde: `mvn -B -ntp clean verify` = **356 tests, 0 saltados** (server-app 60→72) con JaCoCo y javadoc estricto OK; los tests de MySQL autodesactivables sin Docker (`disabledWithoutDocker`). **PR pendiente** a `develop`; Ismael debe cerrar **#34** a mano al fusionar y refrendar los TC humanos de CDU16 en la H2 nueva; **#40** creada con el prompt de Iter5/CDU12 | — |
+| 25 | 16-17/11/2026 | **Iter7 · CDU14 listas de espera (CFG-07, issue #47) — implementación servidora completa; ejecutor TDOP aún sin cerrar:** rama `feature/iter07-cdu14-listas-espera` (subida hasta `47a6601`). Commits: `d9c0766` inventario de la base, `410bf15` diagramas D31, `080fd09` **diseño TDOP de 253 filas** (8 tablas A-H en `docs/test/iter07/tdop-cdu14-espec.json`, semilla 20261116, CSVs regenerados y verificados byte a byte) + plantilla `docs/tc/cdu14-tc-humanos.md`, `9fd5eff`+`18a5b78` alineación del modelo (Agente B), `741fdfe` tren de versiones 1.2.0-SNAPSHOT + `tools/cdu14_smoke.py`, `6168156` contratos en `iso2-common`, `1fda042` dominio (comparador determinista prioridad↓/fechaSolicitud↑/esperaId↑ + auditoría `REUBICACION` encadenada propia en `espera_auditoria` con génesis virtual), `f6dda51`+`23627f7` repositorios y asignación con profesional, `dfe87aa` servicio + auditoría, `2c7ea4e` capa web con consejos de error, `99578f9` RBAC `lista_espera:leer/escribir` + Flyway **V1.6.0 dual h2+mysql** + semillas, `7891e61` notas del ejecutor al doc TDOP, `d8f95fe` **arreglo del hallazgo TC14-E10**: control optimista `@Version` en `ListaEspera` → 409 `CONFLICTO_ENTRADA_NO_ACTIVA` + columna `version` en V1.6.0 (modelo D31 alineado), `47a6601` doble `PRUEBA_DUP` y borrador del ejecutor guardado en `docs/test/iter07/borrador-ejecutor/`. **Estado honesto:** reactor `iso2-citas`+`iso2-server-app` en verde (`mvn -B -pl iso2-citas,iso2-server-app -am test`: **238 tests** en citas —los de siempre, **ninguna clase de test nueva de CDU14 compila todavía**— y **90** en server-app con 3 saltados), así que la **puerta de la matriz CFG-07 sigue ABIERTA**: `Cdu14MatrizTdopTest` (253 casos 1:1) no existe aún. Ensayo **TC14-H05 en verde contra el servidor real** (5 ALTAs 201, tres lecturas de cola idénticas, `auditoria/verificar` → verificable=true con 8 eslabones, retirar 200). Hallazgo anotado: `AgendaNoEncontradoException` del asignar no está mapeada en el consejo de citas → 500 `ERROR_INTERNO` (afecta a F16/F17/F48/F50) | — |
 
 ## Deuda / pendientes inmediatos
 
@@ -465,29 +466,43 @@ desde la rama `docs/iter06-cierre` con su PR a `develop`, **tag anotado `cfg-ite
 **`v0.2.0-alpha`** (ALFA-1 / R1), que se materializa publicando **`release/R1` → `main`** (D30), y el **refrendo
 de los TC humanos** que ejecutó el agente (D28): esa ejecución es evidencia útil, no sustituye su validación.
 
-**Lo que sigue es la Iter7 / CFG-07 · CDU14 «listas de espera»** sobre `iso2-citas` **1.2.0** (inversión D23:
-CDU14 antes que CDU01). Ventana del plan **23-27/11/2026**, fase Construcción, actor **Administrativo**, pareja
-responsable P-A, **22 h con IA**. Foco de calidad ISO 25010: **Adec. Funcional (corrección)**, **Usabilidad
+**La Iter7 / CFG-07 · CDU14 «listas de espera» está EN CURSO desde el 16/11 (sesión 25)** sobre `iso2-citas`
+**1.2.0-SNAPSHOT** (inversión D23: CDU14 antes que CDU01), en la rama `feature/iter07-cdu14-listas-espera`
+(subida hasta `47a6601`). Ventana del plan **23-27/11/2026** (vamos por delante), fase Construcción, actor
+**Administrativo**, pareja responsable P-A, **22 h con IA**. Foco de calidad ISO 25010: **Adec. Funcional (corrección)**, **Usabilidad
 (operabilidad y protección)** y **Seguridad (no repudio y responsabilidad)**. Puertas de CFG-07 en
 `docs/planificacion-iteraciones+Calidad.csv`: **reordenación determinista probada** y **auditoría de
 reubicaciones**. Sus condiciones de trabajo están en el apartado **2-ter**.
 
-Primeros pasos de la sesión que arranque la Iter7:
+**Hecho ya en la Iter7** (ver sesión 25 del registro): inventario (`d9c0766`), diagramas D31 (`410bf15`), diseño
+TDOP de 253 filas con spec canonica + plantilla de TC humanos (`080fd09`), modelo alineado del Agente B
+(`9fd5eff`+`18a5b78`), tren de versiones 1.2.0 + smoke (`741fdfe`), contratos en `iso2-common` (`6168156`),
+dominio con cola determinista y auditoría `REUBICACION` (`1fda042`), repositorios (`f6dda51`+`23627f7`), servicio
+(`dfe87aa`), capa web (`2c7ea4e`), RBAC + Flyway V1.6.0 dual (`99578f9`), notas del ejecutor (`7891e61`) y control
+optimista `@Version` del hallazgo TC14-E10 (`d8f95fe`). **La puerta grande sigue abierta: el ejecutor
+`Cdu14MatrizTdopTest` de los 253 casos no existe todavía** (solo el borrador en
+`docs/test/iter07/borrador-ejecutor/`), y no hay ninguna clase de test nueva de CDU14 compilando. Pasos
+siguientes, en orden:
 
-1. **Abrir la issue CFG-07** (`gh`, D29) con el alcance y el DoD, y desde ahí la rama
-   `feature/iter07-cdu14-listas-espera` **partiendo del tip de `develop` tras el cierre de la Iter6**.
-2. **Diseñar los conjuntos de casos de prueba de CDU14** con las cuatro técnicas de la D33 (clases de
-   equivalencia, conjetura de errores, valores límite y *pairwise*), escribir la spec
-   `docs/test/iter07/tdop-cdu14-espec.json`, generar los CSV con `python tools/pairwise.py` y proyectar los TC
-   humanos con `python tools/tc_plantillas.py`.
-3. **Informe del diseño de los conjuntos de prueba** (nuevo, pedido por Ismael el 15/11): documentar el diseño
-   en sí, no solo el resultado, porque tiene valor pedagógico. Sitio elegido:
-   `docs/informes/diseno-conjuntos-prueba.md`.
-4. **Agente B en paralelo** (opcional, Deuda nº 26): *worktree* `C:\ProgIA\PrISO2-iter07` desde `develop`,
-   acotado a `docs/modelo/iter07/` y `docs/test/iter07/`, sin tocar `src/`, `pom.xml` ni los registros.
-5. **Repartirse la deuda heredada**: `D-01..D-07` del spike (`docs/informes/spike-cdu19.md`) y las tres nuevas
-   del cierre: **D-08** (puerta JaCoCo de `iso2-common`), **D-09** (401 en rutas sin mapear) y **D-10** (código
-   esperado distinto entre matriz aislada y aplicación montada).
+1. **Cerrar la matriz TDOP (prioridad nº 1):** escribir `Cdu14MatrizTdopTest` en
+   `iso2-citas/src/test/java/es/uclm/iso2/citas/tdop/` siguiendo el patrón de `Cdu12MatrizTdopTest`: lectura de
+   los 9 CSVs, tabla de esperados, ayuda `aplicarSetup` (semillas `SEMILLA-COLA-*` por API y `SEM-TAMPER:*` con
+   los hooks `setHashParaPruebas`/`setMotivoParaPruebas`), y las 8 tablas A-H. El sembrado usa **un único
+   paciente** (`api-paciente`) y la colisión de clave se dispara con `api-prueba-dup` (`PRUEBA_DUP` en
+   `PruebasCitas`). Regla D33: si un caso sale rojo, se corrige el código o la spec JSON y se regeneran los
+   CSVs con `python tools/pairwise.py docs/test/iter07/tdop-cdu14-espec.json --resources
+   iso2-citas/src/test/resources/tdop`; nunca editar CSVs ni el ejecutor a mano.
+2. **Hallazgo que destapará la tabla F (F16/F17/F48/F50):** `AgendaNoEncontradoException` del asignar no está
+   mapeada en `ListaEsperaManejadorErrores` y cae a 500 `ERROR_INTERNO`. Decidir (con Ismael si hace falta) si
+   se mapea a 404/409 o la spec acepta `ERROR_INTERNO`, y dejarlo consignado.
+3. **TC humanos:** la plantilla `docs/tc/cdu14-tc-humanos.md` ya proyecta las 8 tablas; el ensayo del flujo
+   TC14-H05 contra el servidor real ya salió verde (evidencia en el registro sesión 25). Rellenado y refrendo,
+   de Ismael (D28).
+4. **Wiki (D32):** página `Iter7-CDU14-listas-espera.md` (espejo de `Iter6-CDU19-integracion.md`), PNGs a
+   `images/iter07-cdu14-*.png` y fila de Iter7 en `Home.md`.
+5. **Cierre CFG-07 (D29, solo por orden de Ismael):** PR `feature/iter07-cdu14-listas-espera` → `develop`
+   (sin `Closes`), fusión y cierre de **#47** a mano, tag anotado `cfg-iter07` sobre el merge y refresco de
+   `TASADEFECTOS.md` (D37).
 
 ### 0) Arranque en el equipo nuevo (10/11/2026)
 
