@@ -206,6 +206,10 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       LocalDateTime inicio, Integer duracionMinutos)
       : AsignacionResultadoDTO
       + verificarAuditoria() : VerificacionAuditoriaDTO
+      + auditoriaDe(String esperaId) : List~AuditoriaEsperaDTO~
+      (404 LISTA_ESPERA_NO_ENCONTRADA si la entrada no
+      existe: auditar una entrada que no existe no
+      devuelve lista vacia, tabla G de la spec)
       ..
       Reglas: duplicado por claveDuplicada (409
       CONFLICTO_ALTA_DUPLICADA, y si la base de datos
@@ -234,10 +238,16 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       + POST /api/listas-espera/{esperaId}/prioridad : cambiarPrioridad
       + POST /api/listas-espera/{esperaId}/asignar : asignarDesdeCola
       + POST /api/listas-espera/{esperaId}/retirar : retirar (motivo)
+      + GET /api/listas-espera/{esperaId}/auditoria : auditoriaDe
       + GET /api/listas-espera/auditoria-verificable : verificarAuditoria
+      (el literal auditoria-verificable gana al path
+      variable: Spring prioriza el segmento literal)
       ..
       Sin PUT / PATCH: la prioridad y el estado solo
-      cambian por las acciones de la cola
+      cambian por las acciones de la cola.
+      El path variable esperaId va tipado UUID: un id
+      mal formado es 400 DATOS_INVALIDOS (rechazo del
+      conversor), nunca un 404 disfrazado
     }
     class ListaEsperaManejadorErrores <<@RestControllerAdvice, nuevo>> {
       ListaEsperaNoEncontradaException -> 404 LISTA_ESPERA_NO_ENCONTRADA
@@ -248,7 +258,12 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       CONFLICTO_FUERA_DE_FRANJA / CONFLICTO_SOLICITUD_NO_APTA (heredado)
       CatalogoNoEncontradoException -> 404 PRUEBA_NO_ENCONTRADA (alta)
       SolicitudNoEncontradaException -> 404 SOLICITUD_NO_ENCONTRADA (alta)
+      DataIntegrityViolation (dos entradas peleandose por
+      el mismo hueco de CDU12 al asignar) -> 409
+      CONFLICTO_HUECO_OCUPADO (heredado de CDU12)
       IllegalArgument / JsonInvalido -> 400 DATOS_INVALIDOS
+      (incluye el esperaId que no es UUID: rechazo del
+      conversor, nunca 404 disfrazado)
       Resto -> 500 ERROR_INTERNO
     }
   }

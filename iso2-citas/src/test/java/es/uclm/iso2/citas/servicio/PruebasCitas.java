@@ -17,10 +17,13 @@ import es.uclm.iso2.common.solicitudes.SolicitudFacade.SolicitudDTO;
 import es.uclm.iso2.common.solicitudes.SolicitudFacade.SolicitudNuevaDTO;
 import es.uclm.iso2.common.solicitudes.SolicitudFacade.SolicitudPrescripcionDTO;
 import es.uclm.iso2.common.solicitudes.SolicitudFacade.TrazabilidadSolicitudDTO;
+import es.uclm.iso2.common.citas.ListaEsperaFacade;
 import es.uclm.iso2.common.solicitudes.SolicitudNoEncontradaException;
 import es.uclm.iso2.citas.repositorio.AuditoriaCitasRepositorio;
+import es.uclm.iso2.citas.repositorio.AuditoriaEsperaRepositorio;
 import es.uclm.iso2.citas.repositorio.CitaHuecoRepositorio;
 import es.uclm.iso2.citas.repositorio.CitaRepositorio;
+import es.uclm.iso2.citas.repositorio.ListaEsperaRepositorio;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -112,6 +115,28 @@ public class PruebasCitas {
             AuditoriaCitasRepositorio auditoria, AgendaFacade agendas, PruebaCatalogoFacade catalogo,
             SolicitudFacade solicitudes) {
         return new CitaServicio(citas, huecos, auditoria, agendas, catalogo, solicitudes,
+                Clock.fixed(AHORA, ZoneOffset.UTC));
+    }
+
+    /**
+     * Servicio real de listas de espera del CDU14 (CDU14), con los repositorios JPA
+     * de la cola y el motor de citas de arriba, reloj fijo igual que {@link #citaServicio}
+     * y las mismas fachadas falsas. Lo consume {@code ListaEsperaControlador} al escanear
+     * el paquete web; sin este bean el contexto de las pruebas web no arranca desde que
+     * existe la cola.
+     *
+     * @param esperas      repositorio JPA de entradas de la cola
+     * @param auditoria    repositorio JPA del rastro encadenado de la cola
+     * @param catalogo     fachada de catalogo falsa
+     * @param solicitudes  fachada de solicitudes falsa
+     * @param citaServicio motor de citas real del CDU12 para asignar desde la cola
+     * @return fachada de lista de espera de prueba
+     */
+    @Bean
+    public ListaEsperaFacade listaEsperaFacade(ListaEsperaRepositorio esperas,
+            AuditoriaEsperaRepositorio auditoria, PruebaCatalogoFacade catalogo,
+            SolicitudFacade solicitudes, CitaServicio citaServicio) {
+        return new ListaEsperaServicio(esperas, auditoria, catalogo, solicitudes, citaServicio,
                 Clock.fixed(AHORA, ZoneOffset.UTC));
     }
 

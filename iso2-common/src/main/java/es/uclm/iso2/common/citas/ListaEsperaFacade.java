@@ -138,6 +138,27 @@ public interface ListaEsperaFacade {
     }
 
     /**
+     * Eslabon de la cadena de auditoria de una entrada concreta, leido en orden
+     * de encadenamiento (id ascendente). El ancla genesis no se devuelve como
+     * fila: el primer eslabon real lleva {@code hashAnterior} nulo y el genesis
+     * es el literal canonico con el que enlaza (TDOP tabla G).
+     *
+     * @param esperaId     entrada de la cola sobre la que recayo la accion
+     * @param accion       ALTA, REUBICACION, ASIGNACION o RETIRADA
+     * @param antes        prioridad o estado previo (null en el alta)
+     * @param despues      prioridad o estado nuevo
+     * @param usuario      firmante del eslabon (claim del JWT o {@code sistema})
+     * @param motivo       motivo de la accion (null en alta y asignacion)
+     * @param instante     momento de la escritura
+     * @param hash         SHA-256 hex de este eslabon
+     * @param hashAnterior hash del eslabon previo (null en el primero de la tabla)
+     */
+    record AuditoriaEsperaDTO(String esperaId, String accion, String antes,
+                              String despues, String usuario, String motivo,
+                              Instant instante, String hash, String hashAnterior) {
+    }
+
+    /**
      * Da de alta una entrada en la lista de espera con prioridad de la escala CDU06.
      *
      * @param alta datos del alta
@@ -227,4 +248,17 @@ public interface ListaEsperaFacade {
      * @return el resumen de verificacion
      */
     VerificacionAuditoriaDTO verificarAuditoria();
+
+    /**
+     * Cadena de auditoria de una entrada concreta, en orden de encadenamiento.
+     *
+     * @param esperaId entrada a auditar
+     * @return los eslabones escritos para esa entrada (vacio solo si la entrada
+     *         existe pero nunca tuvo accion registrable, algo que no ocurre hoy
+     *         porque el alta escribe la suya)
+     * @throws ListaEsperaNoEncontradaException si la entrada no existe: auditar una
+     *                                          entrada inexistente es 404, nunca una
+     *                                          lista vacia (tabla G de la spec TDOP)
+     */
+    List<AuditoriaEsperaDTO> auditoriaDe(String esperaId);
 }

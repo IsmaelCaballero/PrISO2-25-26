@@ -385,6 +385,20 @@ public class ListaEsperaServicio implements ListaEsperaFacade {
         return new VerificacionAuditoriaDTO(integra ? INTEGRAL : MANIPULADA, cadena.size(), hashUltimo);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AuditoriaEsperaDTO> auditoriaDe(String esperaId) {
+        // auditar una entrada inexistente es 404 propio, no una lista vacia: la
+        // guarda corre antes de leer la cadena (tabla G, fila NINGUNA de la spec)
+        entradaO404(esperaId);
+        return auditoria.findByEsperaIdOrderByIdAsc(esperaId.trim()).stream()
+                .map(registro -> new AuditoriaEsperaDTO(registro.getEsperaId(),
+                        registro.getAccion().name(), registro.getAntes(), registro.getDespues(),
+                        registro.getUsuario(), registro.getMotivo(), registro.getInstante(),
+                        registro.getHash(), registro.getHashAnterior()))
+                .toList();
+    }
+
     // ------------------------------------------------------------------
     // Auditoria encadenada y ayudas
     // ------------------------------------------------------------------
