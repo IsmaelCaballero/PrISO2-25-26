@@ -14,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -31,7 +32,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * {@code UNIQUE (profesional_id, inicio)} de {@code cita_hueco} y aqui se responde
  * el mismo 409 {@code CONFLICTO_HUECO_OCUPADO} que devuelve la comprobacion previa
  * del CDU12. El alta duplicada tambien choca contra el UNIQUE de
- * {@code clave_duplicada}, pero esa ya la traduce el servicio antes de llegar aqui.</p>
+ * {@code clave_duplicada}, pero esa ya la traduce el servicio antes de llegar aqui.
+ * La version optimista de la fila ({@code @Version} en {@code ListaEspera}) lanza
+ * {@link ObjectOptimisticLockingFailureException} cuando dos hilos escriben sobre la
+ * misma entrada: tambien se traduce a 409, nunca al 500 del catch-all.</p>
  *
  * <p>Como en {@link CitaManejadorErrores}, el advice esta acotado al controlador:
  * un metodo no declarado (POST sobre la ruta de auditoria, DELETE sobre la
@@ -143,6 +147,27 @@ public class ListaEsperaManejadorErrores {
         LOG.warn("hueco en disputa al asignar desde la cola: {}", e.getMessage());
         return error(HttpStatus.CONFLICT, "CONFLICTO_HUECO_OCUPADO",
                 "el hueco pedido ya no esta libre u otra operacion lo esta ocupando a la vez");
+    }
+
+    /**
+     * Dos pulsaciones escribiendo sobre la misma entrada de la cola (TC14-E10):
+     * Hibernate detecta que la columna {@code @Version} de {@code lista_espera}
+     * cambio mientras el segundo hilo tenia la copia abierta y descarta su UPDATE.
+     * Sin este manejo acabaria en el 500 del catch-all disfrazando un conflicto
+     * normal de doble clic; aqui se responde el mismo 409
+     * {@code CONFLICTO_ENTRADA_NO_ACTIVA} que recibe el hilo que llega tarde por la
+     * maquina de estados, que es la misma situacion vista desde la base de datos.
+     * Va despues del de {@link DataIntegrityViolationException} y no lo pisa: ese
+     * es la pelea por un hueco de CDU12, este es la pelea por la misma fila.
+     *
+     * @param e fallo de control optimista sobre la fila de la cola
+     * @return respuesta 409 con {@code CONFLICTO_ENTRADA_NO_ACTIVA}
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiError> entradaEnDisputa(ObjectOptimisticLockingFailureException e) {
+        LOG.warn("entrada de la cola en disputa por control optimista: {}", e.getMessage());
+        return error(HttpStatus.CONFLICT, "CONFLICTO_ENTRADA_NO_ACTIVA",
+                "otra operacion ha modificado esta entrada de la cola a la vez");
     }
 
     /**

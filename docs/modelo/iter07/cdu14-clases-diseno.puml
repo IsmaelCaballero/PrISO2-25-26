@@ -127,6 +127,7 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       - citaId : String (nullable)
       - motivoFin : String (nullable)
       - claveDuplicada : String (UNIQUE parcial)
+      - version : int (@Version, control optimista)
       + nueva(...) : ListaEspera (estado ACTIVA)
       + cambiarPrioridad(Prioridad nueva) : Prioridad
       (devuelve la prioridad anterior; no cambia
@@ -140,7 +141,10 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       claveDuplicada = pacienteId + "|" + pruebaCodigo
       mientras esta ACTIVA y pasa a NULL al retirar o
       asignar (UNIQUE solo permite una fila no nula,
-      la misma regla ya probada en CDU12/CDU13/CDU16)
+      la misma regla ya probada en CDU12/CDU13/CDU16).
+      El @Version es el control optimista del TC14-E10:
+      dos hilos que retiran la misma entrada no escriben
+      dos eslabones RETIRADA
     }
     enum "ListaEspera.Estado" as Estado {
       ACTIVA; ASIGNADA; RETIRADA
@@ -261,6 +265,9 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       DataIntegrityViolation (dos entradas peleandose por
       el mismo hueco de CDU12 al asignar) -> 409
       CONFLICTO_HUECO_OCUPADO (heredado de CDU12)
+      ObjectOptimisticLockingFailure (dos hilos escribiendo
+      la misma entrada, TC14-E10) -> 409
+      CONFLICTO_ENTRADA_NO_ACTIVA
       IllegalArgument / JsonInvalido -> 400 DATOS_INVALIDOS
       (incluye el esperaId que no es UUID: rechazo del
       conversor, nunca 404 disfrazado)
@@ -301,6 +308,7 @@ package "iso2-server-app 0.3.0" {
   class "Flyway V1.6.0 (migracion SQL, h2 y mysql)" as FLY {
     tabla lista_espera: uk espera_id +
     uk_lista_espera_clave_duplicada (null admitido)
+    + version INT NOT NULL DEFAULT 0 (columna @Version)
     + indices (prueba_codigo, estado), (profesional_id, estado)
     tabla espera_auditoria (hash encadenado)
     + indice espera_auditoria_espera_id

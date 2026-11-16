@@ -110,6 +110,14 @@ Las decisiones que fija este diagrama (y que luego sujetan los tests):
   mientras la entrada esta ACTIVA y pasa a `NULL` al asignar o retirar, con UNIQUE
   sobre la columna. Es la misma tecnica ya probada en CDU12/CDU13/CDU16: el UNIQUE es
   la puerta dura, la comprobacion previa solo da el mensaje bonito.
+- **Fila con control optimista (`@Version`)**: la tabla `lista_espera` lleva columna
+  `version INT NOT NULL DEFAULT 0` mapeada con `@Version` en `ListaEspera`. Es la
+  puerta dura del TC14-E10 (dos retiradas concurrentes de la misma entrada): el
+  `UPDATE` perdedor no escribe y Hibernate lanza
+  `ObjectOptimisticLockingFailureException`, que el `ListaEsperaManejadorErrores`
+  traduce a 409 `CONFLICTO_ENTRADA_NO_ACTIVA` en lugar del 500 del catch-all. Sin
+  esa columna, dos hilos leen `ACTIVA`, los dos pasan la maquina de estados y la
+  cadena de auditoria queda con dos eslabones `RETIRADA` para la misma entrada.
 - **Reubicacion redundante rechazada**: `cambiarPrioridad(esperaId, prioridad, motivo,
   usuario)` calcula la posicion antes y despues; si coincide,
   `CONFLICTO_REUBICACION_REDUNDANTE` (409) y **ningun eslabon nuevo** en

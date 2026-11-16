@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.UUID;
@@ -111,6 +112,18 @@ public class ListaEspera {
      */
     @Column(name = "clave_duplicada", unique = true, length = 121)
     private String claveDuplicada;
+
+    /**
+     * Control optimista (TC14-E10): dos retiradas concurrentes sobre la misma entrada
+     * no pueden escribir dos eslabones RETIRADA en la auditoria. El segundo UPDATE
+     * encuentra version desfasada y Hibernate lanza ObjectOptimisticLockingFailureException,
+     * que el consejo de errores traduce en 409 CONFLICTO_ENTRADA_NO_ACTIVA (el mismo
+     * codigo que recibe el hilo que llega tarde por la maquina de estados); mismo
+     * criterio que {@link CitaHueco} en CDU12.
+     */
+    @Version
+    @Column(nullable = false)
+    private int version;
 
     /** Reconstructora de JPA: no fija estado, Hibernate lo escribe despues. */
     protected ListaEspera() {
@@ -342,5 +355,14 @@ public class ListaEspera {
      */
     public String getClaveDuplicada() {
         return claveDuplicada;
+    }
+
+    /**
+     * Devuelve la version del control optimista.
+     *
+     * @return version gestionada por JPA
+     */
+    public int getVersion() {
+        return version;
     }
 }

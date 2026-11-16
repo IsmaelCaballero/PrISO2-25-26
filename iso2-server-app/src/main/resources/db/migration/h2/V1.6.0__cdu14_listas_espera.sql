@@ -15,6 +15,9 @@ CREATE TABLE lista_espera (
     cita_id          VARCHAR(36),
     motivo_fin       VARCHAR(300),
     clave_duplicada  VARCHAR(121),
+    -- Control optimista (TC14-E10, decision cerrada en la matriz): dos retiradas
+    -- concurrentes sobre la misma entrada no escriben dos eslabones RETIRADA.
+    version          INT          NOT NULL DEFAULT 0,
     CONSTRAINT uk_lista_espera_espera_id UNIQUE (espera_id),
     -- Anti-reincidencia del alta (RF14.1): solo las entradas ACTIVAS llevan clave; al
     -- pasar a ASIGNADA o RETIRADA el servicio la deja a NULL, y el UNIQUE admite
