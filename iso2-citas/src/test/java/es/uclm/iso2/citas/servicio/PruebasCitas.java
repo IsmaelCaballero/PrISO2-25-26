@@ -80,6 +80,13 @@ public class PruebasCitas {
     /** Codigo de prueba del catalogo falso: duracion 30 min y plazo de cancelacion de 24 h. */
     public static final String PRUEBA = "api-prueba";
 
+    /**
+     * Segunda prueba que solo sabe resolver codigo, no listarse a si misma. CDU14 la
+     * usa en el par de conjetura (paciente, prueba) distinto: alta con y sin solicitud
+     * (CF-01) sobre un par que no interfiere con las filas de api-prueba.
+     */
+    public static final String PRUEBA_DUP = "api-prueba-dup";
+
     /** Solicitud falsa en estado creada, apta para cita. */
     public static final String SOL_CREADA = "api-sol-creada";
 
@@ -233,11 +240,17 @@ public class PruebasCitas {
 
         @Override
         public Optional<PruebaImagenDTO> buscarPorCodigo(String codigo) {
-            if (!PRUEBA.equals(codigo)) {
-                return Optional.empty();
+            if (PRUEBA.equals(codigo)) {
+                return Optional.of(new PruebaImagenDTO(codigo, "Radiografia de prueba", "RX", true,
+                        DURACION, true, new ProtocoloDTO("Preparacion standard", 0, "ninguna"),
+                        new PoliticaDTO(24, 3)));
             }
-            return Optional.of(new PruebaImagenDTO(codigo, "Radiografia de prueba", "RX", true, DURACION, true,
-                    new ProtocoloDTO("Preparacion standard", 0, "ninguna"), new PoliticaDTO(24, 3)));
+            if (PRUEBA_DUP.equals(codigo)) {
+                return Optional.of(new PruebaImagenDTO(codigo, "Radiografia de prueba duplicada", "RX",
+                        true, DURACION, true, new ProtocoloDTO("Preparacion standard", 0, "ninguna"),
+                        new PoliticaDTO(24, 3)));
+            }
+            return Optional.empty();
         }
 
         @Override
