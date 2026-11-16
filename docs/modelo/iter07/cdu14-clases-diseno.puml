@@ -26,7 +26,7 @@ package "iso2-common 1.2.0 (baseline CDU12 1.1.0 congelado + extension MINOR CDU
     + pacienteId : String (obligatorio)
     + pruebaCodigo : String (obligatorio)
     + profesionalId : String (nullable)
-    + prioridad : String (URGENTE / ALTA / NORMAL / BAJA)
+    + prioridad : String (URGENTE / PREFERENTE / ORDINARIA)
     + fechaSolicitud : Instant (null = ahora)
     ..
     constructor compacto: pacienteId y pruebaCodigo
