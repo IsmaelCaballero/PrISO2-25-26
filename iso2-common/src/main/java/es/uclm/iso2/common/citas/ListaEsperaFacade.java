@@ -91,12 +91,16 @@ public interface ListaEsperaFacade {
     }
 
     /**
-     * Peticion de asignacion desde la cola: hueco elegido para la cita.
+     * Peticion de asignacion desde la cola: hueco elegido para la cita. El
+     * {@code profesionalId} va en el cuerpo porque la cita del CDU12 necesita
+     * profesional: la guarda de sintaxis corre antes de cargar la entrada
+     * (TDOP asignar, factor profesional VACIO/AUSENTE).
      *
+     * @param profesionalId profesional que atiende la cita, obligatorio
      * @param inicio          inicio del hueco
      * @param duracionMinutos duracion en minutos; null = la del catalogo de la prueba
      */
-    record AsignacionEsperaDTO(LocalDateTime inicio, Integer duracionMinutos) {
+    record AsignacionEsperaDTO(String profesionalId, LocalDateTime inicio, Integer duracionMinutos) {
     }
 
     /**
@@ -203,6 +207,7 @@ public interface ListaEsperaFacade {
      * Deja el eslabon {@code ASIGNACION} en la cadena de la cola.
      *
      * @param esperaId        entrada de la cola, debe estar activa
+     * @param profesionalId   profesional que atiende la cita, obligatorio (400 si falta)
      * @param inicio          inicio del hueco elegido
      * @param duracionMinutos duracion en minutos; null = la del catalogo de la prueba
      * @return la cita creada y la posicion que ocupaba la entrada
@@ -212,7 +217,8 @@ public interface ListaEsperaFacade {
      * @throws CitaConflictoException           si el hueco no vale (409, contrato CDU12)
      * @throws IllegalArgumentException         si faltan datos (400)
      */
-    AsignacionResultadoDTO asignarDesdeCola(String esperaId, LocalDateTime inicio, Integer duracionMinutos);
+    AsignacionResultadoDTO asignarDesdeCola(String esperaId, String profesionalId,
+                                            LocalDateTime inicio, Integer duracionMinutos);
 
     /**
      * Verifica la cadena de auditoria de la cola: si ningun eslabon de altas,

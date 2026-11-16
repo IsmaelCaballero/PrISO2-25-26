@@ -14,8 +14,9 @@ package "iso2-common 1.2.0 (baseline CDU12 1.1.0 congelado + extension MINOR CDU
     + cambiarPrioridad(String esperaId, String prioridad,
     String motivo) : EntradaEsperaDTO
     + retirar(String esperaId, String motivo) : EntradaEsperaDTO
-    + asignarDesdeCola(String esperaId, LocalDateTime inicio,
-    Integer duracionMinutos) : AsignacionResultadoDTO
+    + asignarDesdeCola(String esperaId, String profesionalId,
+    LocalDateTime inicio, Integer duracionMinutos)
+    : AsignacionResultadoDTO
     + verificarAuditoria() : VerificacionAuditoriaDTO
     ..
     Baseline de CDU14, aditivo: el contrato de
@@ -55,6 +56,10 @@ package "iso2-common 1.2.0 (baseline CDU12 1.1.0 congelado + extension MINOR CDU
     + motivo : String (obligatorio)
   }
   class AsignacionEsperaDTO <<record, nuevo>> {
+    + profesionalId : String (obligatorio en el cuerpo:
+    la cita del CDU12 necesita profesional, y la
+    guarda de sintaxis corre antes de cargar la
+    entrada: TDOP factor profesional VACIO/AUSENTE)
     + inicio : LocalDateTime
     + duracionMinutos : Integer (null = la del catalogo)
   }
@@ -197,8 +202,9 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       + cambiarPrioridad(String esperaId, String prioridad,
       String motivo, String usuario) : EntradaEsperaDTO
       + retirar(...) : EntradaEsperaDTO
-      + asignarDesdeCola(String esperaId, LocalDateTime inicio,
-      Integer duracionMinutos) : AsignacionResultadoDTO
+      + asignarDesdeCola(String esperaId, String profesionalId,
+      LocalDateTime inicio, Integer duracionMinutos)
+      : AsignacionResultadoDTO
       + verificarAuditoria() : VerificacionAuditoriaDTO
       ..
       Reglas: duplicado por claveDuplicada (409
