@@ -17,10 +17,11 @@
   </parent>
 
   <artifactId>iso2-common</artifactId>
-  <!-- Contratos 1.1.0-SNAPSHOT en la rama feature de Iter1/CDU16 (D22/D23):
-       se amplia la fachada de catalogo. Version literal: las propiedades no
-       valen como version de modulo (Maven lo considera malformado). -->
-  <version>1.1.0-SNAPSHOT</version>
+  <!-- Contratos: 1.1.0-SNAPSHOT en Iter1/CDU16 (amplia la fachada de catalogo) y
+       1.2.0-SNAPSHOT en Iter7/CDU14 (fachada ListaEsperaFacade, extension MINOR
+       D22/D23). Version literal: las propiedades no valen como version de modulo
+       (Maven lo considera malformado). -->
+  <version>1.2.0-SNAPSHOT</version>
 
   <name>iso2-common</name>
 
