@@ -593,3 +593,32 @@ mvn -B -ntp -pl iso2-citas -am test
 
 Los CSV de trabajo estan en `docs/test/iter07/` y su copia en el classpath de pruebas (`iso2-citas/src/test/resources/tdop/`) es identica: el generador las escribe a la vez.
 
+La matriz la ejecuta `Cdu14MatrizTdopTest` en `iso2-citas` (aislado, sin Spring Security, como
+`Cdu12MatrizTdopTest`). Notas del ejecutor, para releer la matriz sin sorpresa:
+
+- **Semillas por la puerta de entrada.** Todo lo que se siembra entra por `POST /api/listas-espera`
+  (y por `/{esperaId}/prioridad|retirar|asignar`), sin repositorios: la peticion de alta admite
+  `fechaSolicitud`, asi que las marcas de tiempo son explicitas y la matriz da el mismo resultado a
+  cualquier hora del dia.
+- **Pacientes.** `PAC_DUPL` y `PAC_OTRO` no cambian el paciente: el identificador canonico es uno
+  solo, y la clave `pacienteId|pruebaCodigo` se dispara por la otra mitad cambiando el codigo de
+  prueba (canon del curso: un unico paciente de integracion).
+- **Genesis virtual.** No hay fila genesis en `espera_auditoria` (el nacimiento de la cola no es una
+  peticion): el primer eslabon real enlaza con el genesis virtual, y las cadenas esperadas se anotan
+  por entrada como `GENESIS,ALTA,...`. El ejecutor re-encadena los eslabones de cada entrada con
+  `AuditoriaEspera.cadenaIntegra`, la misma comprobacion que hace `auditoria-verificable`.
+- **`SEMILLA-SOLO`** (tabla G) es un mundo vacio: con genesis virtual no hay fila que sembrar.
+  `SEMILLA-CON-RETIRO` y `SEMILLA-SOLO` son los nombre cortos de `SEMILLA-COLA-CON-RETIRO` y
+  `SEMILLA-COLA-SOLO`.
+- **Empates y posiciones.** Las filas con empates (A03, D01-D08, F51-F56) no escriben un orden
+  literal: el ejecutor ordena el estado real leido del server con el comparador del dominio
+  (`ListaEspera.porOrdenDeEspera`) y compara esa secuencia con la servida, ademas de exigir dos
+  lecturas identicas y posiciones 1..n. El desempate por `esperaId` (UUID) es determinista dentro de
+  cada ejecucion: lo que se promueve a invariante es que el orden sea total y estable.
+- **Ataques de manipulacion (`SEM-TAMPER`).** Se sembraria la cadena limpia y despues se rompe a mano
+  con los hooks de prueba de `AuditoriaEspera` (`setMotivoParaPruebas`, `setHashParaPruebas`):
+  `ENLAZE` reescribe el motivo de un eslabon (su hash ya no encaja con el que firmo el siguiente),
+  `REORDEN` invierte dos eslabones de una cadena larga (los enlaces se rompen en medio) y `BORRADO`
+  elimina un eslabon central (`espera_auditoria` no tiene FK de estructura: la rotura se descubre por
+  encadenado, que es precisamente lo que promete la verificacion).
+
