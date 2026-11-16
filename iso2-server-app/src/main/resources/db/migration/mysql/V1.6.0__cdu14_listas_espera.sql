@@ -1,0 +1,101 @@
+-- V1.6.0 CDU14 (Iter7/CFG-07): listas de espera deterministicas sobre las pruebas de
+-- la CDU16, con auditoria de hash encadenado propia (REUBICACION) que enlaza con la de
+-- AuditoriaCitas en CDU18. El esquema sigue siendo autoritativo (ddl-auto = none).
+-- Variante MySQL (D34): AUTO_INCREMENT y DATETIME(6) (la conexion JDBC fuerza UTC), y
+-- las marcas con zona de la version h2 pasan a DATETIME(6) en UTC.
+
+CREATE TABLE lista_espera (
+    id               BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    espera_id        VARCHAR(36)  NOT NULL,
+    solicitud_id     VARCHAR(36),
+    paciente_id      VARCHAR(60)  NOT NULL,
+    prueba_codigo    VARCHAR(60)  NOT NULL,
+    profesional_id   VARCHAR(60),
+    prioridad        VARCHAR(20)  NOT NULL,
+    fecha_solicitud  DATETIME(6)  NOT NULL,
+    estado           VARCHAR(20)  NOT NULL,
+    cita_id          VARCHAR(36),
+    motivo_fin       VARCHAR(300),
+    clave_duplicada  VARCHAR(121),
+    CONSTRAINT uk_lista_espera_espera_id UNIQUE (espera_id),
+    -- Anti-reincidencia del alta (RF14.1): solo las entradas ACTIVAS llevan clave; al
+    -- pasar a ASIGNADA o RETIRADA el servicio la deja a NULL, y el UNIQUE admite
+    -- multiples NULL tanto en h2 como en mysql (D34), asi que las filas terminales no
+    -- chocan entre si ni impiden reingresos futuros. Sin indice parcial: el criterio
+    -- es identico en ambos dialectos.
+    CONSTRAINT uk_lista_espera_clave_duplicada UNIQUE (clave_duplicada),
+    -- FK natural sobre el identificador funcional: el alta de CDU14 puede nacer directa
+    -- en el mostrador, sin solicitud de por medio, por eso la columna es nullable.
+    CONSTRAINT fk_lista_espera_solicitud FOREIGN KEY (solicitud_id) REFERENCES solicitud (solicitud_id)
+    -- cita_id y prueba_codigo quedan SIN FK a proposito: la asignacion llega por la
+    -- fachada del CDU12 y el rastro de la cola no se borra si la cita o la prueba dejan
+    -- de existir (mismo criterio que prueba_codigo en cita, V1.5.0).
+);
+
+-- Indices de las consultas del CDU14: la cola por prueba y estado (RF14.3) y el filtro
+-- por profesional con estado (la cola del cuadro de un profesional).
+CREATE INDEX idx_lista_espera_prueba_estado ON lista_espera (prueba_codigo, estado);
+CREATE INDEX idx_lista_espera_profesional_estado ON lista_espera (profesional_id, estado);
+
+-- Auditoria encadenada de la cola: canonico accion|esperaId|antes->despues|usuario|
+-- motivo|instante|hashAnterior, con campos sin valor firmando como cadena vacia y el
+-- primer eslabon enlazando con el literal GENESIS (columna hash_anterior NULL). La
+-- cadena es GLOBAL por id ascendente (como cita_auditoria) e INDEPENDIENTE de ella:
+-- CDU18 (Iter15) las unira (TC14-G08).
+CREATE TABLE espera_auditoria (
+    id             BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    accion         VARCHAR(20)  NOT NULL,
+    espera_id      VARCHAR(36)  NOT NULL,
+    antes          VARCHAR(20),
+    despues        VARCHAR(20)  NOT NULL,
+    usuario        VARCHAR(60)  NOT NULL,
+    motivo         VARCHAR(300),
+    instante       DATETIME(6)  NOT NULL,
+    hash           VARCHAR(64)  NOT NULL,
+    hash_anterior  VARCHAR(64)
+);
+
+CREATE INDEX idx_espera_auditoria_espera_id ON espera_auditoria (espera_id);
+
+-- Datos semilla de DESARROLLO sobre las pruebas SEM-RM-RODILLA y SEM-RX-TORAX del
+-- catalogo. El esperaId del contrato es UUID (INEXISTENTE/MAL_FORMATADO en la spec),
+-- asi que las filas llevan UUIDs fijos y las etiquetas humanas ESPERA-SEM-00N quedan
+-- solo en los comentarios. La historia demuestra el orden RF14.3: la cola ACTIVA de
+-- SEM-RM-RODILLA tiene la 001 (alta posterior, reubicada a URGENTE) DELANTE de la 002
+-- (alta anterior, ORDINARIA): la prioridad manda sobre la antiguedad. La 004 nace de la
+-- solicitud SEM-SOL-CITA-02 y queda ASIGNADA a la cita CITA-SEM-002 del CDU12 (el
+-- enlace entre ambos CDU); la 005 fue RETIRADA con motivo y sin clave, como toda
+-- terminal. Sin CHECK en estado por coherencia con V1.5.0: el dominio es el que
+-- garantiza los valores.
+INSERT INTO lista_espera (espera_id, solicitud_id, paciente_id, prueba_codigo, profesional_id,
+                          prioridad, fecha_solicitud, estado, cita_id, motivo_fin, clave_duplicada) VALUES
+    ('e5c01400-0000-4000-8000-000000000001', NULL, 'HC-1001', 'SEM-RM-RODILLA', 'medico',  'URGENTE',    '2026-11-06 07:00:00', 'ACTIVA',   NULL, NULL, 'HC-1001|SEM-RM-RODILLA'),
+    ('e5c01400-0000-4000-8000-000000000002', NULL, 'HC-1004', 'SEM-RM-RODILLA', 'medico',  'ORDINARIA',  '2026-11-05 09:00:00', 'ACTIVA',   NULL, NULL, 'HC-1004|SEM-RM-RODILLA'),
+    ('e5c01400-0000-4000-8000-000000000003', NULL, 'HC-1003', 'SEM-RX-TORAX',   'tecnico', 'PREFERENTE', '2026-11-06 09:30:00', 'ACTIVA',   NULL, NULL, 'HC-1003|SEM-RX-TORAX'),
+    ('e5c01400-0000-4000-8000-000000000004', 'SEM-SOL-CITA-02', 'HC-1002', 'SEM-RX-TORAX', 'tecnico', 'PREFERENTE', '2026-11-06 09:45:00', 'ASIGNADA', 'CITA-SEM-002', NULL, NULL),
+    ('e5c01400-0000-4000-8000-000000000005', NULL, 'HC-1005', 'SEM-RX-TORAX',   'tecnico', 'ORDINARIA',  '2026-11-05 11:00:00', 'RETIRADA', NULL, 'el paciente ya fue atendido en otro centro', NULL);
+
+-- Auditoria encadenada de la semilla (usuario recepcionista, el Administrativo del
+-- CDU14), enlazada por el esperaId UUID de cada fila y en la cronologia de siembra de
+-- arriba (ALTA de la 002, ALTA de la 005, ALTA de la 001, RETIRADA de la 005, ALTA de
+-- la 003, ALTA de la 004, ASIGNACION de la 004, REUBICACION de la 001). Las huellas son
+-- el SHA-256 real del canonico (tools/cdu14_seed_hashes.py), asi que GET
+-- /api/listas-espera/auditoria-verificable responde CADENA_INTEGRAL con ocho eslabones
+-- desde el primer arranque.
+INSERT INTO espera_auditoria (accion, espera_id, antes, despues, usuario, motivo, instante, hash, hash_anterior) VALUES
+    ('ALTA',        'e5c01400-0000-4000-8000-000000000002', NULL,       'ACTIVA',   'recepcionista', NULL,                                     '2026-11-05 09:00:00',
+     '9e536e319657a0179780cac335b3aba132ee274072f0b409a6c93e6af91e3716', NULL),
+    ('ALTA',        'e5c01400-0000-4000-8000-000000000005', NULL,       'ACTIVA',   'recepcionista', NULL,                                     '2026-11-05 11:00:00',
+     '32e0fe41ecdb7750f2732059fba35e9227c5031bc4c7bfcba1bc15095c99390f', '9e536e319657a0179780cac335b3aba132ee274072f0b409a6c93e6af91e3716'),
+    ('ALTA',        'e5c01400-0000-4000-8000-000000000001', NULL,       'ACTIVA',   'recepcionista', NULL,                                     '2026-11-06 07:00:00',
+     'd4d87440f398fc3b046e32790b8f08641e8f951ecf577dc7a75744aa7e7c1ee5', '32e0fe41ecdb7750f2732059fba35e9227c5031bc4c7bfcba1bc15095c99390f'),
+    ('RETIRADA',    'e5c01400-0000-4000-8000-000000000005', 'ACTIVA',   'RETIRADA', 'recepcionista', 'el paciente ya fue atendido en otro centro', '2026-11-06 08:30:00',
+     '3a95cce822c157116b62459716cf28429f1a22f0e09726aa748888849a729ebf', 'd4d87440f398fc3b046e32790b8f08641e8f951ecf577dc7a75744aa7e7c1ee5'),
+    ('ALTA',        'e5c01400-0000-4000-8000-000000000003', NULL,       'ACTIVA',   'recepcionista', NULL,                                     '2026-11-06 09:30:00',
+     '409e887a571afb77e479c81406d36208625bdf68f1f51e1940b059dc2601d173', '3a95cce822c157116b62459716cf28429f1a22f0e09726aa748888849a729ebf'),
+    ('ALTA',        'e5c01400-0000-4000-8000-000000000004', NULL,       'ACTIVA',   'recepcionista', NULL,                                     '2026-11-06 09:45:00',
+     '014844048bea5ef4c59c02f18168aaa019a44ed2a05839dea56df61dff8fe898', '409e887a571afb77e479c81406d36208625bdf68f1f51e1940b059dc2601d173'),
+    ('ASIGNACION',  'e5c01400-0000-4000-8000-000000000004', 'ACTIVA',   'ASIGNADA', 'recepcionista', NULL,                                     '2026-11-06 10:15:00',
+     '7f0bf09622af76560730b0e7df5d376170a717975c12af19cb9c2f2d314f41fd', '014844048bea5ef4c59c02f18168aaa019a44ed2a05839dea56df61dff8fe898'),
+    ('REUBICACION', 'e5c01400-0000-4000-8000-000000000001', 'ORDINARIA','URGENTE',  'recepcionista', 'revaloracion medica: dolor agudo',       '2026-11-07 07:00:00',
+     '95c1f51866a6825bc9fd6bd66a5d22e5343fb5ab6dba315606a2509cdae986b0', '7f0bf09622af76560730b0e7df5d376170a717975c12af19cb9c2f2d314f41fd');

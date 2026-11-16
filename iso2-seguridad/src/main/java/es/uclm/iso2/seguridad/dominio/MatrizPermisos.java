@@ -19,7 +19,10 @@ import java.util.Set;
  * Con CDU06 (CFG-04) el Medico prescribe (solicitud:escribir) y el resto de roles
  * sanitarios solo consultan: recepcion lee solicitudes, tecnico y celador no.
  * Con CDU12 (CFG-05) recepcion gestiona citas (cita:escribir, actor Administrativo del
- * CDU12) y medico solo las lee; tecnico y celador quedan fuera de las citas. Con CDU19
+ * CDU12) y medico solo las lee; tecnico y celador quedan fuera de las citas. Con CDU14
+ * (CFG-07) recepcion gestiona las listas de espera (lista_espera:escribir, actor
+ * Administrativo del CDU14) y medico solo las lee; tecnico y celador quedan fuera de la
+ * cola, igual que en las citas. Con CDU19
   (CFG-06) llegan los permisos de integracion: el spike fija que la API de integracion
   es solo de ADMINISTRADOR, y ya los cubre el {@code EnumSet.allOf} del administrador,
   por eso ningun rol de trabajo los recibe en la matriz.</p>
@@ -33,12 +36,14 @@ public final class MatrizPermisos {
     static {
         MATRIZ.put(Rol.ADMINISTRADOR, EnumSet.allOf(Permiso.class));
         MATRIZ.put(Rol.MEDICO, EnumSet.of(Permiso.CATALOGO_LEER, Permiso.AGENDA_LEER,
-                Permiso.SOLICITUD_LEER, Permiso.SOLICITUD_ESCRIBIR, Permiso.CITA_LEER));
+                Permiso.SOLICITUD_LEER, Permiso.SOLICITUD_ESCRIBIR, Permiso.CITA_LEER,
+                Permiso.LISTA_ESPERA_LEER));
         MATRIZ.put(Rol.TECNICO, EnumSet.of(Permiso.CATALOGO_LEER, Permiso.AGENDA_LEER));
         MATRIZ.put(Rol.CELADOR, EnumSet.of(Permiso.CATALOGO_LEER));
         MATRIZ.put(Rol.RECEPCIONISTA, EnumSet.of(Permiso.CATALOGO_LEER,
                 Permiso.AGENDA_LEER, Permiso.AGENDA_ESCRIBIR, Permiso.SOLICITUD_LEER,
-                Permiso.CITA_LEER, Permiso.CITA_ESCRIBIR));
+                Permiso.CITA_LEER, Permiso.CITA_ESCRIBIR,
+                Permiso.LISTA_ESPERA_LEER, Permiso.LISTA_ESPERA_ESCRIBIR));
     }
 
     private MatrizPermisos() {
