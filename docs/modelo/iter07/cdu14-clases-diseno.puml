@@ -246,6 +246,8 @@ package "iso2-citas 1.2.0 (elevado a CFG-05 y CDU14)" {
       CitaNoEncontradaException -> 404 CITA_NO_ENCONTRADA (heredado)
       CitaConflictoException -> 409 CONFLICTO_HUECO_OCUPADO /
       CONFLICTO_FUERA_DE_FRANJA / CONFLICTO_SOLICITUD_NO_APTA (heredado)
+      CatalogoNoEncontradoException -> 404 PRUEBA_NO_ENCONTRADA (alta)
+      SolicitudNoEncontradaException -> 404 SOLICITUD_NO_ENCONTRADA (alta)
       IllegalArgument / JsonInvalido -> 400 DATOS_INVALIDOS
       Resto -> 500 ERROR_INTERNO
     }
@@ -288,7 +290,7 @@ package "iso2-server-app 0.3.0" {
     tabla espera_auditoria (hash encadenado)
     + indice espera_auditoria_espera_id
     sin CHECK en estado por coherencia con V1.5.0
-    semilla demo: entradas de cola (URGENTE y NORMAL
+    semilla demo: entradas de cola (URGENTE y ORDINARIA
     desempatadas, una asignada y una retirada)
   }
 }

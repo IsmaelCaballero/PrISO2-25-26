@@ -26,7 +26,7 @@ CTRL -> SVC : cola(pruebaCodigo, profesionalId null, estado null)
 SVC -> ESP : cola(...) con\nORDER BY prioridad DESC,\nfecha_solicitud ASC, espera_id ASC
 ESP --> SVC : lista en el orden de porOrdenDeEspera()
 SVC --> CTRL : List~EntradaEsperaDTO~ numerada 1..n\n(posicion calculada, total del filtro)
-CTRL --> MEDICO : 200 + lista JSON (position 1 URGENTE,\nposition 2 NORMAL antigua, position 3 NORMAL nueva)
+CTRL --> MEDICO : 200 + lista JSON (position 1 URGENTE,\nposition 2 ORDINARIA antigua, position 3 ORDINARIA nueva)
 note right of SVC
   La posicion sale de contar la fila en la lista
   ya ordenada; en la tabla lista_espera no hay
@@ -35,14 +35,14 @@ note right of SVC
 end note
 
 == Alta en la cola (flujo feliz) ==
-ADMIN -> CTRL : POST /api/listas-espera\n{pacienteId: "P-142", pruebaCodigo: "RX_TORAX",\nprofesionalId: "medico", prioridad: "NORMAL"}
+ADMIN -> CTRL : POST /api/listas-espera\n{pacienteId: "P-142", pruebaCodigo: "RX_TORAX",\nprofesionalId: "medico", prioridad: "ORDINARIA"}
 CTRL -> SVC : darDeAlta(AltaEsperaDTO)
 SVC -> CAT : buscarPorCodigo("RX_TORAX")
 CAT --> SVC : existe y requiereCita = true\n(si no existiera: 404 PRUEBA_NO_ENCONTRADA)
 SVC -> ESP : alta con estado ACTIVA,\nclaveDuplicada = "P-142|RX_TORAX",\nfechaSolicitud = ahora
 ESP --> SVC : insert correcto (respeta uk espera_id y\nuk clave_duplicada)
 group UNA sola transaccion (lista_espera + espera_auditoria)
-  SVC -> AUD : registrar(ALTA, esperaId, antes "-" ->\ndespues "NORMAL", usuario, motivo null,\nhashAnterior = hash del ultimo eslabon)
+  SVC -> AUD : registrar(ALTA, esperaId, antes null ->\ndespues "ACTIVA", usuario, motivo null,\nhashAnterior = hash del ultimo eslabon)
 end
 SVC --> CTRL : EntradaEsperaDTO(esperaId, estado "activa",\nposicion 4 sobre 4, total 4)
 CTRL --> ADMIN : 201 + EntradaEsperaDTO(JSON)
@@ -66,12 +66,12 @@ end note
 == Reubicar la prioridad (sube en la cola) ==
 ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/prioridad\n{prioridad: "URGENTE", motivo: "dolor intenso"}
 CTRL -> SVC : cambiarPrioridad(esperaId, "URGENTE",\n"dolor intenso", usuario del JWT)
-SVC -> ESP : estado ACTIVA y prioridad actual NORMAL
+SVC -> ESP : estado ACTIVA y prioridad actual ORDINARIA
 SVC -> SVC : posicion antes: 4 de 4
 SVC -> ESP : cambiarPrioridad(Prioridad.URGENTE)\n(fechaSolicitud NO se toca)
 SVC -> SVC : posicion despues: 1 de 4
 group UNA sola transaccion
-  SVC -> AUD : registrar(REUBICACION, esperaId,\n"NORMAL" -> "URGENTE", usuario, motivo,\nhashAnterior = hash del eslabon de ALTA)
+  SVC -> AUD : registrar(REUBICACION, esperaId,\n"ORDINARIA" -> "URGENTE", usuario, motivo,\nhashAnterior = hash del eslabon de ALTA)
 end
 SVC --> CTRL : EntradaEsperaDTO(prioridad "URGENTE",\nposicion 1, total 4)
 CTRL --> ADMIN : 200 + EntradaEsperaDTO(JSON)
