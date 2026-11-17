@@ -18,6 +18,7 @@ import es.uclm.iso2.citas.repositorio.CitaHuecoRepositorio;
 import es.uclm.iso2.citas.repositorio.CitaRepositorio;
 import es.uclm.iso2.citas.repositorio.ListaEsperaRepositorio;
 import es.uclm.iso2.citas.servicio.PruebasCitas;
+import es.uclm.iso2.common.solicitudes.Prioridad;
 import es.uclm.iso2.common.solicitudes.SolicitudFacade;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -272,25 +273,24 @@ class Cdu14MatrizTdopTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("filasAlta")
     void altaDesdeMatriz(Fila f) throws Exception {
-        aplicarSetup(f.get("setup"));
-        String paciente = pacienteAlta(f);
-        String prueba = pruebaAlta(f);
-        String prioridad = prioridadAlta(f);
-        String solicitud = solicitudAlta(f);
-        MockHttpServletRequestBuilder peticion = post(BASE).contentType(MediaType.APPLICATION_JSON);
-        if (!"AUSENTE".equals(f.get("cuerpo"))) {
-            Map<String, Object> cuerpo = new LinkedHashMap<>();
-            if (solicitud != null) {
-                cuerpo.put("solicitudId", solicitud);
-            }
-            cuerpo.put("pacienteId", paciente);
-            cuerpo.put("pruebaCodigo", prueba);
-            if (prioridad != null) {
-                cuerpo.put("prioridad", prioridad);
-            }
-            peticion.content(mapper.writeValueAsString(cuerpo));
+        aplicarSetup(f);
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        if (!"AUSENTE".equals(f.get("paciente"))) {
+            cuerpo.put("pacienteId", pacienteAlta(f));
         }
-        MvcResult r = req(peticion);
+        if (!"AUSENTE".equals(f.get("prueba"))) {
+            cuerpo.put("pruebaCodigo", pruebaAlta(f));
+        }
+        String prioridad = prioridadAlta(f);
+        if (prioridad != null) {
+            cuerpo.put("prioridad", prioridad);
+        }
+        String solicitud = f.get("solicitud");
+        if (!"AUSENTE".equals(solicitud) && !"NINGUNA".equals(solicitud)) {
+            cuerpo.put("solicitudId", solicitudAlta(solicitud));
+        }
+        MvcResult r = req(post(BASE).contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(cuerpo)));
         verificar(f, r);
     }
 
@@ -298,8 +298,8 @@ class Cdu14MatrizTdopTest {
         return switch (f.get("paciente")) {
             case "VACIO" -> "";
             case "ESPACIOS" -> "   ";
-            case "MAX" -> "P".repeat(60);
-            case "LARGO" -> "P".repeat(61);
+            case "MAX" -> "P".repeat(40);
+            case "LARGO" -> "P".repeat(41);
             default -> "api-paciente";
         };
     }
@@ -307,8 +307,8 @@ class Cdu14MatrizTdopTest {
     private String pruebaAlta(Fila f) {
         return switch (f.get("prueba")) {
             case "VACIO" -> "";
-            case "MAX" -> "c".repeat(60);
-            case "LARGO" -> "c".repeat(61);
+            case "MAX" -> "c".repeat(40);
+            case "LARGO" -> "c".repeat(41);
             default -> token(f.get("prueba"));
         };
     }
@@ -321,14 +321,276 @@ class Cdu14MatrizTdopTest {
         return "MINUSCULA".equals(p) ? "urgente" : p;
     }
 
-    private String solicitudAlta(Fila f) {
-        String s = f.get("solicitud");
-        if ("NINGUNA".equals(s)) {
-            return null;
-        }
-        if ("MAL_FORMATADO".equals(s)) {
+    private String solicitudAlta(String solicitud) {
+        if ("MAL_FORMATADO".equals(solicitud)) {
             return "no-es-un-uuid";
         }
-        return token(s);
+        return token(solicitud);
+    }
+
+    // ------------------------------------------------------------------
+    // Tabla A (cdu14-cola.csv): lectura de la cola con sus filtros
+    // ------------------------------------------------------------------
+
+    static Stream<Fila> filasCola() {
+        return filas("cdu14-cola.csv");
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasCola")
+    void colaDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f);
+        MvcResult primera = req(cola(f));
+        verificar(f, primera);
+        MvcResult segunda = req(cola(f));
+        if (primera.getResponse().getStatus() == 200) {
+            JsonNode cola = cuerpo(primera);
+            assertThat(cola.isArray()).as("%s: la cola es una lista", f.id()).isTrue();
+            assertThat(ordenCanonico(cola)).as("%s: el orden canon es prioridad desc, fecha asc y "
+                    + "esperaId asc; respuesta: %s", f.id(), cola).isTrue();
+            for (int i = 0; i < cola.size(); i++) {
+                assertThat(cola.get(i).path("posicion").asInt())
+                        .as("%s: la posicion es 1-based y sigue al orden", f.id()).isEqualTo(i + 1);
+                assertThat(cola.get(i).path("total").asLong())
+                        .as("%s: el total bate con las filas del filtro", f.id()).isEqualTo(cola.size());
+            }
+            assertThat(segunda.getResponse().getContentAsString())
+                    .as("%s: leer la cola dos veces da exactamente lo mismo", f.id())
+                    .isEqualTo(primera.getResponse().getContentAsString());
+        }
+    }
+
+    private MockHttpServletRequestBuilder cola(Fila f) {
+        MockHttpServletRequestBuilder peticion = get(BASE);
+        String prueba = filtro(f.get("prueba"), f.get("cola"));
+        if (prueba != null) {
+            peticion.param("pruebaCodigo", prueba);
+        }
+        String profesional = filtro(f.get("profesional"), f.get("cola"));
+        if (profesional != null) {
+            peticion.param("profesionalId", profesional);
+        }
+        String estado = filtro(f.get("estado"), f.get("cola"));
+        if (estado != null) {
+            peticion.param("estado", estado);
+        }
+        return peticion;
+    }
+
+    /** Valor real de un filtro de cola; null es que el parametro no va en la peticion. */
+    private String filtro(String nivel, String mundo) {
+        return switch (nivel) {
+            case "NINGUNO", "-", "SIN_FILTRO" -> null;
+            case "VACIO" -> "";
+            case "ESPACIOS" -> "   ";
+            case "MINUSCULA" -> "activa";
+            case "CONOCIDA" -> PruebasCitas.PRUEBA;
+            case "OTRA" -> PruebasCitas.PRUEBA_DUP;
+            case "MIXTA", "EMPALTE_FECHA", "EMPALTE_TODO", "TERMINALES", "SOLO_TERMINALES", "VACIA" -> null;
+            default -> token(nivel);
+        };
+    }
+
+    /**
+     * El pedido llega ordenado como manda D11: prioridad de mayor a menor, empatando la
+     * fecha de solicitud mas antigua, y empatando aun el esperaId. Se compara contra una
+     * ordenacion canonica de la misma respuesta, asi que la matriz no fija literales de id.
+     */
+    private boolean ordenCanonico(JsonNode cola) {
+        List<JsonNode> vistas = new ArrayList<>();
+        cola.forEach(vistas::add);
+        List<JsonNode> canon = new ArrayList<>(vistas);
+        canon.sort(Comparator.comparing((JsonNode e) -> Prioridad.valueOf(e.path("prioridad").asText()),
+                Comparator.reverseOrder())
+                .thenComparing(e -> e.path("fechaSolicitud").asText())
+                .thenComparing(e -> e.path("esperaId").asText()));
+        for (int i = 0; i < vistas.size(); i++) {
+            if (!vistas.get(i).path("esperaId").asText().equals(canon.get(i).path("esperaId").asText())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // ------------------------------------------------------------------
+    // Setup: el mundo de cada fila se siembra por la propia API HTTP
+    // ------------------------------------------------------------------
+
+    /** Inicio fijo dentro de la franja de AgendasFalsas para un dia no festivo. */
+    private static final String INICIO_FIJO = "2026-11-13T09:00:00";
+
+    /** Instantes de siembra: la cola desempata por fechaSolicitud y el reloj esta fijado. */
+    private static final String T1 = "2026-11-11T09:00:00Z";
+    private static final String T2 = "2026-11-11T10:00:00Z";
+    private static final String T3 = "2026-11-11T11:00:00Z";
+
+    /** Material del primer eslabon de cualquier cadena de auditoria. */
+    private static final String GENESIS = "GENESIS";
+
+    private void aplicarSetup(Fila f) throws Exception {
+        for (String bruto : f.get("setup").split(",")) {
+            String s = bruto.trim();
+            if (s.isEmpty() || "-".equals(s)) {
+                continue;
+            }
+            int dosPuntos = s.indexOf(':');
+            String cabeza = dosPuntos < 0 ? s : s.substring(0, dosPuntos);
+            String valor = dosPuntos < 0 ? "" : s.substring(dosPuntos + 1);
+            switch (cabeza) {
+                case "SEMILLA-VACIA", "SEMILLA-SOL", "SEMILLA-SOLO", "ENLAZE", "SEMILLA-PRI", "REDUNDANTE" -> {
+                    // No siembra nada: la solicitud, el enganche y la repeticion los resuelve la fila.
+                }
+                case "SEMILLA-DUP" -> alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "PREFERENTE", T1, null);
+                case "SEMILLA-DUP-RETIRADA" -> {
+                    alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "PREFERENTE", T1, null);
+                    retirar(idSembrado("SEM"), "retirada de siembra");
+                }
+                case "SEMILLA-DUP-ASIGNADA" -> {
+                    alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "PREFERENTE", T1, PruebasCitas.SOL_CREADA);
+                    asignar(idSembrado("SEM"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
+                }
+                case "SEMILLA-OTRO-PACIENTE" -> alta("SEM", "api-paciente-otro", PruebasCitas.PRUEBA,
+                        "PREFERENTE", T1, null);
+                case "SEMILLA-OTRA-PRUEBA" -> alta("SEM", "api-paciente", PruebasCitas.PRUEBA_DUP,
+                        "PREFERENTE", T1, null);
+                case "SEMILLA-MIXTA", "SEMILLA-COLA-TRES" -> colaTres();
+                case "SEMILLA-EMPALTE-FECHA" -> {
+                    alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "ORDINARIA", T1, PruebasCitas.SOL_CREADA);
+                    alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T1, PruebasCitas.SOL_CREADA_2);
+                }
+                case "SEMILLA-EMPALTE-TODO" -> {
+                    alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "PREFERENTE", T1, PruebasCitas.SOL_CREADA);
+                    alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T1, PruebasCitas.SOL_CREADA_2);
+                }
+                case "SEMILLA-TERMINALES", "SEMILLA-COLA-TERMINALES" -> {
+                    colaTres();
+                    asignar(idSembrado("B"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
+                    retirar(idSembrado("C"), "retirada de siembra");
+                }
+                case "SEMILLA-SOLO-TERMINALES" -> {
+                    alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T2, PruebasCitas.SOL_CREADA);
+                    alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "ORDINARIA", T3, PruebasCitas.SOL_CREADA_2);
+                    asignar(idSembrado("B"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
+                    retirar(idSembrado("C"), "retirada de siembra");
+                }
+                case "SEMILLA-COLA-SOLO" -> alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "ORDINARIA", T3, null);
+                case "SEMILLA-COLA-EMPALTE-BC" -> {
+                    alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
+                    alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "ORDINARIA", T2, PruebasCitas.SOL_CREADA_2);
+                    alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "PREFERENTE", T2, PruebasCitas.SOL_CREADA_3);
+                    cambiarPrioridad(idSembrado("B"), "PREFERENTE", "empalme con C");
+                }
+                case "SEMILLA-COLA-CON-RETIRO", "SEMILLA-CON-RETIRO" -> {
+                    colaTres();
+                    cambiarPrioridad(idSembrado("B"), "ORDINARIA", "bajada de siembra");
+                    retirar(idSembrado("B"), "retirada de siembra");
+                }
+                case "SEM-ESTADO" -> semEstado(valor);
+                case "SEM-HUECO-DEST" -> huecoDestino(valor, f);
+                case "SEM-TAMPER" -> tamper(valor, f);
+                default -> throw new IllegalStateException("setup sin resolver: " + s + " en " + f.id());
+            }
+        }
+    }
+
+    /** Tres entradas vivas de la misma prueba: A URGENTE, B PREFERENTE y C ORDINARIA. */
+    private void colaTres() throws Exception {
+        alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
+        alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T2, PruebasCitas.SOL_CREADA_2);
+        alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "ORDINARIA", T3, PruebasCitas.SOL_CREADA_3);
+    }
+
+    /** Deja una entrada en el estado que pide la matriz, con alias OBJ. */
+    private void semEstado(String estado) throws Exception {
+        switch (estado) {
+            case "ACTIVA" -> alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1,
+                    PruebasCitas.SOL_CREADA);
+            case "ASIGNADA" -> {
+                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
+                asignar(idSembrado("OBJ"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
+            }
+            case "RETIRADA" -> {
+                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
+                retirar(idSembrado("OBJ"), "retirada de siembra");
+            }
+            default -> throw new IllegalStateException("SEM-ESTADO sin resolver: " + estado);
+        }
+    }
+
+    private String idSembrado(String alias) {
+        String id = idsSembrados.get(alias);
+        if (id == null) {
+            throw new IllegalStateException("la siembra no dejo la entrada " + alias);
+        }
+        return id;
+    }
+
+    /** Alta sembrada: guarda el esperaId real con su alias para resolver los simbolos. */
+    private MvcResult alta(String alias, String paciente, String prueba, String prioridad,
+            String fecha, String solicitud) throws Exception {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("pacienteId", paciente);
+        cuerpo.put("pruebaCodigo", prueba);
+        cuerpo.put("profesionalId", PruebasCitas.PROF_MEDICO);
+        cuerpo.put("prioridad", prioridad);
+        if (fecha != null) {
+            cuerpo.put("fechaSolicitud", fecha);
+        }
+        if (solicitud != null) {
+            cuerpo.put("solicitudId", solicitud);
+        }
+        MvcResult r = req(post(BASE).contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(cuerpo)));
+        if (r.getResponse().getStatus() == 201) {
+            idsSembrados.put(alias, cuerpo(r).path("esperaId").asText());
+        }
+        return r;
+    }
+
+    private MvcResult cambiarPrioridad(String esperaId, String prioridad, String motivo) throws Exception {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        if (prioridad != null) {
+            cuerpo.put("prioridad", prioridad);
+        }
+        if (motivo != null) {
+            cuerpo.put("motivo", motivo);
+        }
+        return req(post(BASE + "/" + esperaId + "/prioridad").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(cuerpo)));
+    }
+
+    private MvcResult retirar(String esperaId, String motivo) throws Exception {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        if (motivo != null) {
+            cuerpo.put("motivo", motivo);
+        }
+        return req(post(BASE + "/" + esperaId + "/retirar").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(cuerpo)));
+    }
+
+    private MvcResult asignar(String esperaId, String profesional, String inicio, Integer duracion)
+            throws Exception {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        if (profesional != null) {
+            cuerpo.put("profesionalId", profesional);
+        }
+        if (inicio != null) {
+            cuerpo.put("inicio", inicio);
+        }
+        if (duracion != null) {
+            cuerpo.put("duracionMinutos", duracion);
+        }
+        return req(post(BASE + "/" + esperaId + "/asignar").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(cuerpo)));
+    }
+
+    /** Hueco sembrado en el destino de la operacion de la fila: lo resuelve cada tabla. */
+    private void huecoDestino(String valor, Fila f) {
+        // Se siembra al llegar a la tabla de asignacion, que es la que conoce el inicio.
+    }
+
+    /** Ataques a la cadena de auditoria: los monta la tabla G. */
+    private void tamper(String valor, Fila f) {
+        throw new IllegalStateException("tamper sin montar: " + valor);
     }
 }
