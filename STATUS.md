@@ -948,3 +948,57 @@ del punto de vista del usuario sigue siendo de Ismael, y el hito `v0.2.0-alpha` 
   6. Cierre de la iteración: página **Iter7/CDU14** en la wiki (`PrISO2-25-26.wiki.git`, rama `master`, con los 4 PNG de `docs/modelo/iter07` copiados a `images/`), revalidación de **D37** en `TASADEFECTOS.md`, actualización de `STATUS.md` y `PROMPTS.md`, y tag anotado `cfg-iter07`.
 * **Pérdida registrada**: los tests unitarios de cola escritos el 17/11 y una versión larga del ejecutor **nunca llegaron a commit**, y `git fsck` solo devuelve objetos de Iter3/Iter5/Iter6, así que son irrecuperables. La cifra real de pruebas de `iso2-citas` es **238**, no las que anunciaban los apuntes de esa sesión. Queda como regla de trabajo: escribir trozo → comprobar en disco → `git add` → commit → **push inmediato**, y **nunca** `git clean`, `git reset --hard` ni `git restore .`, que son las únicas operaciones que borran el trabajo sin dejar rastro en el reflog.
 * **Relevo al equipo nuevo**: en `docs/test/iter07/notas-ejecutor/` están los volcados derivados de las tablas C, D, E, F, G y H y de los factores y reglas de F, para no releer la spec de 105 KB; en `docs/test/iter07/borrador-ejecutor/` quedan las dos partes del borrador del ejecutor. El equipo nuevo necesita su **`~/.m2` relleno**, porque todo se compila y se prueba con `mvn -o` (sin descarga).
+
+---
+
+## Cierre de la jornada del 17/11/2026 (relevo en el otro equipo)
+
+**Todo esta en GitHub**: rama `feature/iter07-cdu14-listas-espera`, ultimo commit pusheado `b4edce0`.
+Antes de apagar: se teclearon los canones **D (reubicacion, 27 filas)** y **E (secuencias, 12 filas)**
+del ejecutor `iso2-citas/src/test/java/es/uclm/iso2/citas/tdop/Cdu14MatrizTdopTest.java`, y **compilan**
+(`mvn -o -q -ntp -pl iso2-citas -am test-compile` sin errores). No se han **ejecutado todavia**: Docker
+Desktop ya estaba caido, y las pruebas TDOP levantan Postgres con Testcontainers. Por eso los unicos
+datos reales de matriz siguen siendo los de `525ce6c`: **95/253** (tablas A y B).
+
+Estado del ejecutor: 8 handlers (uno por tabla), 4 escritos (A y B verdes; D y E escritos sin correr) y 4 por escribir
+(C operaciones, F asignar-con-hueco, G auditoria, H conjeturas). Lo que ya aporta el codigo nuevo:
+
+- Canon D: compara el `esperadoCola` alias:PRIORIDAD por **bloques de empate** (dos entradas con igual
+  escalon y igual marca de tiempo salen en orden aleatorio porque el desempate es `esperaId`), y afirma
+  posicion 1..n, total y orden canonico D11. La cadena de auditoria se compara **antes/despues**: un
+  alta legitima anade `REUBICACION`, un rechazo deja la cadena igual (eso es lo que prueba D03, D16,
+  D18 y D26 sin inventar identificador).
+- Canon E: secuencias montadas a mano por el token `secuencia`, con los pasos intermedios afirmados con
+  `paso(id, resultado, esperado)` (la columna solo describe la ultima operacion). Concurrencia **real**
+  con dos `CountDownLatch` (`alMismoTiempo`), y el invariante `UN_OK_Y_OTRO_409` se comprueba como
+  "exactamente un 2xx y otro >= 409" sin fijar codigo, porque el perdedor puede acabar en 409 de maquina
+  de estados, en 409 de hueco por UNIQUE o en conflicto optimista por `@Version`.
+- Semillas nuevas que hacian falta: `SEMILLA-COLA-CON-RETIRO`, `SEMILLA-CON-RETIRO`,
+  `SEMILLA-CITA-OCUPA`, y `colaTres(f)` respeta `ENLAZE:NINGUNA` (tres entradas sin solicitud, que es lo
+  que piden D24-D27). Ademas `alta()` **omite la clave `prioridad`** cuando viene nula, que es como las
+  filas AUSENTE de la matriz esperan un 400.
+
+Correccion de una cifra que estaba mal escrita en el bloque anterior: la matriz completa no cuesta
+"20-30 min por corrida". Correr **las 253 filas + los 238 test del modulo** es un solo `mvn test` de
+**2-4 min**; lo que cuesta es el ciclo edicion-correccion-verificacion: cada vuelta conlleva un `mvn
+-am test-compile` y una corrida, y con 158 filas por escribir se estima **10-16 vueltas**, es decir
+**1 h 30 - 2 h 30 de reloj** (y unos 150k-200k tokens de contexto, con compactado incluido).
+
+### Como se retoma en el otro equipo
+
+1. `git clone https://github.com/IsmaelCaballero/PrISO2-25-26.git` (o `git pull` si ya existe) y
+   `git checkout feature/iter07-cdu14-listas-espera`. Levantar Docker Desktop. La primera `mvn` baja
+   dependencias: **no usar `-o`** hasta que la pila local este rellena.
+2. Correr D y E y arreglar lo que salga rojo por D33 (tocar codigo o JSON de spec, nunca CSV ni test):
+   `mvn -ntp -pl iso2-citas -am -Dtest=Cdu14MatrizTdopTest#reubicacionDesdeMatriz test`
+3. Riesgo ya previsto para E02, E03 y E12: el `esperadoStatus` de la matriz dice `OK` (200) en filas
+   cuya ultima operacion es un alta, y el alta responde **201**. Son tres filas de spec mal fijadas:
+   se corrige `docs/test/iter07/tdop-cdu14-espec.json` (crear tokens `ACTIVA_PRIMERA_OK`/`ACTIVA_ULTIMA_200`
+   con el diseno que se acuerde) y se **regeeran los CSV** con `python tools/pairwise.py
+   docs/test/iter07/tdop-cdu14-espec.json --resources iso2-citas/src/test/resources/tdop`.
+4. Quedan los bloques C, F, G y H (119 filas) mas dos piezas de siembra que el codigo aun no tiene:
+   `huecoDestino` (plantar cita que ocupe/solape el hueco pedido) y `tamper` (hooks de prueba en
+   `ListaEsperaServicio` para romper el hash o borrar/reordenar eslabones de `cita_auditoria`). Las
+   reglas de validacion del hueco, ya leidas en `CitaServicio.exigeHuecoLibre`, estan volcadas en
+   `docs/test/iter07/notas-ejecutor/`; recuerda que `SEMILLA-SIN-AGENDA` es **409 FUERA_DE_FRANJA**, no
+   404: esa correccion ya esta aplicada en el JSON.
