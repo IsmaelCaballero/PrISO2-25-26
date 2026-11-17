@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -205,22 +206,14 @@ class Cdu14MatrizTdopTest {
         verificarEsperado(f.id(), f.get("esperadoStatus"), f.get("esperadoCodigo"), r);
     }
 
-    /** Esperado de una operacion repetida de las secuencias: el numero va en el propio token. */
-    private void verificarEsperado(final String id, final int indice, final MvcResult resultado)
-            throws Exception {
-        verificarEsperado(id, esperarToken(indice, resultado), null, resultado);
-    }
-
     /**
-     * Esperado de una operacion repetida. El {@code esperadoStatus} de la tabla vale para la
-     * ultima; las anteriores son las que abren o cierran la puerta, asi que se leen de la
-     * propia secuencia y se comprueban aparte.
+     * Esperado de una operacion intermedia de la secuencia. La columna {@code esperadoStatus}
+     * solo describe la ultima, asi que los pasos previos se afirman con el token que les toca;
+     * el resultado se devuelve para poder encadenar la secuencia.
      */
-    private static String esperarToken(final int indice, final MvcResult resultado) {
-        if (indice == 0) {
-            return "ACTIVA";
-        }
-        return resultado.getResponse().getStatus() == 201 ? "ACTIVA" : "TERMINAL";
+    private MvcResult paso(final String id, final MvcResult r, final String esperado) throws Exception {
+        verificarEsperado(id, esperado, "-", r);
+        return r;
     }
 
     private void verificarEsperado(final String id, final String esperado, final String columnaCodigo,
@@ -440,6 +433,436 @@ class Cdu14MatrizTdopTest {
     }
 
     // ------------------------------------------------------------------
+    // Tabla D (cdu14-reubicacion.csv): reubicacion POST /{esperaId}/prioridad
+    // ------------------------------------------------------------------
+
+    static Stream<Fila> filasReubicacion() {
+        return filas("cdu14-reubicacion.csv");
+    }
+
+    /**
+     * Las 27 filas de reubicacion. Ademas del status y del codigo canonico la fila afirma dos
+     * cosas: que la cadena de auditoria solo crece cuando la reubicacion es legitima (D03, D16,
+     * D18 y D26 no escriben un segundo eslabon) y que la cola ACTIVA sale en el orden canonico
+     * de D11 con las alias de la siembra. Las cadenas no se comparan contra un literal fijo:
+     * se lee la cadena antes de operar y se exige que crezca exactamente un eslabon, porque las
+     * filas de terminales ya traen eslabones de siembra.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasReubicacion")
+    void reubicacionDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f);
+        String esperaId = esperaIdDe(f, "objetivo");
+        boolean objetivoVivo = idsSembrados.containsValue(esperaId);
+        String cadenaAntes = objetivoVivo ? cadenaDe(esperaId) : null;
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        if (!"AUSENTE".equals(f.get("destino"))) {
+            cuerpo.put("prioridad", f.get("destino"));
+        }
+        String motivo = motivoDe(f);
+        if (motivo != null) {
+            cuerpo.put("motivo", motivo);
+        }
+        MvcResult r = req(post(BASE + "/" + esperaId + "/prioridad")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(cuerpo)));
+        verificar(f, r);
+        if (objetivoVivo) {
+            String cadenaDespues = cadenaDe(esperaId);
+            if (statusEsperado(f.get("esperadoStatus")) == 200) {
+                assertThat(cadenaDespues).as("%s: la reubicacion legitima anade un REUBICACION", f.id())
+                        .isEqualTo(cadenaAntes + ",REUBICACION");
+            } else {
+                assertThat(cadenaDespues).as("%s: una reubicacion rechazada no escribe eslabones", f.id())
+                        .isEqualTo(cadenaAntes);
+            }
+        }
+        verificarColaCanon(f, f.get("esperadoCola"));
+    }
+
+    /**
+     * Motivo de la reubicacion. VACIO es cadena en blanco y AUSENTE es quitar la clave del
+     * cuerpo; MAX300 y LARGO301 son las longitudes limite de la columna motivo_fin.
+     */
+    private String motivoDe(Fila f) {
+        return switch (f.get("motivo")) {
+            case "TEXTO" -> "reubicacion de la matriz " + f.id();
+            case "VACIO" -> "";
+            case "AUSENTE", "-" -> null;
+            case "MAX300", "LARGO301" -> token(f.get("motivo"));
+            default -> throw new IllegalStateException(
+                    "motivo sin resolver: " + f.get("motivo") + " en " + f.id());
+        };
+    }
+
+    /**
+     * El esperaId real de la fila. {@code AUT} es la entrada que nombra la columna objetivo;
+     * INEXISTENTE es un UUID que nunca se sembro; MAL_FORMATADO es texto donde va un UUID, que
+     * el PathVariable corta antes de llegar al servicio; y un objetivo "-" pide una entrada que
+     * no existe, como anuncia D19.
+     */
+    private String esperaIdDe(Fila f, String columnaObjetivo) {
+        String simbolo = f.get("esperaId");
+        if (simbolo.isBlank()) {
+            simbolo = "AUT";
+        }
+        return switch (simbolo) {
+            case "INEXISTENTE" -> UUID.randomUUID().toString();
+            case "MAL_FORMATADO" -> "no-es-un-uuid";
+            default -> {
+                String alias = f.get(columnaObjetivo);
+                yield alias.isBlank() || "-".equals(alias)
+                        ? UUID.randomUUID().toString() : idSembrado(alias);
+            }
+        };
+    }
+
+    /**
+     * La columna esperadoCola escribe las entradas ACTIVA en orden canonico como
+     * alias:PRIORIDAD separadas por barras verticales. Las alias salen de la siembra, asi que la
+     * matriz no fija ni un solo UUID. Se lee la cola filtrada por ACTIVA y, ademas del orden, se
+     * reafirman la posicion y el total. Dos entradas que empatan en escalon y en marca de tiempo
+     * pueden salir en cualquier orden porque el desempate es el esperaId y el esperaId es
+     * aleatorio: por eso la comparacion se hace por bloques de empate, como anuncia la nota de
+     * D11 al prometer el bloque {B,C} y la lectura repetida.
+     */
+    private void verificarColaCanon(Fila f, String esperado) throws Exception {
+        if ("-".equals(esperado) || esperado.isBlank()) {
+            return;
+        }
+        List<String> esperados = new ArrayList<>();
+        for (String entrada : esperado.split("\\|")) {
+            esperados.add(entrada.trim());
+        }
+        MvcResult lectura = req(get(BASE).param("pruebaCodigo", PruebasCitas.PRUEBA)
+                .param("estado", "ACTIVA"));
+        assertThat(lectura.getResponse().getStatus()).as("%s: la cola canon se lee con 200", f.id())
+                .isEqualTo(200);
+        JsonNode cola = cuerpo(lectura);
+        List<String> aliasReales = new ArrayList<>();
+        for (int i = 0; i < cola.size(); i++) {
+            JsonNode e = cola.get(i);
+            aliasReales.add(aliasDe(e.path("esperaId").asText()));
+            assertThat(e.path("posicion").asInt()).as("%s: la posicion es 1-based", f.id())
+                    .isEqualTo(i + 1);
+            assertThat(e.path("total").asLong()).as("%s: el total acompana a la cola servida", f.id())
+                    .isEqualTo(cola.size());
+        }
+        assertThat(ordenCanonico(cola)).as("%s: el orden canon es prioridad desc, fecha asc y "
+                + "esperaId asc; respuesta: %s", f.id(), cola).isTrue();
+        assertThat(aliasReales).as("%s: la cola trae exactamente las entradas sembradas", f.id())
+                .hasSameSizeAs(esperados);
+        for (int i = 0; i < aliasReales.size(); i++) {
+            assertThat(cola.get(i).path("prioridad").asText())
+                    .as("%s: el escalon de la posicion %d", f.id(), i + 1)
+                    .isEqualTo(esperados.get(i).substring(esperados.get(i).indexOf(':') + 1));
+        }
+        assertThat(bloquesDeEmpate(cola, aliasReales)).as("%s: las alias de la cola, por bloques", f.id())
+                .isEqualTo(bloquesDeAlias(esperados));
+    }
+
+    /** Bloques de alias de la respuesta: dentro de un empate el orden no es afirmable. */
+    private List<List<String>> bloquesDeEmpate(JsonNode cola, List<String> aliasReales) {
+        List<List<String>> bloques = new ArrayList<>();
+        int i = 0;
+        while (i < aliasReales.size()) {
+            int j = i + 1;
+            while (j < aliasReales.size() && empatan(cola.get(i), cola.get(j))) {
+                j++;
+            }
+            bloques.add(ordenados(aliasReales.subList(i, j)));
+            i = j;
+        }
+        return bloques;
+    }
+
+    /** Los bloques esperados, leidos de la matriz con la misma regla de tamanos. */
+    private List<List<String>> bloquesDeAlias(List<String> esperados) {
+        List<List<String>> bloques = new ArrayList<>();
+        for (String entrada : esperados) {
+            String alias = entrada.substring(0, entrada.indexOf(':'));
+            bloques.add(ordenados(List.of(alias)));
+        }
+        return bloques;
+    }
+
+    /** Dos entradas empatan cuando escalon y marca de tiempo son identicos. */
+    private boolean empatan(JsonNode una, JsonNode otra) {
+        return una.path("prioridad").asText().equals(otra.path("prioridad").asText())
+                && una.path("fechaSolicitud").asText().equals(otra.path("fechaSolicitud").asText());
+    }
+
+    private List<String> ordenados(List<String> valores) {
+        List<String> copia = new ArrayList<>(valores);
+        copia.sort(Comparator.naturalOrder());
+        return copia;
+    }
+
+    /** Alias con la que la siembra conoce una entrada; "?" es una entrada que nadie sembro. */
+    private String aliasDe(String esperaId) {
+        for (Map.Entry<String, String> sembrada : idsSembrados.entrySet()) {
+            if (sembrada.getValue().equals(esperaId)) {
+                return sembrada.getKey();
+            }
+        }
+        return "?";
+    }
+
+    /**
+     * Cadena de auditoria de una entrada: el genesis material mas la accion de cada eslabon.
+     * No hay ningun eslabon GENESIS guardado en la tabla: el genesis es el hash anterior del
+     * primer eslabon, igual que en la cadena de citas de CDU12.
+     */
+    private String cadenaDe(String esperaId) throws Exception {
+        JsonNode asientos = cuerpo(req(get(BASE + "/" + esperaId + "/auditoria")));
+        StringBuilder cadena = new StringBuilder(GENESIS);
+        for (JsonNode asiento : asientos) {
+            cadena.append(',').append(asiento.path("accion").asText());
+        }
+        return cadena.toString();
+    }
+
+    // ------------------------------------------------------------------
+    // Tabla E (cdu14-secuencias.csv): doble clic secuencial y concurrencia
+    // ------------------------------------------------------------------
+
+    static Stream<Fila> filasSecuencia() {
+        return filas("cdu14-secuencias.csv");
+    }
+
+    /**
+     * Las 12 secuencias. La columna esperadoStatus describe la ultima operacion, asi que los
+     * pasos previos se afirman con el token que les toca (paso). Despues se comprueban las tres
+     * salidas del modulo: las cadenas de las entradas tocadas, como multiset; la cola, como
+     * recuento de estados sin filtrar; y el numero de citas. El invariante de la puerta SEG es
+     * que el segundo golpe no escribe nada, y solo se ve comparando las tres.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasSecuencia")
+    void secuenciaDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f);
+        String id = f.id();
+        List<String> tocados = new ArrayList<>();
+        MvcResult ultimo;
+        switch (f.get("secuencia")) {
+            case "ALTA_ALTA" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null),
+                        "CREADO");
+                ultimo = paso(id, alta("P2", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T2, null),
+                        "ALTA_DUPLICADA");
+            }
+            case "ALTA_RETIRAR_ALTA" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null),
+                        "CREADO");
+                ultimo = paso(id, retirar(idSembrado("P1"), "retirada de la secuencia"), "OK");
+                tocados.add("P2");
+                ultimo = paso(id, alta("P2", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T2, null),
+                        "CREADO");
+            }
+            case "ALTA_ASIGNAR_ALTA" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1,
+                        PruebasCitas.SOL_CREADA), "CREADO");
+                ultimo = paso(id, asignar(idSembrado("P1"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null),
+                        "ASIGNADO");
+                tocados.add("P2");
+                ultimo = paso(id, alta("P2", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T2, null),
+                        "CREADO");
+            }
+            case "ALTA_RETIRAR_RETIRAR" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null),
+                        "CREADO");
+                ultimo = paso(id, retirar(idSembrado("P1"), "retirada de la secuencia"), "OK");
+                ultimo = paso(id, retirar(idSembrado("P1"), "segunda retirada"), "NO_ACTIVA");
+            }
+            case "ALTA_PRIORIDAD_VUELTA" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null),
+                        "CREADO");
+                ultimo = paso(id, cambiarPrioridad(idSembrado("P1"), "ORDINARIA", "la bajada"), "OK");
+                ultimo = paso(id, cambiarPrioridad(idSembrado("P1"), "URGENTE", "la vuelta"), "OK");
+            }
+            case "ALTA_PRIORIDAD_IGUAL_IGUAL" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "ORDINARIA", T1, null),
+                        "CREADO");
+                ultimo = paso(id, cambiarPrioridad(idSembrado("P1"), "URGENTE", "primera subida"), "OK");
+                ultimo = paso(id, cambiarPrioridad(idSembrado("P1"), "URGENTE", "doble clic"), "REDUNDANTE");
+            }
+            case "ALTA_ASIGNAR_ASIGNAR" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1,
+                        PruebasCitas.SOL_CREADA), "CREADO");
+                ultimo = paso(id, asignar(idSembrado("P1"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null),
+                        "ASIGNADO");
+                ultimo = paso(id, asignar(idSembrado("P1"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null),
+                        "NO_ACTIVA");
+            }
+            case "ASIGNAR_CONCURRENTES" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1,
+                        PruebasCitas.SOL_CREADA), "CREADO");
+                List<MvcResult> dos = alMismoTiempo(
+                        () -> asignar(idSembrado("P1"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null),
+                        () -> asignar(idSembrado("P1"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null));
+                afirmarUnOkYOtroConflicto(f, dos);
+                ultimo = ganadora(dos);
+            }
+            case "ALTA_ALTA_CONCURRENTES" -> {
+                List<MvcResult> dos = alMismoTiempo(
+                        () -> alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null),
+                        () -> alta("P2", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null));
+                afirmarUnOkYOtroConflicto(f, dos);
+                tocados.add(ganadoraDe(dos, "P1", "P2"));
+                ultimo = ganadora(dos);
+            }
+            case "RETIRAR_CONCURRENTES" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null),
+                        "CREADO");
+                List<MvcResult> dos = alMismoTiempo(
+                        () -> retirar(idSembrado("P1"), "retirada A"),
+                        () -> retirar(idSembrado("P1"), "retirada B"));
+                afirmarUnOkYOtroConflicto(f, dos);
+                ultimo = ganadora(dos);
+            }
+            case "ASIGNAR_MISMO_HUECO_ENTRADAS_DISTINTAS" -> {
+                tocados.add("B");
+                tocados.add("C");
+                ultimo = paso(id, asignar(idSembrado("B"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null),
+                        "ASIGNADO");
+                ultimo = paso(id, asignar(idSembrado("C"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null),
+                        "HUECO_OCUPADO");
+            }
+            case "ALTA_ALTA_DISTINTOS" -> {
+                tocados.add("P1");
+                ultimo = paso(id, alta("P1", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, null),
+                        "CREADO");
+                tocados.add("P2");
+                ultimo = paso(id, alta("P2", "api-paciente-b", PruebasCitas.PRUEBA, "URGENTE", T2, null),
+                        "CREADO");
+            }
+            default -> throw new IllegalStateException(
+                    "secuencia sin montar: " + f.get("secuencia") + " en " + id);
+        }
+        verificar(f, ultimo);
+        verificarEslabones(f, tocados);
+        verificarRecuentos(f, f.get("esperadoCola"));
+        verificarCitas(f, f.get("esperadoCitas"));
+    }
+
+    /**
+     * Eslabones de las entradas que la secuencia toco, comparados como multiset ordenado. La
+     * matriz los escribe separados por " / ", en el orden que le da igual: lo que se afirma es el
+     * conjunto de cadenas, porque el identificador de cada entrada no esta en la matriz.
+     */
+    private void verificarEslabones(Fila f, List<String> aliasTocadas) throws Exception {
+        String esperado = f.get("esperadoEslabones");
+        if ("-".equals(esperado) || esperado.isBlank()) {
+            return;
+        }
+        List<String> reales = new ArrayList<>();
+        for (String alias : aliasTocadas) {
+            reales.add(cadenaDe(idSembrado(alias)));
+        }
+        assertThat(ordenados(reales)).as("%s: cadenas de las entradas tocadas", f.id())
+                .isEqualTo(ordenados(List.of(esperado.split(" / "))));
+    }
+
+    /**
+     * Recuento de estados de la cola. La columna esperadoCola cuenta entradas por estado sobre la
+     * cola SIN filtrar por estado, y por eso la lectura pide solo la prueba: el repositorio
+     * entiende el filtro de estado ausente como todos los estados, y ahi es donde se ve la
+     * terminal que el doble clic dejo atras.
+     */
+    private void verificarRecuentos(Fila f, String esperado) throws Exception {
+        if ("-".equals(esperado) || esperado.isBlank()) {
+            return;
+        }
+        Map<String, Integer> esperados = new HashMap<>();
+        for (String trozo : esperado.split("\\s*\\+\\s*")) {
+            String[] partes = trozo.trim().split("\\s+");
+            esperados.merge(partes[1], Integer.parseInt(partes[0]), Integer::sum);
+        }
+        Map<String, Integer> reales = new HashMap<>();
+        for (JsonNode e : cuerpo(req(get(BASE).param("pruebaCodigo", PruebasCitas.PRUEBA)))) {
+            reales.merge(e.path("estado").asText(), 1, Integer::sum);
+        }
+        assertThat(reales).as("%s: la cola de %s, sin filtro de estado", f.id(), PruebasCitas.PRUEBA)
+                .isEqualTo(esperados);
+    }
+
+    /** Las citas que hay en el sistema: la puerta SEG promete que el segundo golpe no crea. */
+    private void verificarCitas(Fila f, String esperado) throws Exception {
+        if ("-".equals(esperado) || esperado.isBlank()) {
+            return;
+        }
+        int reales = cuerpo(req(get("/api/citas"))).size();
+        assertThat(reales).as("%s: citas creadas por la secuencia", f.id())
+                .isEqualTo(Integer.parseInt(esperado));
+    }
+
+    /**
+     * Dos operaciones lanzadas a la vez con dos barreras: ninguna arranca hasta que las dos
+     * estan listas, y las dos sueltan la barrera en el mismo instante. Sin esto la concurrencia
+     * de las filas E08, E09 y E10 seria una letra bonita que en realidad corre de una en una.
+     */
+    private List<MvcResult> alMismoTiempo(Callable<MvcResult> una, Callable<MvcResult> otra)
+            throws Exception {
+        ExecutorService hilo = Executors.newFixedThreadPool(2);
+        try {
+            CountDownLatch listas = new CountDownLatch(2);
+            CountDownLatch salida = new CountDownLatch(1);
+            Future<MvcResult> primera = hilo.submit(() -> {
+                listas.countDown();
+                salida.await();
+                return una.call();
+            });
+            Future<MvcResult> segunda = hilo.submit(() -> {
+                listas.countDown();
+                salida.await();
+                return otra.call();
+            });
+            assertThat(listas.await(10, TimeUnit.SECONDS)).as("los dos hilos no llegaron a estar listos")
+                    .isTrue();
+            salida.countDown();
+            return List.of(primera.get(30, TimeUnit.SECONDS), segunda.get(30, TimeUnit.SECONDS));
+        } finally {
+            hilo.shutdownNow();
+        }
+    }
+
+    /**
+     * El invariante UN_OK_Y_OTRO_409: exactamente una operacion termina en exito y la otra en
+     * conflicto. La matriz no fija codigo porque el perdedor puede acabar en 409 de maquina de
+     * estados, en 409 de hueco por UNIQUE o en conflicto optimista por @Version.
+     */
+    private void afirmarUnOkYOtroConflicto(Fila f, List<MvcResult> resultados) {
+        List<Integer> codigos = new ArrayList<>();
+        resultados.forEach(r -> codigos.add(r.getResponse().getStatus()));
+        assertThat(codigos.stream().filter(c -> c >= 200 && c < 300).count())
+                .as("%s: exactamente una operacion termina en exito, codigos: %s", f.id(), codigos)
+                .isEqualTo(1L);
+        assertThat(codigos.stream().filter(c -> c >= 409).count())
+                .as("%s: la otra termina en conflicto, codigos: %s", f.id(), codigos).isEqualTo(1L);
+    }
+
+    private MvcResult ganadora(List<MvcResult> dos) {
+        return dos.stream()
+                .filter(r -> r.getResponse().getStatus() >= 200 && r.getResponse().getStatus() < 300)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("ninguna operacion termino en exito"));
+    }
+
+    /** Que alias se guardo el alta que gano la carrera. */
+    private String ganadoraDe(List<MvcResult> dos, String aliasPrimera, String aliasSegunda) {
+        return dos.get(0).getResponse().getStatus() == 201 ? aliasPrimera : aliasSegunda;
+    }
+
+    // ------------------------------------------------------------------
     // Setup: el mundo de cada fila se siembra por la propia API HTTP
     // ------------------------------------------------------------------
 
@@ -480,7 +903,7 @@ class Cdu14MatrizTdopTest {
                         "PREFERENTE", T1, null);
                 case "SEMILLA-OTRA-PRUEBA" -> alta("SEM", "api-paciente", PruebasCitas.PRUEBA_DUP,
                         "PREFERENTE", T1, null);
-                case "SEMILLA-MIXTA", "SEMILLA-COLA-TRES" -> colaTres();
+                case "SEMILLA-MIXTA", "SEMILLA-COLA-TRES" -> colaTres(f);
                 case "SEMILLA-EMPALTE-FECHA" -> {
                     alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "ORDINARIA", T1, PruebasCitas.SOL_CREADA);
                     alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T1, PruebasCitas.SOL_CREADA_2);
@@ -490,7 +913,7 @@ class Cdu14MatrizTdopTest {
                     alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T1, PruebasCitas.SOL_CREADA_2);
                 }
                 case "SEMILLA-TERMINALES", "SEMILLA-COLA-TERMINALES" -> {
-                    colaTres();
+                    colaTres(f);
                     asignar(idSembrado("B"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
                     retirar(idSembrado("C"), "retirada de siembra");
                 }
@@ -507,10 +930,18 @@ class Cdu14MatrizTdopTest {
                     alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "PREFERENTE", T2, PruebasCitas.SOL_CREADA_3);
                     cambiarPrioridad(idSembrado("B"), "PREFERENTE", "empalme con C");
                 }
-                case "SEMILLA-COLA-CON-RETIRO", "SEMILLA-CON-RETIRO" -> {
-                    colaTres();
-                    cambiarPrioridad(idSembrado("B"), "ORDINARIA", "bajada de siembra");
-                    retirar(idSembrado("B"), "retirada de siembra");
+                case "SEMILLA-COLA-CON-RETIRO" -> {
+                    colaTres(f);
+                    retirar(idSembrado("A"), "retirada de siembra");
+                }
+                case "SEMILLA-CON-RETIRO" -> {
+                    alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "ORDINARIA", T1, null);
+                    cambiarPrioridad(idSembrado("SEM"), "URGENTE", "reubicacion de siembra");
+                    retirar(idSembrado("SEM"), "retirada de siembra");
+                }
+                case "SEMILLA-CITA-OCUPA" -> {
+                    alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
+                    asignar(idSembrado("SEM"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
                 }
                 case "SEM-ESTADO" -> semEstado(valor);
                 case "SEM-HUECO-DEST" -> huecoDestino(valor, f);
@@ -521,10 +952,29 @@ class Cdu14MatrizTdopTest {
     }
 
     /** Tres entradas vivas de la misma prueba: A URGENTE, B PREFERENTE y C ORDINARIA. */
-    private void colaTres() throws Exception {
-        alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
-        alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T2, PruebasCitas.SOL_CREADA_2);
-        alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "ORDINARIA", T3, PruebasCitas.SOL_CREADA_3);
+    private void colaTres(Fila f) throws Exception {
+        String solA = PruebasCitas.SOL_CREADA;
+        String solB = PruebasCitas.SOL_CREADA_2;
+        String solC = PruebasCitas.SOL_CREADA_3;
+        if ("NINGUNA".equals(enlaceDe(f))) {
+            solA = null;
+            solB = null;
+            solC = null;
+        }
+        alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, solA);
+        alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T2, solB);
+        alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "ORDINARIA", T3, solC);
+    }
+
+    /** Valor del token ENLAZE del setup: CITADA o NINGUNA; null es que la fila no lo lleva. */
+    private String enlaceDe(Fila f) {
+        for (String bruto : f.get("setup").split(",")) {
+            String s = bruto.trim();
+            if (s.startsWith("ENLAZE:")) {
+                return s.substring("ENLAZE:".length());
+            }
+        }
+        return null;
     }
 
     /** Deja una entrada en el estado que pide la matriz, con alias OBJ. */
@@ -559,7 +1009,9 @@ class Cdu14MatrizTdopTest {
         cuerpo.put("pacienteId", paciente);
         cuerpo.put("pruebaCodigo", prueba);
         cuerpo.put("profesionalId", PruebasCitas.PROF_MEDICO);
-        cuerpo.put("prioridad", prioridad);
+        if (prioridad != null) {
+            cuerpo.put("prioridad", prioridad);
+        }
         if (fecha != null) {
             cuerpo.put("fechaSolicitud", fecha);
         }
