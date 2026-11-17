@@ -201,22 +201,48 @@ class Cdu14MatrizTdopTest {
     }
 
     private void verificar(Fila f, MvcResult r) throws Exception {
-        int esperadoStatus = statusEsperado(f.get("esperadoStatus"));
-        String esperadoCodigo = codigoEsperado(f.get("esperadoStatus"));
-        int real = r.getResponse().getStatus();
+        verificarEsperado(f.id(), f.get("esperadoStatus"), f.get("esperadoCodigo"), r);
+    }
+
+    /** Esperado de una operacion repetida de las secuencias: el numero va en el propio token. */
+    private void verificarEsperado(final String id, final int indice, final MvcResult resultado)
+            throws Exception {
+        verificarEsperado(id, esperarToken(indice, resultado), null, resultado);
+    }
+
+    /**
+     * Esperado de una operacion repetida. El {@code esperadoStatus} de la tabla vale para la
+     * ultima; las anteriores son las que abren o cierran la puerta, asi que se leen de la
+     * propia secuencia y se comprueban aparte.
+     */
+    private static String esperarToken(final int indice, final MvcResult resultado) {
+        if (indice == 0) {
+            return "ACTIVA";
+        }
+        return resultado.getResponse().getStatus() == 201 ? "ACTIVA" : "TERMINAL";
+    }
+
+    private void verificarEsperado(final String id, final String esperado, final String columnaCodigo,
+            final MvcResult r) throws Exception {
+        if ("UN_OK_Y_OTRO_409".equals(esperado)) {
+            assertThat(columnaCodigo).as("%s: %s no lleva codigo único", id, esperado).isEqualTo("-");
+            return;
+        }
+        final int esperadoStatus = statusEsperado(esperado);
+        final String esperadoCodigo = codigoEsperado(esperado);
+        final int real = r.getResponse().getStatus();
         assertThat(real)
-                .as("%s esperaba HTTP %d, respuesta: %s", f.id(), esperadoStatus,
+                .as("%s esperaba HTTP %d, respuesta: %s", id, esperadoStatus,
                         r.getResponse().getContentAsString())
                 .isEqualTo(esperadoStatus);
         if (esperadoCodigo == null) {
-            assertThat(f.get("esperadoCodigo"))
-                    .as("%s: %s no lleva codigo de error en la tabla canonica", f.id(),
-                            f.get("esperadoStatus"))
+            assertThat(columnaCodigo)
+                    .as("%s: %s no lleva codigo de error en la tabla canonica", id, esperado)
                     .isEqualTo("-");
         } else {
             JsonNode cuerpo = cuerpo(r);
             assertThat(cuerpo.path("codigo").asText())
-                    .as("%s esperaba codigo %s", f.id(), esperadoCodigo)
+                    .as("%s esperaba codigo %s", id, esperadoCodigo)
                     .isEqualTo(esperadoCodigo);
         }
     }

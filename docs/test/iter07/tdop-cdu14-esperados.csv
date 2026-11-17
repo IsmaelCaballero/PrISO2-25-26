@@ -13,8 +13,7 @@ ALTA_DUPLICADA;409;CONFLICTO_ALTA_DUPLICADA;primera capa del doble clic: ya exis
 NO_ACTIVA;409;CONFLICTO_ENTRADA_NO_ACTIVA;tercera capa del doble clic y salida de estado terminal: solo una entrada ACTIVA se reubica, se asigna o se retira
 REDUNDANTE;409;CONFLICTO_REUBICACION_REDUNDANTE;segunda capa del doble clic: la prioridad pedida es la que ya tiene, no se mueve nada y no se escribe un segundo eslabon
 HUECO_OCUPADO;409;CONFLICTO_HUECO_OCUPADO;el hueco pedido ya esta reservado: lo decide la base de datos por UNIQUE (profesional_id, inicio) y el @Version
-FUERA_DE_FRANJA;409;CONFLICTO_FUERA_DE_FRANJA;la cita no cabe entera en una franja del profesional (antes de abrir, despues de cerrar o en festivo)
-ERROR_INTERNO;500;ERROR_INTERNO;el profesional no tiene agenda: comportamiento heredado de CDU12/CDU13, AgendaNoEncontradoException no tiene mapeo propio y cae en el manejador global (HALLAZGO a cerrar en otra iteracion)
+FUERA_DE_FRANJA;409;CONFLICTO_FUERA_DE_FRANJA;la cita no cabe entera en una franja del profesional (antes de abrir, despues de cerrar o en festivo), y tambien cuando el profesional no tiene agenda: sin agenda no hay ninguna franja donde quepa el hueco
 UN_OK_Y_OTRO_409;201;-;dos pulsaciones concurrentes: exactamente una termina en exito y la otra en conflicto (409 o 500 por optimista). El TC comprueba el multiset de codigos, no cual gano
 CONTENIDO;415;-;Content-Type no JSON en un endpoint con @RequestBody: lo resuelve Spring y no pasa por el consejo del modulo, asi que no hay cuerpo ApiError
 METODO;405;-;metodo no mapeado sobre una ruta si existe: lo resuelve Spring sin cuerpo ApiError

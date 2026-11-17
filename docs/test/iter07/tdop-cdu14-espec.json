@@ -35,9 +35,11 @@
     "   motivo en blanco o demasiado largo se responde 400 aunque la reubicacion fuera tambien redundante: es",
     "   la misma decision de CDU12 (la guarda precede a la busqueda) y mantiene el contrato estable.",
     " - asignar: la sintaxis manda (400) > la entrada existe (404) > la entrada esta ACTIVA (409) > la",
-    "   solicitud enlazada es apta (409 SOLICITUD_NO_APTA, incluido solicitudId nulo) > el profesional tiene",
-    "   agenda (500 ERROR_INTERNO, mismo comportamiento heredado de CDU12/CDU13) > la cita cabe en la franja",
-    "   (409 FUERA_DE_FRANJA) > el hueco esta libre (409 HUECO_OCUPADO). La aptitud se comprueba ANTES de",
+    "   solicitud enlazada es apta (409 SOLICITUD_NO_APTA, incluido solicitudId nulo) > la cita cabe en la",
+    "   franja del profesional (409 FUERA_DE_FRANJA; aqui cae tambien el profesional sin agenda, porque",
+    "   CitaServicio.franjasDelProfesional traduce el AgendaNoEncontradoException de CDU13 al conflicto de",
+    "   CDU12 y CitaServicioTest deja esa traduccion fijada) > el hueco esta libre (409 HUECO_OCUPADO). La",
+    "   aptitud se comprueba ANTES de",
     "   tocar la agenda porque es una guarda propia de la cola: evitar una llamada al catalogo cuando el",
     "   paciente no tiene solicitud es mas barato y da un codigo mas explicativo. Esta precedencia se fijo",
     "   tras el informe de factibilidad y es la que afirman las filas de las tablas C y F.",
@@ -189,12 +191,7 @@
     "FUERA_DE_FRANJA": {
       "http": 409,
       "codigo": "CONFLICTO_FUERA_DE_FRANJA",
-      "descripcion": "la cita no cabe entera en una franja del profesional (antes de abrir, despues de cerrar o en festivo)"
-    },
-    "ERROR_INTERNO": {
-      "http": 500,
-      "codigo": "ERROR_INTERNO",
-      "descripcion": "el profesional no tiene agenda: comportamiento heredado de CDU12/CDU13, AgendaNoEncontradoException no tiene mapeo propio y cae en el manejador global (HALLAZGO a cerrar en otra iteracion)"
+      "descripcion": "la cita no cabe entera en una franja del profesional (antes de abrir, despues de cerrar o en festivo), y tambien cuando el profesional no tiene agenda: sin agenda no hay ninguna franja donde quepa el hueco"
     },
     "UN_OK_Y_OTRO_409": {
       "http": 201,
@@ -1872,8 +1869,7 @@
       "NO_ACTIVA",
       "SOLICITUD_NO_APTA",
       "FUERA_DE_FRANJA",
-      "HUECO_OCUPADO",
-      "ERROR_INTERNO"
+      "HUECO_OCUPADO"
     ],
     "codigosError": {
       "INVALIDOS": "DATOS_INVALIDOS",
@@ -1881,8 +1877,7 @@
       "NO_ACTIVA": "CONFLICTO_ENTRADA_NO_ACTIVA",
       "SOLICITUD_NO_APTA": "CONFLICTO_SOLICITUD_NO_APTA",
       "FUERA_DE_FRANJA": "CONFLICTO_FUERA_DE_FRANJA",
-      "HUECO_OCUPADO": "CONFLICTO_HUECO_OCUPADO",
-      "ERROR_INTERNO": "ERROR_INTERNO"
+      "HUECO_OCUPADO": "CONFLICTO_HUECO_OCUPADO"
     },
     "factores": [
       {
@@ -1948,8 +1943,8 @@
           {
             "valor": "SIN_AGENDA",
             "valido": true,
-            "motivo": "api-sin-agenda existe como id pero no tiene agenda: AgendaNoEncontradoException sin mapear",
-            "criterio": "valor limite: heredado de CDU12, se responde 500 ERROR_INTERNO (deuda conocida del canon, CDU14 no la agranda ni la arregla a medias)"
+            "motivo": "api-sin-agenda existe como id pero no tiene agenda: el AgendaNoEncontradoException de CDU13 se traduce a conflicto de franja",
+            "criterio": "valor limite: heredado de CDU12, se responde 409 CONFLICTO_FUERA_DE_FRANJA porque sin agenda no hay franja donde quepa el hueco (CitaServicioTest lo deja fijado)"
           },
           {
             "valor": "DESCONOCIDO",
@@ -2222,18 +2217,18 @@
           "factor": "profesional",
           "igual": "SIN_AGENDA"
         },
-        "estado": "ERROR_INTERNO",
-        "codigo": "ERROR_INTERNO",
-        "porque": "AgendaNoEncontradoException no tiene mapeo propio desde CDU12: 500 heredado y documentado, CDU14 no introduce un mapeo a medias solo para su endpoint"
+        "estado": "FUERA_DE_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "sin agenda no hay ninguna franja donde quepa el hueco: CitaServicio.franjasDelProfesional ya traduce el AgendaNoEncontradoException de CDU13 al conflicto del CDU12, y esa traduccion la fija CitaServicioTest"
       },
       {
         "si": {
           "factor": "profesional",
           "igual": "DESCONOCIDO"
         },
-        "estado": "ERROR_INTERNO",
-        "codigo": "ERROR_INTERNO",
-        "porque": "mismo camino: el id del profesional no se valida contra un directorio en CDU12 ni en CDU14"
+        "estado": "FUERA_DE_FRANJA",
+        "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+        "porque": "mismo camino: el id del profesional no se valida contra un directorio en CDU12 ni en CDU14, asi que sin agenda simplemente no cabe"
       },
       {
         "si": {
