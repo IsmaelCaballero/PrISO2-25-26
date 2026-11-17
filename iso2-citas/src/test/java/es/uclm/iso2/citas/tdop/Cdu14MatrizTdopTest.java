@@ -25,15 +25,21 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -100,8 +106,8 @@ class Cdu14MatrizTdopTest {
     /** Simbolo -> esperaId real sembrado en la corrida de la fila actual. */
     private final Map<String, String> idsSembrados = new LinkedHashMap<>();
 
-    /** Tabla canonico -> (esperado, codigo) leida de cdu14-esperados.csv. */
-    private static final Map<String, String> ESPERADOS = leerEsperados();
+    /** Tabla canonico -> (HTTP, codigo) leida de cdu14-esperados.csv. */
+    private static final Map<String, Esperado> ESPERADOS = leerEsperados();
 
     @BeforeEach
     void mundoLimpio() {
@@ -162,47 +168,51 @@ class Cdu14MatrizTdopTest {
         });
     }
 
-    private static Map<String, String> leerEsperados() {
-        Map<String, String> mapa = new LinkedHashMap<>();
+    /** Un renglon de cdu14-esperados.csv: estado simbolico -> HTTP + codigo RFC 7807. */
+    private record Esperado(int http, String codigoError) {
+    }
+
+    private static Map<String, Esperado> leerEsperados() {
+        Map<String, Esperado> mapa = new LinkedHashMap<>();
         List<String> lineas = lineasCsv("cdu14-esperados.csv");
         for (String linea : lineas.subList(1, lineas.size())) {
             String[] c = linea.split(";", -1);
-            mapa.put(c[0].trim(), c[1].trim());
+            String codigo = c[2].trim();
+            mapa.put(c[0].trim(), new Esperado(Integer.parseInt(c[1].trim()),
+                    "-".equals(codigo) ? null : codigo));
         }
         return mapa;
     }
 
-    /** Traduce el esperado simbolico de la matriz a status HTTP y codigo RFC 7807. */
+    /** Codigo RFC 7807 que la tabla canonica asigna al esperado simbolico (null si no lo hay). */
     private static String codigoEsperado(String esperado) {
-        return ESPERADOS.getOrDefault(esperado, esperado);
+        Esperado e = ESPERADOS.get(esperado);
+        return e == null ? null : e.codigoError();
     }
 
+    /** Status HTTP que la tabla canonica asigna al esperado simbolico. */
     private static int statusEsperado(String esperado) {
-        return switch (codigoEsperado(esperado)) {
-            case "OK", "ACEPTADA" -> 200;
-            case "CREADO" -> 201;
-            case "INVALIDOS", "PRUEBA_NO_ENCONTRADA", "SOLICITUD_NO_ENCONTRADA",
-                    "ENTRADA_NO_ENCONTRADA", "AGENDA_NO_ENCONTRADA",
-                    "PRIORIDAD_MOTIVO_OBLIGATORIO", "RETIRO_MOTIVO_OBLIGATORIO" -> 400;
-            case "PROHIBIDO" -> 403;
-            case "NO_AUTORIZADO" -> 401;
-            case "METODO_NO_PERMITIDO", "RUTA_NO_ENCONTRADA", "ERROR_INTERNO" -> 405;
-            case "ALTA_DUPLICADA", "CONFLICTO_ESTADO", "CONFLICTO_HUECO",
-                    "CONFLICTO_ENTRADA_NO_ACTIVA", "CONFLICTO_VERSION" -> 409;
-            case "ENTRADA_NO_ENCONTRADA" -> 404;
-            default -> throw new IllegalStateException("esperado sin mapa de status: " + esperado);
-        };
+        Esperado e = ESPERADOS.get(esperado);
+        if (e == null) {
+            throw new IllegalStateException("esperado sin mapa de status: " + esperado);
+        }
+        return e.http();
     }
 
     private void verificar(Fila f, MvcResult r) throws Exception {
-        int esperadoStatus = statusEsperado(f.get("esperado"));
-        String esperadoCodigo = codigoEsperado(f.get("esperado"));
+        int esperadoStatus = statusEsperado(f.get("esperadoStatus"));
+        String esperadoCodigo = codigoEsperado(f.get("esperadoStatus"));
         int real = r.getResponse().getStatus();
         assertThat(real)
                 .as("%s esperaba HTTP %d, respuesta: %s", f.id(), esperadoStatus,
                         r.getResponse().getContentAsString())
                 .isEqualTo(esperadoStatus);
-        if (!esperadoCodigo.equals(f.get("esperado"))) {
+        if (esperadoCodigo == null) {
+            assertThat(f.get("esperadoCodigo"))
+                    .as("%s: %s no lleva codigo de error en la tabla canonica", f.id(),
+                            f.get("esperadoStatus"))
+                    .isEqualTo("-");
+        } else {
             JsonNode cuerpo = cuerpo(r);
             assertThat(cuerpo.path("codigo").asText())
                     .as("%s esperaba codigo %s", f.id(), esperadoCodigo)
