@@ -96,6 +96,17 @@ public class PruebasCitas {
     /** Solicitud falsa en estado prescrita: no admite cita. */
     public static final String SOL_PRESCRITA = "api-sol-prescrita";
 
+    /**
+     * Segunda solicitud falsa en creada. Aditiva para CDU14: montar dos altas con
+     * solicitud apta en la misma corrida (el alta marca la solicitud como citada al
+     * asignar, y el alta de la cola exige una solicitud propia). No altera a las
+     * {@code api-sol-*} de CDU12.
+     */
+    public static final String SOL_CREADA_2 = "api-sol-creada-2";
+
+    /** Tercera solicitud falsa en creada, por el mismo motivo CDU14 (E11 y F). */
+    public static final String SOL_CREADA_3 = "api-sol-creada-3";
+
     /** Solicitud inexistente. */
     public static final String SOL_INEXISTENTE = "api-sol-que-no-existe";
 
@@ -296,6 +307,8 @@ public class PruebasCitas {
             datos.clear();
             fallaDevolverACreada = false;
             datos.put(SOL_CREADA, nueva(SOL_CREADA, "creada"));
+            datos.put(SOL_CREADA_2, nueva(SOL_CREADA_2, "creada"));
+            datos.put(SOL_CREADA_3, nueva(SOL_CREADA_3, "creada"));
             datos.put(SOL_CITADA, nueva(SOL_CITADA, "citada"));
             datos.put(SOL_PRESCRITA, nueva(SOL_PRESCRITA, "prescrita"));
         }
