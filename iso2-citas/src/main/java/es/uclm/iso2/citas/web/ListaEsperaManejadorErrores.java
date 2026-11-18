@@ -212,21 +212,22 @@ public class ListaEsperaManejadorErrores {
     }
 
     /**
-     * Contenido con un medio que el contrato no admite (texto plano donde va JSON): 415
-     * {@code CONTENIDO} con respuesta vacia. El contrato no define cuerpo para el 415, y aqui el
-     * consejo lo sirve igual que lo servia Spring por defecto: sin {@link ApiError}. Hace falta un
-     * manejador especifico porque el catch-all de {@link Exception} de esta clase lo tragaba y lo
-     * disfrazaba de 500 {@code ERROR_INTERNO}. El 405 de un metodo no declarado sigue sirriendose
-     * por Spring sin mas: cuando el metodo no existe, este advice acotado al controlador ni
-     * interviene (TC14-H02 y TC14-H10).
+     * Contenido con un medio que el contrato no admite (texto plano donde va JSON): 415 con el
+     * codigo estable {@code CONTENIDO_NO_ACEPTADO}, el mismo que ya sirve el resto de modulos
+     * (D25 y D35). Hace falta un manejador especifico porque el catch-all de {@link Exception} de
+     * esta clase se comia la negociacion de contenido de Spring y la disfrazaba de 500
+     * {@code ERROR_INTERNO}. El 405 de un metodo no declarado sigue sirriendose por Spring sin
+     * mas: cuando el metodo no existe, este advice acotado al controlador ni interviene
+     * (TC14-H02 y TC14-H10).
      *
      * @param e medio no soportado declarado en la peticion
-     * @return respuesta 415 sin cuerpo
+     * @return respuesta 415 con el error de contrato
      */
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<Void> medioNoSoportado(HttpMediaTypeNotSupportedException e) {
+    public ResponseEntity<ApiError> medioNoSoportado(HttpMediaTypeNotSupportedException e) {
         LOG.debug("medio no soportado en la lista de espera: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
+        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "CONTENIDO_NO_ACEPTADO",
+                "el Content-Type de la peticion no es compatible con el contrato de la API");
     }
 
     /**

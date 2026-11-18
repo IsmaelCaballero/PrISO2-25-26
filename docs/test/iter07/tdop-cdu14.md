@@ -18,6 +18,7 @@ Las mismas filas las ejecutan los JUnit parametrizados de `es.uclm.iso2.citas.td
 | `SEMILLA-COLA-TRES` | cola canonicA de tres entradas ACTIVA etiquetadas A (URGENTE, t1), B (PREFERENTE, t2) y C (ORDINARIA, t3), las tres de api-paciente con api-prueba y marcas de tiempo ordenadas |
 | `SEMILLA-COLA-EMPALTE-BC` | como SEMILLA-COLA-TRES pero B y C comparten marca de tiempo gemela: el desempate por esperaId es lo unico que rompe el empate |
 | `SEMILLA-COLA-CON-RETIRO` | A RETIRADA mas B PREFERENTE y C ORDINARIA activas: la cola activa se renumera porque la posicion se calcula |
+| `SEMILLA-CON-REUBICACION` | una unica entrada etiquetada SEM, de api-paciente con api-prueba, creada en ORDINARIA y despues reubicada a URGENTE con motivo: es la montura de la cadena con eslabon REUBICACION, porque en SEMILLA-COLA-EMPALTE-BC cualquier reubicacion legal cambiaria la cola que esperan TC14-D10 y TC14-D11 |
 | `SEMILLA-COLA-TERMINALES` | A ACTIVA URGENTE, B ASIGNADA (cita en 09:00) PREFERENTE y C RETIRADA ORDINARIA: montura de los rechazos por estado terminal |
 | `SEMILLA-COLA-SOLO` | una sola entrada C ORDINARIA ACTIVA: reubicar en una cola unitaria y comprobar que la posicion 1 sigue saliendo en el JSON |
 | `SEMILLA-DUP` | entrada ACTIVA de api-paciente con api-prueba sembrada ANTES del alta que se va a pedir: el alta es repetido (doble clic de alta) |
@@ -74,7 +75,7 @@ Las mismas filas las ejecutan los JUnit parametrizados de `es.uclm.iso2.citas.td
 | `HUECO_OCUPADO` | 409 | `CONFLICTO_HUECO_OCUPADO` | el hueco pedido ya esta reservado: lo decide la base de datos por UNIQUE (profesional_id, inicio) y el @Version |
 | `FUERA_DE_FRANJA` | 409 | `CONFLICTO_FUERA_DE_FRANJA` | la cita no cabe entera en una franja del profesional (antes de abrir, despues de cerrar o en festivo), y tambien cuando el profesional no tiene agenda: sin agenda no hay ninguna franja donde quepa el hueco |
 | `UN_OK_Y_OTRO_409` | 201 | `-` | dos pulsaciones concurrentes: exactamente una termina en exito y la otra en conflicto (409 o 500 por optimista). El TC comprueba el multiset de codigos, no cual gano |
-| `CONTENIDO` | 415 | `-` | Content-Type no JSON en un endpoint con @RequestBody: lo resuelve Spring y no pasa por el consejo del modulo, asi que no hay cuerpo ApiError |
+| `CONTENIDO` | 415 | `CONTENIDO_NO_ACEPTADO` | Content-Type no JSON en un endpoint con @RequestBody: la conjetura de que Spring lo resolvia sin pasar por el consejo del modulo era falsa, el catch-all de Exception se lo comia y salia 500. Lleva manejador especifico en el advice y el codigo estable CONTENIDO_NO_ACEPTADO que D35 fijo para el resto de modulos (D25) |
 | `METODO` | 405 | `-` | metodo no mapeado sobre una ruta si existe: lo resuelve Spring sin cuerpo ApiError |
 | `RUTA_INEXISTENTE` | 404 | `-` | ruta fuera del mapa del modulo: el 404 lo resuelve Spring y tampoco lleva cuerpo ApiError |
 
@@ -360,7 +361,7 @@ Las mismas filas las ejecutan los JUnit parametrizados de `es.uclm.iso2.citas.td
 | `TC14-D08` | `TRES` | `C` | `PREFERENTE` | `TEXTO` | `AUT` | `A:URGENTE\|B:PREFERENTE\|C:PREFERENTE` | `SEMILLA-COLA-TRES` | OK | C sube al intermedio y empata con B: gana B por marca de tiempo (t2 < t3) |
 | `TC14-D09` | `TRES` | `C` | `ORDINARIA` | `TEXTO` | `AUT` | `A:URGENTE\|B:PREFERENTE\|C:ORDINARIA` | `SEMILLA-COLA-TRES` | REDUNDANTE `CONFLICTO_REUBICACION_REDUNDANTE` | redundancia con el escalon mas bajo: la tercera variante del boton duplicado de reubicar |
 | `TC14-D10` | `EMPALTE_BC` | `B` | `URGENTE` | `TEXTO` | `AUT` | `A:URGENTE\|B:URGENTE\|C:ORDINARIA` | `SEMILLA-COLA-EMPALTE-BC` | OK | B sube a URGENTE y empata con A: pierde por marca de tiempo, C conserva su marca gemela pero sigue en su escalon |
-| `TC14-D11` | `EMPALTE_BC` | `C` | `PREFERENTE` | `TEXTO` | `AUT` | `A:URGENTE\|B:PREFERENTE\|C:PREFERENTE` | `SEMILLA-COLA-EMPALTE-BC` | OK | C sube y queda con escalon y marca IDENTICOS a B: decide esperaId ascendente (creada antes), y por eso dos lecturas seguidas dan el mismo orden exacto, el TC afirma el bloque {B,C} y la lectura repetida |
+| `TC14-D11` | `EMPALTE_BC` | `C` | `PREFERENTE` | `TEXTO` | `AUT` | `A:URGENTE\|B,C:PREFERENTE` | `SEMILLA-COLA-EMPALTE-BC` | OK | C sube y queda con escalon y marca IDENTICOS a B: decide esperaId ascendente (creada antes), y por eso dos lecturas seguidas dan el mismo orden exacto, el TC afirma el bloque {B,C} y la lectura repetida |
 | `TC14-D12` | `CON_RETIRO` | `B` | `URGENTE` | `TEXTO` | `AUT` | `B:URGENTE\|C:ORDINARIA` | `SEMILLA-COLA-CON-RETIRO` | OK | A fue retirada: la cola filtrada por ACTIVA no la incluye (sigue en la tabla) y las activas suben una posicion real porque la posicion se calcula, no se almacena |
 | `TC14-D13` | `CON_RETIRO` | `C` | `URGENTE` | `TEXTO` | `AUT` | `C:URGENTE\|B:PREFERENTE` | `SEMILLA-COLA-CON-RETIRO` | OK | C sube por encima de B en un mundo con una terminal fuera de la cola activa: el retiro previo no distorsiona el comparador |
 | `TC14-D14` | `TERMINALES` | `B` | `URGENTE` | `TEXTO` | `AUT` | `A:URGENTE` | `SEMILLA-COLA-TERMINALES` | NO_ACTIVA `CONFLICTO_ENTRADA_NO_ACTIVA` | B esta ASIGNADA (cita en 09:00): reubicarla se corta antes de tocar nada y la cola ACTIVA sigue siendo solo A |
@@ -389,8 +390,8 @@ Las mismas filas las ejecutan los JUnit parametrizados de `es.uclm.iso2.citas.td
 | ID | secuencia | esperadoEslabones | esperadoCola | esperadoCitas | Setup | Esperado | Nota del caso |
 |---|---|---|---|---|---|---|---|
 | `TC14-E01` | `ALTA_ALTA` | `GENESIS,ALTA` | `1 ACTIVA` | `0` | `SEMILLA-VACIA` | ALTA_DUPLICADA `CONFLICTO_ALTA_DUPLICADA` | doble clic de alta secuencial: la segunda pulsacion se rechaza por la clave condicionada y la cadena sigue en dos eslabones |
-| `TC14-E02` | `ALTA_RETIRAR_ALTA` | `GENESIS,ALTA,RETIRADA / GENESIS,ALTA` | `1 ACTIVA + 1 RETIRADA` | `0` | `SEMILLA-VACIA` | OK | retirar y volver a dar alta es el camino legitimo: la clave pasa a NULL en la terminal y la nueva entrada abre su propia cadena |
-| `TC14-E03` | `ALTA_ASIGNAR_ALTA` | `GENESIS,ALTA,ASIGNACION / GENESIS,ALTA` | `1 ACTIVA + 1 ASIGNADA` | `1` | `SEMILLA-VACIA` | OK | reingreso tras asignar: el alta no consulta el estado de la solicitud ni el de la entrada anterior, y el hueco de la cita sigue bloqueado |
+| `TC14-E02` | `ALTA_RETIRAR_ALTA` | `GENESIS,ALTA,RETIRADA / GENESIS,ALTA` | `1 ACTIVA + 1 RETIRADA` | `0` | `SEMILLA-VACIA` | CREADO | retirar y volver a dar alta es el camino legitimo: la clave pasa a NULL en la terminal y la nueva entrada abre su propia cadena |
+| `TC14-E03` | `ALTA_ASIGNAR_ALTA` | `GENESIS,ALTA,ASIGNACION / GENESIS,ALTA` | `1 ACTIVA + 1 ASIGNADA` | `1` | `SEMILLA-VACIA` | CREADO | reingreso tras asignar: el alta no consulta el estado de la solicitud ni el de la entrada anterior, y el hueco de la cita sigue bloqueado |
 | `TC14-E04` | `ALTA_RETIRAR_RETIRAR` | `GENESIS,ALTA,RETIRADA` | `1 RETIRADA` | `0` | `SEMILLA-VACIA` | NO_ACTIVA `CONFLICTO_ENTRADA_NO_ACTIVA` | doble clic de retirar en secuencia: segundo 409 y cero eslabones nuevos |
 | `TC14-E05` | `ALTA_PRIORIDAD_VUELTA` | `GENESIS,ALTA,REUBICACION,REUBICACION` | `1 ACTIVA` | `0` | `SEMILLA-VACIA` | OK | URGENTE, bajar a ORDINARIA y volver a URGENTE: dos movimientos legitimos son dos eslabones, la cola vuelve al estado original |
 | `TC14-E06` | `ALTA_PRIORIDAD_IGUAL_IGUAL` | `GENESIS,ALTA,REUBICACION` | `1 ACTIVA` | `0` | `SEMILLA-VACIA` | REDUNDANTE `CONFLICTO_REUBICACION_REDUNDANTE` | alta con escalon por defecto y despues dos pedidos de URGENTE: el primero es legitimo y deja UN eslabon de REUBICACION, el segundo es el doble clic y no anade nada, se comprueba que la cadena tiene exactamente tres eslabones |
@@ -399,7 +400,7 @@ Las mismas filas las ejecutan los JUnit parametrizados de `es.uclm.iso2.citas.td
 | `TC14-E09` | `ALTA_ALTA_CONCURRENTES` | `GENESIS,ALTA` | `1 ACTIVA` | `0` | `SEMILLA-VACIA` | UN_OK_Y_OTRO_409 | dos hilos dan alta al mismo paciente y prueba: la clave UNIQUE condicionada es la capa dura, si el servicio dejara pasar ambos por carrera, la base la corta y el consejo la traduce al mismo 409 |
 | `TC14-E10` | `RETIRAR_CONCURRENTES` | `GENESIS,ALTA,RETIRADA` | `1 RETIRADA` | `0` | `SEMILLA-VACIA` | UN_OK_Y_OTRO_409 | dos hilos retiran la misma entrada: un eslabon RETIRADA y la marca de fin unica del ganador |
 | `TC14-E11` | `ASIGNAR_MISMO_HUECO_ENTRADAS_DISTINTAS` | `GENESIS,ALTA,ASIGNACION / GENESIS,ALTA` | `1 ASIGNADA + 2 ACTIVA` | `1` | `SEMILLA-COLA-TRES` | HUECO_OCUPADO `CONFLICTO_HUECO_OCUPADO` | el doble clic no es solo sobre la misma entrada: dos entradas distintas quieren el mismo hueco y la proteccion del hueco de CDU12 (UNIQUE profesional+inicio y @Version) lo mantiene indivisible |
-| `TC14-E12` | `ALTA_ALTA_DISTINTOS` | `GENESIS,ALTA / GENESIS,ALTA` | `2 ACTIVA` | `0` | `SEMILLA-VACIA` | OK | control negativo de la capa anti-duplicado: pacientes distintos o pruebas distintas dan dos entradas y dos cadenas |
+| `TC14-E12` | `ALTA_ALTA_DISTINTOS` | `GENESIS,ALTA / GENESIS,ALTA` | `2 ACTIVA` | `0` | `SEMILLA-VACIA` | CREADO | control negativo de la capa anti-duplicado: pacientes distintos o pruebas distintas dan dos entradas y dos cadenas |
 
 ## Tabla F · asignar cita desde la cola: franja horaria, proteccion del hueco y aptitud de la solicitud
 
@@ -548,7 +549,7 @@ Las mismas filas las ejecutan los JUnit parametrizados de `es.uclm.iso2.citas.td
 | ID | caso | esperadoVerificable | esperadoEslabones | Setup | Esperado | Nota del caso |
 |---|---|---|---|---|---|---|
 | `TC14-G01` | `ALTA_PURA` | `true` | `GENESIS,ALTA` | `SEMILLA-COLA-TRES` | OK | el alta crea el primer eslabon real y enlaza con el genesis de la cola, igual que el genesis de cita_auditoria en CDU12 |
-| `TC14-G02` | `CON_REUBICACION` | `true` | `GENESIS,ALTA,REUBICACION` | `SEMILLA-COLA-EMPALTE-BC` | OK | REUBICACION no existe en AccionAuditoria de CDU12: se anade a la cadena de cola sin romper la tabla de citas (D30) |
+| `TC14-G02` | `CON_REUBICACION` | `true` | `GENESIS,ALTA,REUBICACION` | `SEMILLA-CON-REUBICACION` | OK | REUBICACION no existe en AccionAuditoria de CDU12: se anade a la cadena de cola sin romper la tabla de citas (D30), la reubicacion la hace el propio setup, que es una sola entrada para que la secuencia de acciones de la tabla sea la que se afirma |
 | `TC14-G03` | `CON_RETIRADA` | `true` | `GENESIS,ALTA,REUBICACION,RETIRADA` | `SEMILLA-CON-RETIRO` | OK | el eslabon RETIRADA guarda el motivo en el propio hash y deja la entrada terminal, despues de retirar ya no se puede reubicar: la columna de reubicacion final devuelve NO_ACTIVA |
 | `TC14-G04` | `MANIPULA-CONTENIDO` | `false` | `-` | `SEM-TAMPER:ENLAZE` | OK | se cambia el motivo de un eslabon ya guardado desde el repositorio: la cadena se rompe en ese eslabon y la verificacion global dice false (conjetura: recompute el hash o corte la cadena) |
 | `TC14-G05` | `MANIPULA-BORRADO` | `false` | `-` | `SEM-TAMPER:BORRADO` | OK | se borra un eslabon intermedio: el hash del siguiente queda huerfano y la verificacion debe detectarlo como rotura, no como hueco tolerable |
@@ -571,11 +572,11 @@ Las mismas filas las ejecutan los JUnit parametrizados de `es.uclm.iso2.citas.td
 | ID | ataque | metodo | ruta | Setup | Esperado | Nota del caso |
 |---|---|---|---|---|---|---|
 | `TC14-H01` | `CUERPO-ILEGIBLE` | `POST` | `/api/listas-espera` | `SEMILLA-VACIA` | CUERPO_ILEGIBLE `DATOS_INVALIDOS` | texto suelto donde va el JSON del alta: 400 con codigo estable, nunca 500 (leccion de CDU12 y CDU19) |
-| `TC14-H02` | `CONTENT-TIPO-ERRONEO` | `POST` | `/api/listas-espera` | `SEMILLA-VACIA` | CONTENIDO | enviar el alta como text/plain: Spring responde 415 sin cuerpo ApiError propio, es el canon, no se persigue 400 aqui |
+| `TC14-H02` | `CONTENT-TIPO-ERRONEO` | `POST` | `/api/listas-espera` | `SEMILLA-VACIA` | CONTENIDO `CONTENIDO_NO_ACEPTADO` | enviar el alta como text/plain. La conjetura daba por bueno el 415 sin cuerpo de Spring, al ejecutarla salio un defecto real: el catch-all de Exception del advice de la cola se comia la HttpMediaTypeNotSupportedException y respondia 500 ERROR_INTERNO. Arreglado con un manejador especifico que sirve el 415 con el codigo estable CONTENIDO_NO_ACEPTADO, la convencion que D35 fijo en los demas modulos (D25) |
 | `TC14-H03` | `QUERY-CON-PARAMS-EN-ALTA` | `POST` | `/api/listas-espera?pruebaCodigo=api-prueba` | `SEMILLA-VACIA` | INVALIDOS `DATOS_INVALIDOS` | intentar colar los obligatorios por query en lugar de cuerpo: el alta solo lee el cuerpo, asi que faltan y es 400, si alguna vez diera 201, HALLAZGO |
 | `TC14-H04` | `PRIORIDAD-INVENTADA-EN-ALTA` | `POST` | `/api/listas-espera` | `SEMILLA-VACIA` | CREADO | prioridad=' URGENTE ' con espacios y minusculas: canon de CDU06, se recorta y normaliza, la cola la sirve como URGENTE en la cuspide |
 | `TC14-H05` | `COLISION-RUTA-VARIABLE` | `POST` | `/api/listas-espera/auditoria-verificable/prioridad` | `SEMILLA-VACIA` | INVALIDOS `DATOS_INVALIDOS` | usar la palabra auditoria-verificable como esperaId en la ruta de prioridad: el metodo coincide (todo en cola es POST) y la colision cae en el path variable de UUID, que la rechaza con 400 DATOS_INVALIDOS (HALLAZGO 3 de CDU19, corregido en CDU12: MAL_FORMATADO es INVALIDOS, no NO_ENCONTRADA), con PUT en cambio Spring daria 405 antes de mirar el UUID |
-| `TC14-H06` | `FILTRO-CON-PARAM-REPETIDO` | `GET` | `/api/listas-espera?pruebaCodigo=api-prueba&pruebaCodigo=api-otra` | `SEMILLA-MIXTA` | OK | el cliente manda el mismo filtro dos veces con valores distintos: Spring se queda con el primer valor (canon MultiValueMap), se sirve la cola de api-prueba y no hay 500 (es la trampa del diseno: al reves, esta fila estaria en rojo) |
+| `TC14-H06` | `FILTRO-CON-PARAM-REPETIDO` | `GET` | `/api/listas-espera?pruebaCodigo=api-prueba&pruebaCodigo=api-otra` | `SEMILLA-MIXTA` | FILTRO_INVALIDO `DATOS_INVALIDOS` | el cliente manda el mismo filtro dos veces con valores distintos: la conjetura de que Spring guarda el primer valor era falsa, al atar el parametro repetido a un String junta los dos (api-prueba,api-otra) y esa prueba conjunta no esta en el catalogo: 400 DATOS_INVALIDOS como cualquier filtro fuera de catalogo. Lo que si se confirma es que no hay 500 y la cola queda intacta |
 | `TC14-H07` | `PRUEBA-FUERA-DE-CATALOGO-EN-FILTRO` | `GET` | `/api/listas-espera?pruebaCodigo=NO-EXISTE` | `SEMILLA-MIXTA` | FILTRO_INVALIDO `DATOS_INVALIDOS` | filtrar por una prueba que no esta en el catalogo: se prefiere 400 DATOS_INVALIDOS a servir una cola vacia que parece legitima (precedencia fijada en la nota de la tabla A, el 404 se reserva para el alta, donde la prueba si es una referencia que falta) |
 | `TC14-H08` | `ESTADO-ABSURDO-EN-FILTRO` | `GET` | `/api/listas-espera?estado=VOLANDO` | `SEMILLA-MIXTA` | INVALIDOS `DATOS_INVALIDOS` | estado=VOLANDO en el filtro: 400, nunca una cola vacia que miente (leccion de CDU12 TC12-07) |
 | `TC14-H09` | `COLISION-RUTA-LITERAL` | `GET` | `/api/listas-espera/auditoria-verificable` | `SEMILLA-VACIA` | OK | GET /api/listas-espera/auditoria-verificable: el segmento literal no debe ser secuestrado por la ruta /{esperaId}, Spring da prioridad al literal y responde la verificacion, no un 400 por UUID ilegible (es la trampa del diseno: al reves, esta fila estaria en rojo) |
@@ -591,33 +592,4 @@ mvn -B -ntp -pl iso2-citas -am test
 ```
 
 Los CSV de trabajo estan en `docs/test/iter07/` y su copia en el classpath de pruebas (`iso2-citas/src/test/resources/tdop/`) es identica: el generador las escribe a la vez.
-
-La matriz la ejecuta `Cdu14MatrizTdopTest` en `iso2-citas` (aislado, sin Spring Security, como
-`Cdu12MatrizTdopTest`). Notas del ejecutor, para releer la matriz sin sorpresa:
-
-- **Semillas por la puerta de entrada.** Todo lo que se siembra entra por `POST /api/listas-espera`
-  (y por `/{esperaId}/prioridad|retirar|asignar`), sin repositorios: la peticion de alta admite
-  `fechaSolicitud`, asi que las marcas de tiempo son explicitas y la matriz da el mismo resultado a
-  cualquier hora del dia.
-- **Pacientes.** `PAC_DUPL` y `PAC_OTRO` no cambian el paciente: el identificador canonico es uno
-  solo, y la clave `pacienteId|pruebaCodigo` se dispara por la otra mitad cambiando el codigo de
-  prueba (canon del curso: un unico paciente de integracion).
-- **Genesis virtual.** No hay fila genesis en `espera_auditoria` (el nacimiento de la cola no es una
-  peticion): el primer eslabon real enlaza con el genesis virtual, y las cadenas esperadas se anotan
-  por entrada como `GENESIS,ALTA,...`. El ejecutor re-encadena los eslabones de cada entrada con
-  `AuditoriaEspera.cadenaIntegra`, la misma comprobacion que hace `auditoria-verificable`.
-- **`SEMILLA-SOLO`** (tabla G) es un mundo vacio: con genesis virtual no hay fila que sembrar.
-  `SEMILLA-CON-RETIRO` y `SEMILLA-SOLO` son los nombre cortos de `SEMILLA-COLA-CON-RETIRO` y
-  `SEMILLA-COLA-SOLO`.
-- **Empates y posiciones.** Las filas con empates (A03, D01-D08, F51-F56) no escriben un orden
-  literal: el ejecutor ordena el estado real leido del server con el comparador del dominio
-  (`ListaEspera.porOrdenDeEspera`) y compara esa secuencia con la servida, ademas de exigir dos
-  lecturas identicas y posiciones 1..n. El desempate por `esperaId` (UUID) es determinista dentro de
-  cada ejecucion: lo que se promueve a invariante es que el orden sea total y estable.
-- **Ataques de manipulacion (`SEM-TAMPER`).** Se sembraria la cadena limpia y despues se rompe a mano
-  con los hooks de prueba de `AuditoriaEspera` (`setMotivoParaPruebas`, `setHashParaPruebas`):
-  `ENLAZE` reescribe el motivo de un eslabon (su hash ya no encaja con el que firmo el siguiente),
-  `REORDEN` invierte dos eslabones de una cadena larga (los enlaces se rompen en medio) y `BORRADO`
-  elimina un eslabon central (`espera_auditoria` no tiene FK de estructura: la rotura se descubre por
-  encadenado, que es precisamente lo que promete la verificacion).
 

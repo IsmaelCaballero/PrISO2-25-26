@@ -201,8 +201,8 @@
     },
     "CONTENIDO": {
       "http": 415,
-      "codigo": "-",
-      "descripcion": "Content-Type no JSON en un endpoint con @RequestBody: lo resuelve Spring y no pasa por el consejo del modulo, asi que no hay cuerpo ApiError"
+      "codigo": "CONTENIDO_NO_ACEPTADO",
+      "descripcion": "Content-Type no JSON en un endpoint con @RequestBody: la conjetura de que Spring lo resolvia sin pasar por el consejo del modulo era falsa, el catch-all de Exception se lo comia y salia 500. Lleva manejador especifico en el advice y el codigo estable CONTENIDO_NO_ACEPTADO que D35 fijo para el resto de modulos (D25)"
     },
     "METODO": {
       "http": 405,
@@ -2456,8 +2456,8 @@
         "ruta": "/api/listas-espera",
         "setup": "SEMILLA-VACIA",
         "esperadoStatus": "CONTENIDO",
-        "esperadoCodigo": "-",
-        "nota": "enviar el alta como text/plain: Spring responde 415 sin cuerpo ApiError propio; es el canon, no se persigue 400 aqui"
+        "esperadoCodigo": "CONTENIDO_NO_ACEPTADO",
+        "nota": "enviar el alta como text/plain. La conjetura daba por bueno el 415 sin cuerpo de Spring; al ejecutarla salio un defecto real: el catch-all de Exception del advice de la cola se comia la HttpMediaTypeNotSupportedException y respondia 500 ERROR_INTERNO. Arreglado con un manejador especifico que sirve el 415 con el codigo estable CONTENIDO_NO_ACEPTADO, la convencion que D35 fijo en los demas modulos (D25)"
       },
       {
         "ataque": "QUERY-CON-PARAMS-EN-ALTA",

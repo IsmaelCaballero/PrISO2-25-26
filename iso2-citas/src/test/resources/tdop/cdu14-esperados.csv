@@ -15,6 +15,6 @@ REDUNDANTE;409;CONFLICTO_REUBICACION_REDUNDANTE;segunda capa del doble clic: la 
 HUECO_OCUPADO;409;CONFLICTO_HUECO_OCUPADO;el hueco pedido ya esta reservado: lo decide la base de datos por UNIQUE (profesional_id, inicio) y el @Version
 FUERA_DE_FRANJA;409;CONFLICTO_FUERA_DE_FRANJA;la cita no cabe entera en una franja del profesional (antes de abrir, despues de cerrar o en festivo), y tambien cuando el profesional no tiene agenda: sin agenda no hay ninguna franja donde quepa el hueco
 UN_OK_Y_OTRO_409;201;-;dos pulsaciones concurrentes: exactamente una termina en exito y la otra en conflicto (409 o 500 por optimista). El TC comprueba el multiset de codigos, no cual gano
-CONTENIDO;415;-;Content-Type no JSON en un endpoint con @RequestBody: lo resuelve Spring y no pasa por el consejo del modulo, asi que no hay cuerpo ApiError
+CONTENIDO;415;CONTENIDO_NO_ACEPTADO;Content-Type no JSON en un endpoint con @RequestBody: la conjetura de que Spring lo resolvia sin pasar por el consejo del modulo era falsa, el catch-all de Exception se lo comia y salia 500. Lleva manejador especifico en el advice y el codigo estable CONTENIDO_NO_ACEPTADO que D35 fijo para el resto de modulos (D25)
 METODO;405;-;metodo no mapeado sobre una ruta si existe: lo resuelve Spring sin cuerpo ApiError
 RUTA_INEXISTENTE;404;-;ruta fuera del mapa del modulo: el 404 lo resuelve Spring y tampoco lleva cuerpo ApiError
