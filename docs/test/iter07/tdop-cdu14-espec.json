@@ -1589,7 +1589,7 @@
       {
         "secuencia": "ALTA_RETIRAR_ALTA",
         "setup": "SEMILLA-VACIA",
-        "esperadoStatus": "OK",
+        "esperadoStatus": "CREADO",
         "esperadoCodigo": "-",
         "esperadoEslabones": "GENESIS,ALTA,RETIRADA / GENESIS,ALTA",
         "esperadoCola": "1 ACTIVA + 1 RETIRADA",
@@ -1599,7 +1599,7 @@
       {
         "secuencia": "ALTA_ASIGNAR_ALTA",
         "setup": "SEMILLA-VACIA",
-        "esperadoStatus": "OK",
+        "esperadoStatus": "CREADO",
         "esperadoCodigo": "-",
         "esperadoEslabones": "GENESIS,ALTA,ASIGNACION / GENESIS,ALTA",
         "esperadoCola": "1 ACTIVA + 1 ASIGNADA",
@@ -1689,7 +1689,7 @@
       {
         "secuencia": "ALTA_ALTA_DISTINTOS",
         "setup": "SEMILLA-VACIA",
-        "esperadoStatus": "OK",
+        "esperadoStatus": "CREADO",
         "esperadoCodigo": "-",
         "esperadoEslabones": "GENESIS,ALTA / GENESIS,ALTA",
         "esperadoCola": "2 ACTIVA",
