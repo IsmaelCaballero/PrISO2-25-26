@@ -1,6 +1,6 @@
 id;caso;setup;esperadoStatus;esperadoCodigo;esperadoVerificable;esperadoEslabones;nota
 TC14-G01;ALTA_PURA;SEMILLA-COLA-TRES;OK;-;true;GENESIS,ALTA;el alta crea el primer eslabon real y enlaza con el genesis de la cola, igual que el genesis de cita_auditoria en CDU12
-TC14-G02;CON_REUBICACION;SEMILLA-COLA-EMPALTE-BC;OK;-;true;GENESIS,ALTA,REUBICACION;REUBICACION no existe en AccionAuditoria de CDU12: se anade a la cadena de cola sin romper la tabla de citas (D30)
+TC14-G02;CON_REUBICACION;SEMILLA-CON-REUBICACION;OK;-;true;GENESIS,ALTA,REUBICACION;REUBICACION no existe en AccionAuditoria de CDU12: se anade a la cadena de cola sin romper la tabla de citas (D30), la reubicacion la hace el propio setup, que es una sola entrada para que la secuencia de acciones de la tabla sea la que se afirma
 TC14-G03;CON_RETIRADA;SEMILLA-CON-RETIRO;OK;-;true;GENESIS,ALTA,REUBICACION,RETIRADA;el eslabon RETIRADA guarda el motivo en el propio hash y deja la entrada terminal, despues de retirar ya no se puede reubicar: la columna de reubicacion final devuelve NO_ACTIVA
 TC14-G04;MANIPULA-CONTENIDO;SEM-TAMPER:ENLAZE;OK;-;false;-;se cambia el motivo de un eslabon ya guardado desde el repositorio: la cadena se rompe en ese eslabon y la verificacion global dice false (conjetura: recompute el hash o corte la cadena)
 TC14-G05;MANIPULA-BORRADO;SEM-TAMPER:BORRADO;OK;-;false;-;se borra un eslabon intermedio: el hash del siguiente queda huerfano y la verificacion debe detectarlo como rotura, no como hueco tolerable

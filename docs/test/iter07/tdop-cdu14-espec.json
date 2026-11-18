@@ -81,6 +81,7 @@
     "SEMILLA-COLA-TRES": "cola canonicA de tres entradas ACTIVA etiquetadas A (URGENTE, t1), B (PREFERENTE, t2) y C (ORDINARIA, t3), las tres de api-paciente con api-prueba y marcas de tiempo ordenadas",
     "SEMILLA-COLA-EMPALTE-BC": "como SEMILLA-COLA-TRES pero B y C comparten marca de tiempo gemela: el desempate por esperaId es lo unico que rompe el empate",
     "SEMILLA-COLA-CON-RETIRO": "A RETIRADA mas B PREFERENTE y C ORDINARIA activas: la cola activa se renumera porque la posicion se calcula",
+    "SEMILLA-CON-REUBICACION": "una unica entrada etiquetada SEM, de api-paciente con api-prueba, creada en ORDINARIA y despues reubicada a URGENTE con motivo: es la montura de la cadena con eslabon REUBICACION, porque en SEMILLA-COLA-EMPALTE-BC cualquier reubicacion legal cambiaria la cola que esperan TC14-D10 y TC14-D11",
     "SEMILLA-COLA-TERMINALES": "A ACTIVA URGENTE, B ASIGNADA (cita en 09:00) PREFERENTE y C RETIRADA ORDINARIA: montura de los rechazos por estado terminal",
     "SEMILLA-COLA-SOLO": "una sola entrada C ORDINARIA ACTIVA: reubicar en una cola unitaria y comprobar que la posicion 1 sigue saliendo en el JSON",
     "SEMILLA-DUP": "entrada ACTIVA de api-paciente con api-prueba sembrada ANTES del alta que se va a pedir: el alta es repetido (doble clic de alta)",
@@ -2322,12 +2323,12 @@
       },
       {
         "caso": "CON_REUBICACION",
-        "setup": "SEMILLA-COLA-EMPALTE-BC",
+        "setup": "SEMILLA-CON-REUBICACION",
         "esperadoStatus": "OK",
         "esperadoCodigo": "-",
         "esperadoVerificable": "true",
         "esperadoEslabones": "GENESIS,ALTA,REUBICACION",
-        "nota": "REUBICACION no existe en AccionAuditoria de CDU12: se anade a la cadena de cola sin romper la tabla de citas (D30)"
+        "nota": "REUBICACION no existe en AccionAuditoria de CDU12: se anade a la cadena de cola sin romper la tabla de citas (D30); la reubicacion la hace el propio setup, que es una sola entrada para que la secuencia de acciones de la tabla sea la que se afirma"
       },
       {
         "caso": "CON_RETIRADA",
@@ -2490,9 +2491,9 @@
         "metodo": "GET",
         "ruta": "/api/listas-espera?pruebaCodigo=api-prueba&pruebaCodigo=api-otra",
         "setup": "SEMILLA-MIXTA",
-        "esperadoStatus": "OK",
-        "esperadoCodigo": "-",
-        "nota": "el cliente manda el mismo filtro dos veces con valores distintos: Spring se queda con el primer valor (canon MultiValueMap), se sirve la cola de api-prueba y no hay 500 (es la trampa del diseno: al reves, esta fila estaria en rojo)"
+        "esperadoStatus": "FILTRO_INVALIDO",
+        "esperadoCodigo": "DATOS_INVALIDOS",
+        "nota": "el cliente manda el mismo filtro dos veces con valores distintos: la conjetura de que Spring guarda el primer valor era falsa, al atar el parametro repetido a un String junta los dos (api-prueba,api-otra) y esa prueba conjunta no esta en el catalogo: 400 DATOS_INVALIDOS como cualquier filtro fuera de catalogo. Lo que si se confirma es que no hay 500 y la cola queda intacta"
       },
       {
         "ataque": "PRUEBA-FUERA-DE-CATALOGO-EN-FILTRO",

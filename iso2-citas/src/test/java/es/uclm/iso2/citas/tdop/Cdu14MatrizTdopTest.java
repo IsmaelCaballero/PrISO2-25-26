@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.uclm.iso2.citas.dominio.AuditoriaCitas;
 import es.uclm.iso2.citas.dominio.AuditoriaEspera;
 import es.uclm.iso2.citas.dominio.CitaHueco;
 import es.uclm.iso2.citas.dominio.ListaEspera;
@@ -28,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -868,6 +870,128 @@ class Cdu14MatrizTdopTest {
     }
 
     // ------------------------------------------------------------------
+    // Tabla C (cdu14-operaciones.csv): cobertura de las operaciones de la cola
+    // ------------------------------------------------------------------
+
+    static Stream<Fila> filasOperaciones() {
+        return filas("cdu14-operaciones.csv");
+    }
+
+    /**
+     * Una fila de la tabla C: cada operacion de CDU14 sobre las tres terminales de la maquina y
+     * sobre una entrada que no existe. El id se resuelve por el estado de entrada, que es la
+     * columna que nombra el objetivo en esta tabla; NINGUNA pide un UUID sembrado nunca. Cuando
+     * la fila lleva REDUNDANTE la operacion se da dos veces: las dos deben anunciar el mismo
+     * esperado, que es lo que significa que la repeticion no corrompa nada.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasOperaciones")
+    void operacionDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f);
+        boolean sinEntrada = "NINGUNA".equals(f.get("estadoEntrada"));
+        String esperaId = sinEntrada ? UUID.randomUUID().toString() : idSembrado("OBJ");
+        String cadenaAntes = sinEntrada ? null : cadenaDe(esperaId);
+        MvcResult r = ejecutar(f, esperaId);
+        if (esRedundante(f)) {
+            verificar(f, r);
+            r = ejecutar(f, esperaId);
+        }
+        verificar(f, r);
+        if (cadenaAntes != null) {
+            assertThat(cadenaDe(esperaId))
+                    .as("%s: la operacion escribe justo el eslabon que le toca", f.id())
+                    .isEqualTo(cadenaAntes + eslabonDe(f));
+        }
+    }
+
+    /** La operacion que prueba la fila, armada con los tokens del mundo de pruebas. */
+    private MvcResult ejecutar(Fila f, String esperaId) throws Exception {
+        return switch (f.get("operacion")) {
+            case "DETALLE_ESPERA" -> req(get(BASE + "/" + esperaId));
+            case "AUDITORIA_ESPERA" -> req(get(BASE + "/" + esperaId + "/auditoria"));
+            // la verificacion de la cadena es global: es el path fijo del controlador, que en Spring
+            // gana al path variable y por eso la entrada de la fila no entra en la url
+            case "AUDITORIA_VERIFICABLE" -> req(get(BASE + "/auditoria-verificable"));
+            case "PRIORIDAD" -> cambiarPrioridad(esperaId, prioridadPedida(f), "ajuste de la matriz");
+            case "RETIRAR" -> retirar(esperaId, "retirada de la matriz");
+            case "ASIGNAR" -> asignar(esperaId, PruebasCitas.PROF_MEDICO, inicioDe(f), null);
+            default -> throw new IllegalStateException(
+                    "operacion sin resolver: " + f.get("operacion") + " en " + f.id());
+        };
+    }
+
+    /**
+     * La prioridad que pide una fila PRIORIDAD: SUBIR pide el escalon mas alto que la maquina
+     * acepta y BAJAR el mas bajo, porque lo que se prueba aqui es que la operacion va bien; el
+     * orden resultante lo afirman las filas de la tabla D, que llevan la cola escrita.
+     */
+    private String prioridadPedida(Fila f) {
+        String pedida = tokenValor(f, "SEM-PRI:");
+        if (pedida == null) {
+            return "URGENTE";
+        }
+        return switch (pedida) {
+            case "SUBIR" -> "URGENTE";
+            case "BAJAR" -> "ORDINARIA";
+            default -> throw new IllegalStateException(
+                    "SEM-PRI sin resolver: " + pedida + " en " + f.id());
+        };
+    }
+
+    /**
+     * La prioridad con la que hay que sembrar la entrada para que la reubicacion de la fila sea
+     * un cambio real: si se sembrara en el escalon que despide, el servicio responderia
+     * CONFLICTO_REUBICACION_REDUNDANTE y la fila feliz quedaria sin probar.
+     */
+    private String prioridadSembrada(Fila f) {
+        String pedida = tokenValor(f, "SEM-PRI:");
+        if (pedida == null) {
+            return "URGENTE";
+        }
+        return switch (pedida) {
+            case "SUBIR" -> "ORDINARIA";
+            case "BAJAR" -> "URGENTE";
+            default -> throw new IllegalStateException(
+                    "SEM-PRI sin resolver: " + pedida + " en " + f.id());
+        };
+    }
+
+    /** Valor del token {@code PREFIJO:valor} del setup de la fila, o null si la fila no lo lleva. */
+    private String tokenValor(Fila f, String prefijo) {
+        for (String bruto : f.get("setup").split(",")) {
+            String s = bruto.trim();
+            if (s.startsWith(prefijo)) {
+                return s.substring(prefijo.length());
+            }
+        }
+        return null;
+    }
+
+    /** true cuando la fila pide repetir la operacion antes de afirmar el esperado. */
+    private boolean esRedundante(Fila f) {
+        for (String bruto : f.get("setup").split(",")) {
+            if ("REDUNDANTE".equals(bruto.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Eslabon que debe anadir la operacion a la cadena de la cola; ninguno si se rechaza. */
+    private String eslabonDe(Fila f) {
+        boolean exito = "OK".equals(f.get("esperadoStatus")) || "ASIGNADO".equals(f.get("esperadoStatus"));
+        if (!exito) {
+            return "";
+        }
+        return switch (f.get("operacion")) {
+            case "PRIORIDAD" -> ",REUBICACION";
+            case "RETIRAR" -> ",RETIRADA";
+            case "ASIGNAR" -> ",ASIGNACION";
+            default -> "";
+        };
+    }
+
+    // ------------------------------------------------------------------
     // Tabla F (cdu14-asignar.csv): asignacion desde la cola
     // ------------------------------------------------------------------
 
@@ -975,6 +1099,256 @@ class Cdu14MatrizTdopTest {
     }
 
     // ------------------------------------------------------------------
+    // Tabla G (cdu14-auditoria.csv): la cadena de auditoria de la cola
+    // ------------------------------------------------------------------
+
+    static Stream<Fila> filasAuditoria() {
+        return filas("cdu14-auditoria.csv");
+    }
+
+    /**
+     * Las 12 filas de la cadena. El setup monta la historia y, en las tres de manipulacion, la rompe
+     * a mano desde el repositorio. La operacion que se afirma con el status de la fila es la
+     * verificacion global, salvo en las tres que cierran el doble clic y el motivo obligatorio, que
+     * afirman la operacion rechazada. Despues se comprueban las dos salidas de la puerta de no
+     * repudio: el balance global que sirve {@code /auditoria-verificable} y la cadena de la entrada
+     * afectada, re-encadenada por el ejecutor tal y como la re-encadena el servicio.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasAuditoria")
+    void auditoriaDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f);
+        String alias = protagonistaDe(f);
+        String esperaId = alias == null ? null : idSembrado(alias);
+        String cadenaAntes = esperaId == null ? null : cadenaDe(esperaId);
+        verificar(f, accionDeAuditoria(f, esperaId));
+        verificarBalanceGlobal(f);
+        String esperada = f.get("esperadoEslabones");
+        if (esperaId == null) {
+            assertThat(esperada).as("%s: sin entradas solo esta el genesis virtual", f.id())
+                    .isEqualTo(GENESIS);
+            assertThat(auditoriasEspera.count()).as("%s: la cadena de la cola no tiene eslabones", f.id())
+                    .isZero();
+        } else if (!"-".equals(esperada)) {
+            assertThat(cadenaDe(esperaId))
+                    .as("%s: la cadena de %s es la que anuncia la matriz", f.id(), alias)
+                    .isEqualTo(esperada);
+        } else if (f.get("setup").contains("SEM-TAMPER")) {
+            assertThat(cadenaDe(esperaId))
+                    .as("%s: la lectura de la cadena es lo que deja el ataque", f.id())
+                    .isEqualTo(cadenaTrasAtaque(f));
+        } else {
+            assertThat(cadenaDe(esperaId))
+                    .as("%s: lo que se rechazo no escribe eslabon", f.id())
+                    .isEqualTo(cadenaAntes);
+        }
+        if ("SOLO-GENESIS".equals(f.get("caso"))) {
+            verificarEsperado(f.id(), "NO_ENCONTRADA", "-",
+                    req(get(BASE + "/" + UUID.randomUUID() + "/auditoria")));
+        }
+        if ("CADENAS-INDEPENDIENTES".equals(f.get("caso"))) {
+            verificarCadenasSeparadas(f);
+        }
+    }
+
+    /**
+     * La operacion cuyo status afirma la fila G: la verificacion global, que es la salida de la
+     * puerta, o la operacion rechazada en las tres filas que miran lo que la auditoria no debe tragar.
+     */
+    private MvcResult accionDeAuditoria(Fila f, String esperaId) throws Exception {
+        return switch (f.get("caso")) {
+            case "RETIRADA-SIN-MOTIVO" -> retirar(esperaId, null);
+            case "REUBICAR-TERMINAL" -> cambiarPrioridad(esperaId, "URGENTE", "reubicar una terminal");
+            case "PRIORIDAD-REPETIDA" -> cambiarPrioridad(esperaId, "URGENTE", "doble clic de reubicacion");
+            default -> req(get(BASE + "/auditoria-verificable"));
+        };
+    }
+
+    /** Entrada cuya cadena afirma la fila: SEM es la protagonista de G y si no, la primera sembrada. */
+    private String protagonistaDe(Fila f) {
+        if (idsSembrados.containsKey("SEM")) {
+            return "SEM";
+        }
+        return idsSembrados.keySet().stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Cadena que debe quedar despues de romperla a mano. La matriz anota "-" en los tres ataques
+     * porque lo que se afirma ahi es que la verificacion global dice {@code false}; la secuencia de
+     * acciones que se lee por HTTP es la consecuencia de cada rotura sobre la cadena limpia que
+     * {@code SEM-TAMPER} acaba de escribir: alterar el contenido no la cambia, borrar el eslabon del
+     * medio lo quita e invertir dos enlaces los cambia de sitio.
+     */
+    private String cadenaTrasAtaque(Fila f) {
+        List<String> eslabones = new ArrayList<>(Arrays.asList(CADENA_TAMPER.split(",")));
+        String montaje = f.get("setup");
+        String rotura = montaje.substring(montaje.indexOf("SEM-TAMPER:") + "SEM-TAMPER:".length());
+        switch (rotura) {
+            case "ENLAZE" -> {
+                // el contenido alterado sigue firmando la misma accion
+            }
+            case "BORRADO" -> eslabones.remove(2);
+            case "REORDEN" -> Collections.swap(eslabones, 2, 3);
+            default -> throw new IllegalStateException("SEM-TAMPER sin resolver: " + rotura + " en " + f.id());
+        }
+        return String.join(",", eslabones);
+    }
+
+    /**
+     * El balance global de la cadena. El token {@code esperadoVerificable} se afirma sobre
+     * {@code integracion}, y el recuento y el ultimo hash se comprueban contra la tabla: si el
+     * servicio dijera INTEGRAL sobre una cadena que el dominio encuentra rota, la fila se pone roja.
+     */
+    private void verificarBalanceGlobal(Fila f) throws Exception {
+        boolean integra = "true".equals(f.get("esperadoVerificable"));
+        JsonNode balance = cuerpo(req(get(BASE + "/auditoria-verificable")));
+        List<AuditoriaEspera> cadena = auditoriasEspera.findAllByOrderByIdAsc();
+        assertThat(balance.path("integracion").asText())
+                .as("%s: el balance global de la cadena", f.id())
+                .isEqualTo(integra ? "CADENA_INTEGRAL" : "CADENA_MANIPULADA");
+        assertThat(AuditoriaEspera.cadenaIntegra(cadena))
+                .as("%s: el dominio y el controlador ven la misma cadena", f.id())
+                .isEqualTo(integra);
+        assertThat(balance.path("totalAsientos").asLong())
+                .as("%s: el balance cuenta los eslabones que hay en la tabla", f.id())
+                .isEqualTo(cadena.size());
+        String ultimo = cadena.isEmpty() ? "" : cadena.get(cadena.size() - 1).getHash();
+        assertThat(balance.path("hashUltimo").asText())
+                .as("%s: el balance da el hash del ultimo eslabon", f.id())
+                .isEqualTo(ultimo);
+    }
+
+    /** TC14-G08: la cita nacida de la cola abre su propia cadena y ninguna de las dos ve a la otra. */
+    private void verificarCadenasSeparadas(Fila f) {
+        List<AuditoriaCitas> cadenaCita = auditoriasCitas.findAllByOrderByIdAsc();
+        assertThat(cadenaCita).as("%s: la cita escribe en su propia tabla", f.id()).isNotEmpty();
+        assertThat(AuditoriaCitas.cadenaIntegra(cadenaCita))
+                .as("%s: la cadena de citas verifica por su cuenta", f.id())
+                .isTrue();
+        Set<String> hashesDeCitas = new HashSet<>();
+        for (AuditoriaCitas asiento : cadenaCita) {
+            hashesDeCitas.add(asiento.getHash());
+        }
+        for (AuditoriaEspera eslabon : auditoriasEspera.findAllByOrderByIdAsc()) {
+            assertThat(hashesDeCitas)
+                    .as("%s: ningun eslabon de la cola pertenece a la cadena de citas", f.id())
+                    .doesNotContain(eslabon.getHash());
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Tabla H (cdu14-conjetura.csv): conjeturas de ataque por la capa HTTP
+    // ------------------------------------------------------------------
+
+    static Stream<Fila> filasConjetura() {
+        return filas("cdu14-conjetura.csv");
+    }
+
+    /**
+     * Las 13 conjeturas: se manda exactamente la peticion que anuncia la tabla, con el metodo y la
+     * ruta de sus columnas, y se comprueba lo que la matriz cree que pasa. Son conjeturas, asi que la
+     * fila se pone roja cuando el sistema desmiente a la matriz: ahi se decide si el hallazgo es del
+     * codigo o de la especificacion, y nunca se adapta el ejecutor a la respuesta que dio el server.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasConjetura")
+    void conjeturaDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f);
+        MvcResult r = ataque(f);
+        verificar(f, r);
+        switch (f.get("ataque")) {
+            case "PRIORIDAD-INVENTADA-EN-ALTA" -> {
+                JsonNode cola = cuerpo(req(get(BASE).param("pruebaCodigo", PruebasCitas.PRUEBA)));
+                assertThat(cola.size()).as("%s: la entrada normalizada si esta en la cola", f.id())
+                        .isEqualTo(1);
+                assertThat(cola.get(0).path("prioridad").asText())
+                        .as("%s: la prioridad se guarda recortada y en mayusculas", f.id())
+                        .isEqualTo("URGENTE");
+            }
+            case "FILTRO-CON-PARAM-REPETIDO" -> {
+                assertThat(cuerpo(r).path("codigo").asText())
+                        .as("%s: el rechazo es el ApiError del contrato, no una cola", f.id())
+                        .isEqualTo("DATOS_INVALIDOS");
+                JsonNode cola = cuerpo(req(get(BASE).param("pruebaCodigo", PruebasCitas.PRUEBA)));
+                assertThat(cola.size()).as("%s: el filtro rechazado no toca la cola", f.id())
+                        .isEqualTo(3);
+            }
+            case "COLISION-RUTA-LITERAL" -> assertThat(cuerpo(r).has("integracion"))
+                    .as("%s: la ruta literal responde la verificacion, no un 400 por UUID ilegible",
+                            f.id())
+                    .isTrue();
+            case "DOBLE-ASIGNAR" -> assertThat(citas.count())
+                    .as("%s: el segundo golpe no reserva otro hueco ni crea otra cita", f.id())
+                    .isEqualTo(1);
+            default -> {
+                // la conjetura se afirma con el status y el codigo de la fila
+            }
+        }
+    }
+
+    /** La peticion que describe la fila: el metodo y la ruta de las columnas, con el cuerpo del ataque. */
+    private MvcResult ataque(Fila f) throws Exception {
+        String ruta = rutaDe(f);
+        MockHttpServletRequestBuilder peticion = switch (f.get("metodo")) {
+            case "GET" -> get(ruta);
+            case "POST" -> post(ruta);
+            case "DELETE" -> delete(ruta);
+            case "PUT" -> put(ruta);
+            default -> throw new IllegalStateException(
+                    "metodo sin resolver: " + f.get("metodo") + " en " + f.id());
+        };
+        return switch (f.get("ataque")) {
+            case "CUERPO-ILEGIBLE" -> req(peticion.contentType(MediaType.APPLICATION_JSON)
+                    .content("{ esto no es el JSON del alta"));
+            case "CONTENT-TIPO-ERRONEO" -> req(peticion.contentType(MediaType.TEXT_PLAIN)
+                    .content(altaJson("URGENTE")));
+            case "QUERY-CON-PARAMS-EN-ALTA", "ASIGNAR-CON-PARAMS-EN-QUERY" ->
+                    req(peticion.contentType(MediaType.APPLICATION_JSON).content("{}"));
+            case "PRIORIDAD-INVENTADA-EN-ALTA" -> req(peticion.contentType(MediaType.APPLICATION_JSON)
+                    .content(altaJson(" uRGENTE ")));
+            case "COLISION-RUTA-VARIABLE" -> req(peticion.contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"prioridad\":\"URGENTE\",\"motivo\":\"la palabra literal como id\"}"));
+            case "DOBLE-ASIGNAR" -> dobleAsignar(f, ruta);
+            default -> req(peticion);
+        };
+    }
+
+    /** La ruta de la fila con el esperaId en su sitio. */
+    private String rutaDe(Fila f) {
+        String ruta = f.get("ruta");
+        if (!ruta.contains("{esperaId}")) {
+            return ruta;
+        }
+        // H10 ataca la ruta con un id bien formado pero nunca sembrado; H12 y H13 lo hacen sobre una
+        // entrada viva, que es la unica manera de que la maquina de estados tenga algo que rechazar
+        String esperaId = "METODO-NO-DECLARADO".equals(f.get("ataque"))
+                ? UUID.randomUUID().toString()
+                : idSembrado("A");
+        return ruta.replace("{esperaId}", esperaId);
+    }
+
+    /** El doble clic de H13: los dos intentos van seguidos y la fila afirma el ultimo. */
+    private MvcResult dobleAsignar(Fila f, String ruta) throws Exception {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("profesionalId", PruebasCitas.PROF_MEDICO);
+        cuerpo.put("inicio", INICIO_FIJO);
+        String json = mapper.writeValueAsString(cuerpo);
+        paso(f.id(), req(post(ruta).contentType(MediaType.APPLICATION_JSON).content(json)), "ASIGNADO");
+        return req(post(ruta).contentType(MediaType.APPLICATION_JSON).content(json));
+    }
+
+    /** Cuerpo del alta para los ataques de contenido: el mismo que sembraria una fila normal. */
+    private String altaJson(String prioridad) throws Exception {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("pacienteId", "api-paciente");
+        cuerpo.put("pruebaCodigo", PruebasCitas.PRUEBA);
+        cuerpo.put("profesionalId", PruebasCitas.PROF_MEDICO);
+        cuerpo.put("prioridad", prioridad);
+        cuerpo.put("fechaSolicitud", T1);
+        return mapper.writeValueAsString(cuerpo);
+    }
+
+    // ------------------------------------------------------------------
     // Setup: el mundo de cada fila se siembra por la propia API HTTP
     // ------------------------------------------------------------------
 
@@ -1050,6 +1424,10 @@ class Cdu14MatrizTdopTest {
                     cambiarPrioridad(idSembrado("SEM"), "URGENTE", "reubicacion de siembra");
                     retirar(idSembrado("SEM"), "retirada de siembra");
                 }
+                case "SEMILLA-CON-REUBICACION" -> {
+                    alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "ORDINARIA", T1, null);
+                    cambiarPrioridad(idSembrado("SEM"), "URGENTE", "reubicacion de siembra");
+                }
                 case "SEMILLA-CITA-OCUPA" -> {
                     alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
                     asignar(idSembrado("SEM"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
@@ -1057,6 +1435,9 @@ class Cdu14MatrizTdopTest {
                 case "SEM-ESTADO" -> semEstado(valor, f);
                 case "SEM-HUECO-DEST" -> huecoDestino(valor, f);
                 case "SEM-TAMPER" -> tamper(valor, f);
+                case "SEM-PRI" -> {
+                    // la prioridad que se va a pedir la resuelve la fila al ejecutar la operacion
+                }
                 default -> throw new IllegalStateException("setup sin resolver: " + s + " en " + f.id());
             }
         }
@@ -1091,14 +1472,15 @@ class Cdu14MatrizTdopTest {
     /** Deja una entrada en el estado que pide la matriz, con alias OBJ. */
     private void semEstado(String estado, Fila f) throws Exception {
         String solicitud = solicitudDeSiembra(f);
+        String prioridad = prioridadSembrada(f);
         switch (estado) {
-            case "ACTIVA" -> alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, solicitud);
+            case "ACTIVA" -> alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, prioridad, T1, solicitud);
             case "ASIGNADA" -> {
-                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, solicitud);
+                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, prioridad, T1, solicitud);
                 asignar(idSembrado("OBJ"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
             }
             case "RETIRADA" -> {
-                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, solicitud);
+                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, prioridad, T1, solicitud);
                 retirar(idSembrado("OBJ"), "retirada de siembra");
             }
             default -> throw new IllegalStateException("SEM-ESTADO sin resolver: " + estado);
@@ -1224,12 +1606,66 @@ class Cdu14MatrizTdopTest {
             inicio = inicio.plusMinutes(15);
         }
         LocalDateTime fin = inicio.plusMinutes(PruebasCitas.DURACION);
+        if (huecos.findByProfesionalIdAndInicio(profesional, inicio).isPresent()) {
+            // la propia siembra ya ocupo el tramo al asignar la entrada: el escenario ya esta montado
+            return;
+        }
         huecos.saveAndFlush(new CitaHueco(HUECO_FANTASMA + (++huecosSembrados),
                 profesional, inicio, fin));
     }
 
-    /** Ataques a la cadena de auditoria: los monta la tabla G. */
-    private void tamper(String valor, Fila f) {
-        throw new IllegalStateException("tamper sin montar: " + valor);
+    /** Cadena limpia que escribe {@code SEM-TAMPER} antes de romperla: alta, reubicacion y retirada. */
+    private static final String CADENA_TAMPER = "GENESIS,ALTA,REUBICACION,RETIRADA";
+
+    /**
+     * Ataques a la cadena de auditoria: los monta la tabla G. Primero se escribe una cadena limpia de
+     * tres eslabones para la misma entrada (alta, reubicacion y retirada) y despues se rompe a mano
+     * desde el repositorio, que es lo que haria alguien con acceso a la base de datos. Se usan los
+     * mismos ganchos de pruebas con los que CDU12 rompe su cadena de citas: alterar el contenido de un
+     * eslabon ({@code setMotivoParaPruebas}), borrar el del medio, o volver a escribir dos eslabones
+     * ya firmados en el orden contrario.
+     */
+    private void tamper(String valor, Fila f) throws Exception {
+        alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "ORDINARIA", T1, null);
+        cambiarPrioridad(idSembrado("SEM"), "URGENTE", "reubicacion de siembra");
+        retirar(idSembrado("SEM"), "retirada de siembra");
+        assertThat(cadenaDe(idSembrado("SEM")))
+                .as("%s: el ataque parte de una cadena limpia de tres eslabones", f.id())
+                .isEqualTo(CADENA_TAMPER);
+        List<AuditoriaEspera> asientos = auditoriasEspera.findAllByOrderByIdAsc();
+        if (asientos.size() != 3) {
+            throw new IllegalStateException(f.id() + ": la siembra del ataque dejo " + asientos.size()
+                    + " eslabones en lugar de 3");
+        }
+        switch (valor) {
+            case "ENLAZE" -> {
+                AuditoriaEspera ultimo = asientos.get(2);
+                ultimo.setMotivoParaPruebas("motivo cambiado despues de firmar el eslabon");
+                auditoriasEspera.saveAndFlush(ultimo);
+            }
+            case "BORRADO" -> {
+                auditoriasEspera.delete(asientos.get(1));
+                auditoriasEspera.flush();
+            }
+            case "REORDEN" -> {
+                AuditoriaEspera medio = asientos.get(1);
+                AuditoriaEspera ultimo = asientos.get(2);
+                auditoriasEspera.delete(medio);
+                auditoriasEspera.delete(ultimo);
+                auditoriasEspera.flush();
+                // los dos asientos vuelven a la tabla con su contenido original, pero al reves: el
+                // primero que queda enlazaria con un hash que ya no es el del anterior
+                auditoriasEspera.saveAndFlush(copiaDe(ultimo));
+                auditoriasEspera.saveAndFlush(copiaDe(medio));
+            }
+            default -> throw new IllegalStateException("SEM-TAMPER sin resolver: " + valor + " en " + f.id());
+        }
+    }
+
+    /** Copia un eslabon ya firmado, con su hash y su enlace intactos, para volver a escribirlo. */
+    private static AuditoriaEspera copiaDe(AuditoriaEspera eslabon) {
+        return new AuditoriaEspera(eslabon.getAccion(), eslabon.getEsperaId(), eslabon.getAntes(),
+                eslabon.getDespues(), eslabon.getUsuario(), eslabon.getMotivo(), eslabon.getInstante(),
+                eslabon.getHashAnterior(), eslabon.getHash());
     }
 }
