@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.uclm.iso2.citas.dominio.AuditoriaEspera;
+import es.uclm.iso2.citas.dominio.CitaHueco;
 import es.uclm.iso2.citas.dominio.ListaEspera;
 import es.uclm.iso2.citas.repositorio.AuditoriaCitasRepositorio;
 import es.uclm.iso2.citas.repositorio.AuditoriaEsperaRepositorio;
@@ -109,6 +110,12 @@ class Cdu14MatrizTdopTest {
 
     /** Simbolo -> esperaId real sembrado en la corrida de la fila actual. */
     private final Map<String, String> idsSembrados = new LinkedHashMap<>();
+
+    /** Prefijo de las citas fantasmas que siembran huecos en destinos (reglas 21 y 22). */
+    private static final String HUECO_FANTASMA = "cdu14-hueco-fantasma-";
+
+    /** Cuantas citas fantasma se han sembrado: la columna cita_id es UNIQUE. */
+    private int huecosSembrados;
 
     /** Tabla canonico -> (HTTP, codigo) leida de cdu14-esperados.csv. */
     private static final Map<String, Esperado> ESPERADOS = leerEsperados();
@@ -861,6 +868,113 @@ class Cdu14MatrizTdopTest {
     }
 
     // ------------------------------------------------------------------
+    // Tabla F (cdu14-asignar.csv): asignacion desde la cola
+    // ------------------------------------------------------------------
+
+    static Stream<Fila> filasAsignacion() {
+        return filas("cdu14-asignar.csv");
+    }
+
+    /**
+     * Una fila de la tabla F: POST /{esperaId}/asignar con el cuerpo armado por los tokens.
+     * La precedencia de guardas es la que se prueba fila a fila: la sintaxis del cuerpo (400)
+     * corre antes de mirar si la entrada existe (404), el estado de la cola (409) antes que la
+     * solicitud, y la solicitud antes que las guardas del CDU12 (franja antes que hueco).
+     * La cadena de auditoria solo crece con el ASIGNACION de una asignacion legitima.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasAsignacion")
+    void asignacionDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f);
+        String esperaId = switch (f.get("esperaId")) {
+            case "INEXISTENTE" -> UUID.randomUUID().toString();
+            case "MAL_FORMATADO" -> "no-es-un-uuid";
+            default -> idSembrado("OBJ");
+        };
+        boolean objVivo = idsSembrados.containsValue(esperaId);
+        String cadenaAntes = objVivo ? cadenaDe(esperaId) : null;
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        String profesional = profesionalDe(f);
+        if (profesional != null) {
+            cuerpo.put("profesionalId", profesional);
+        }
+        String inicio = inicioDe(f);
+        if (inicio != null) {
+            cuerpo.put("inicio", inicio);
+        }
+        Integer duracion = duracionDe(f);
+        if (duracion != null) {
+            cuerpo.put("duracionMinutos", duracion);
+        }
+        MvcResult r = req(post(BASE + "/" + esperaId + "/asignar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(cuerpo)));
+        verificar(f, r);
+        if ("ASIGNADO".equals(f.get("esperadoStatus"))) {
+            JsonNode cita = cuerpo(r).path("cita");
+            assertThat(cita.path("citaId").asText()).as("%s: la asignacion pare una cita con id", f.id())
+                    .isNotBlank();
+            assertThat(LocalDateTime.parse(cita.path("inicio").asText()))
+                    .as("%s: la cita nace en la hora pedida", f.id())
+                    .isEqualTo(LocalDateTime.parse(inicio));
+            if (objVivo) {
+                assertThat(cadenaDe(esperaId)).as("%s: la asignacion legitima anade un ASIGNACION", f.id())
+                        .isEqualTo(cadenaAntes + ",ASIGNACION");
+            }
+        } else if (objVivo) {
+            assertThat(cadenaDe(esperaId)).as("%s: una asignacion rechazada no escribe eslabones", f.id())
+                    .isEqualTo(cadenaAntes);
+        }
+    }
+
+    /** El profesional de la fila: VACIO es cadena en blanco, AUSENTE quita la clave. */
+    private String profesionalDe(Fila f) {
+        return switch (f.get("profesional")) {
+            case "MEDICO" -> PruebasCitas.PROF_MEDICO;
+            case "SIN_AGENDA" -> PruebasCitas.PROF_SIN_AGENDA;
+            case "DESCONOCIDO" -> "api-profesional-que-no-existe";
+            case "VACIO" -> "";
+            case "AUSENTE" -> null;
+            default -> throw new IllegalStateException(
+                    "profesional sin resolver: " + f.get("profesional") + " en " + f.id());
+        };
+    }
+
+    /**
+     * El inicio de la fila como texto JSON: AUSENTE quita la clave y MAL_FORMATADO manda texto
+     * donde va un LocalDateTime, que la deserializacion corta con 400 DATOS_INVALIDOS.
+     */
+    private String inicioDe(Fila f) {
+        return switch (f.get("inicio")) {
+            case "AUT" -> INICIO_FIJO;
+            case "APERTURA_JUSTA" -> "2026-11-13T08:00:00";
+            case "CIERRE_LIMITRO" -> "2026-11-13T14:30:00";
+            case "PASADA_CIERRE" -> "2026-11-13T15:00:00";
+            case "FESTIVO" -> "2026-11-10T09:00:00";
+            case "ANTERIOR_APERTURA" -> "2026-11-13T07:00:00";
+            case "DOMINGO" -> "2026-11-15T09:00:00";
+            case "MAL_FORMATADO" -> "manana al mediodia";
+            case "AUSENTE" -> null;
+            default -> throw new IllegalStateException(
+                    "inicio sin resolver: " + f.get("inicio") + " en " + f.id());
+        };
+    }
+
+    /** La duracion en minutos; AUSENTE quita la clave y deja que la fije el catalogo. */
+    private Integer duracionDe(Fila f) {
+        return switch (f.get("duracion")) {
+            case "AUT", "AUSENTE" -> null;
+            case "D30" -> 30;
+            case "D1" -> 1;
+            case "D0" -> 0;
+            case "D_NEGATIVA" -> -5;
+            case "EXCESIVA" -> 600;
+            default -> throw new IllegalStateException(
+                    "duracion sin resolver: " + f.get("duracion") + " en " + f.id());
+        };
+    }
+
+    // ------------------------------------------------------------------
     // Setup: el mundo de cada fila se siembra por la propia API HTTP
     // ------------------------------------------------------------------
 
@@ -940,7 +1054,7 @@ class Cdu14MatrizTdopTest {
                     alta("SEM", "api-paciente", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
                     asignar(idSembrado("SEM"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
                 }
-                case "SEM-ESTADO" -> semEstado(valor);
+                case "SEM-ESTADO" -> semEstado(valor, f);
                 case "SEM-HUECO-DEST" -> huecoDestino(valor, f);
                 case "SEM-TAMPER" -> tamper(valor, f);
                 default -> throw new IllegalStateException("setup sin resolver: " + s + " en " + f.id());
@@ -975,20 +1089,33 @@ class Cdu14MatrizTdopTest {
     }
 
     /** Deja una entrada en el estado que pide la matriz, con alias OBJ. */
-    private void semEstado(String estado) throws Exception {
+    private void semEstado(String estado, Fila f) throws Exception {
+        String solicitud = solicitudDeSiembra(f);
         switch (estado) {
-            case "ACTIVA" -> alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1,
-                    PruebasCitas.SOL_CREADA);
+            case "ACTIVA" -> alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, solicitud);
             case "ASIGNADA" -> {
-                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
+                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, solicitud);
                 asignar(idSembrado("OBJ"), PruebasCitas.PROF_MEDICO, INICIO_FIJO, null);
             }
             case "RETIRADA" -> {
-                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
+                alta("OBJ", "api-paciente-obj", PruebasCitas.PRUEBA, "URGENTE", T1, solicitud);
                 retirar(idSembrado("OBJ"), "retirada de siembra");
             }
             default -> throw new IllegalStateException("SEM-ESTADO sin resolver: " + estado);
         }
+    }
+
+    /**
+     * Solicitud que se enlaza al sembrar con SEM-ESTADO: la fija el token ENLAZE de la fila,
+     * como pide la regla 19 de la especificacion. Sin token se usa la creada de siempre, que
+     * es la que necesitan las filas de tablas que no conocen ENLAZE.
+     */
+    private String solicitudDeSiembra(Fila f) {
+        String enlace = enlaceDe(f);
+        if (enlace == null) {
+            return PruebasCitas.SOL_CREADA;
+        }
+        return token(enlace);
     }
 
     private String idSembrado(String alias) {
@@ -1060,9 +1187,45 @@ class Cdu14MatrizTdopTest {
                 .content(mapper.writeValueAsString(cuerpo)));
     }
 
-    /** Hueco sembrado en el destino de la operacion de la fila: lo resuelve cada tabla. */
+    /** Alias de la agenda fantasma que usa FANTASMA_EXACTO: no es un profesional del mundo API. */
+    private static final String PROF_FANTASMA = "api-otro-profesional";
+
+    /**
+     * Hueco sembrado en el destino de la operacion de la fila: lo resuelve cada tabla. El tipo
+     * se toma de la columna {@code hueco} cuando la tabla la tiene (es el factor que se prueba)
+     * y del token del setup en las tablas que no la describen.
+     */
     private void huecoDestino(String valor, Fila f) {
-        // Se siembra al llegar a la tabla de asignacion, que es la que conoce el inicio.
+        String tipo = f.celdas().containsKey("hueco") ? f.get("hueco") : valor;
+        if ("LIBRE".equals(tipo) || !f.celdas().containsKey("inicio")) {
+            // LIBRE no siembra nada, y las tablas que no describen un destino no tienen hueco que llenar
+            return;
+        }
+        LocalDateTime inicio;
+        try {
+            inicio = LocalDateTime.parse(inicioDe(f));
+        } catch (RuntimeException sinInicio) {
+            // sin un inicio interpretable no hay tramo que sembrar: la fila se corta antes por 400
+            return;
+        }
+        String profesional = f.celdas().containsKey("profesional") ? profesionalDe(f)
+                : PruebasCitas.PROF_MEDICO;
+        if (profesional == null || profesional.isBlank()) {
+            // el hueco es solo decoracion cuando la fila se va a rechazar por falta de profesional
+            profesional = PruebasCitas.PROF_MEDICO;
+        }
+        if (tipo.startsWith("FANTASMA")) {
+            // el hueco debe estar en OTRA agenda: si estuviera en la pedida la asignacion no seria
+            // posible y la regla 22 no tendria sentido, porque la prueba exige seguir ASIGNADO
+            profesional = PROF_FANTASMA;
+        }
+        if ("SOLAPE".equals(tipo)) {
+            // tramo que cae dentro del pedido sin coincidir exactamente con el pedido
+            inicio = inicio.plusMinutes(15);
+        }
+        LocalDateTime fin = inicio.plusMinutes(PruebasCitas.DURACION);
+        huecos.saveAndFlush(new CitaHueco(HUECO_FANTASMA + (++huecosSembrados),
+                profesional, inicio, fin));
     }
 
     /** Ataques a la cadena de auditoria: los monta la tabla G. */
