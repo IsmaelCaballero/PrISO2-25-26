@@ -16,9 +16,10 @@
     <version>1.0.0</version>
   </parent>
   <artifactId>iso2-integracion</artifactId>
-  <!-- CFG-06 (D22/D23): sube MINOR de 1.0.0 a 1.1.0 al implementar CDU19. En la rama
-       feature queda 1.1.0-SNAPSHOT; al fusionar a develop perdera el sufijo. -->
-  <version>1.1.0-SNAPSHOT</version>
+  <!-- CFG-06 (D22/D23): sube MINOR de 1.0.0 a 1.1.0 al implementar CDU19. En CFG-07
+       (Iter7) el tren de contratos sube a 1.2.0-SNAPSHOT y este modulo lo acompana
+       sin cambio funcional; al fusionar a develop perdera el sufijo. -->
+  <version>1.2.0-SNAPSHOT</version>
   <name>iso2-integracion</name>
   <properties>
     <!-- Puerta de calidad CFG-06 (D24/D27): cobertura de linea >= 70 % en el modulo.

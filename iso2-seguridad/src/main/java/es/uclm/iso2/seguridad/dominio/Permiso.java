@@ -11,7 +11,8 @@ import java.util.Optional;
  *
  * <p>En CDU17 (CFG-02) se materializaron los permisos del catalogo (CDU16 ya existente) y
  * la autogestion de seguridad; con CDU13 (CFG-03) se anaden los de agenda y con CDU06
- * (CFG-04) los de solicitudes. Con CDU12 (CFG-05) llegan los de citas. Los permisos de
+ * (CFG-04) los de solicitudes. Con CDU12 (CFG-05) llegan los de citas y con CDU14
+ * (CFG-07) los de listas de espera. Los permisos de
  * los demas dominios (informes) se iran anadiendo con su CDU correspondiente.</p>
  *
  * @since 1.1.0 (CFG-02)
@@ -41,6 +42,12 @@ public enum Permiso {
 
     /** Asignar, reprogramar y cancelar citas (actor Administrativo del CDU12). */
     CITA_ESCRIBIR("cita:escribir"),
+
+    /** Consultar las colas de espera por prueba (llega con CDU14). */
+    LISTA_ESPERA_LEER("lista_espera:leer"),
+
+    /** Reubicar, asignar y retirar entradas de la lista de espera (actor Administrativo del CDU14). */
+    LISTA_ESPERA_ESCRIBIR("lista_espera:escribir"),
 
     /** Consultar el estado de los sistemas externos y la auditoria de integracion (llega con CDU19). */
     INTEGRACION_LEER("integracion:leer"),

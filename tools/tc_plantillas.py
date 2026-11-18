@@ -200,6 +200,16 @@ OPERACIONES_EXTRA = {
         "DETALLE": "GET /api/citas/{id}",
         "BAJA": "DELETE /api/citas/{id}",
         "AUDITORIA": "GET /api/citas/{id}/auditoria",
+        # operaciones de CDU14 (lista de espera): el prefijo ESPERA distingue la cola
+        # de las rutas de cita, y DETALLE_ESPERA evita pisar el DETALLE de citas
+        "ALTA_COLA": "POST /api/listas-espera",
+        "COLA": "GET /api/listas-espera",
+        "DETALLE_ESPERA": "GET /api/listas-espera/{esperaId}",
+        "PRIORIDAD": "POST /api/listas-espera/{esperaId}/prioridad",
+        "ASIGNAR": "POST /api/listas-espera/{esperaId}/asignar",
+        "RETIRAR": "POST /api/listas-espera/{esperaId}/retirar",
+        "AUDITORIA_ESPERA": "GET /api/listas-espera/{esperaId}/auditoria",
+        "AUDITORIA_VERIFICABLE": "GET /api/listas-espera/auditoria-verificable",
     },
     "iso2-integracion": {
         "PING": "GET /api/integracion/sistemas/{sistema}/ping",
@@ -276,7 +286,8 @@ def pasos_de(tabla: dict, fila: dict, factores: list[str], spec: dict) -> str:
         extra = fila.get("rutaExtra", "-")
         if extra not in ("-", ""):
             detalle += ", ruta con %s" % RUTA_EXTRA.get(extra, "`%s`" % extra)
-        estado = fila.get("estadoRecurso", fila.get("estadoCita", "-"))
+        estado = fila.get("estadoRecurso",
+                          fila.get("estadoCita", fila.get("estadoEntrada", "-")))
         if estado not in ("-", "NO_EXISTE", "NO_ENCUENTRA"):
             detalle += " sobre recurso en estado `%s`" % estado
         if fila.get("plazo") not in (None, "-", ""):

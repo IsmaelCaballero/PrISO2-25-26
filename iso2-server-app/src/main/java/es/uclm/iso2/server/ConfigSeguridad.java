@@ -42,6 +42,10 @@ import java.time.Instant;
  *       RECEPCIONISTA); TECNICO y CELADOR quedan fuera por matriz.</li>
  *   <li>Agendar/reprogramar/cancelar citas: solo {@code ADMINISTRADOR} y
  *       {@code RECEPCIONISTA} ({@code cita:escribir}, actor Administrativo del CDU12).</li>
+ *   <li>GET de listas de espera (CDU14): roles con {@code lista_espera:leer}
+ *       (ADMINISTRADOR, MEDICO, RECEPCIONISTA); TECNICO y CELADOR quedan fuera por matriz.</li>
+ *   <li>Alta/reubicacion/asignacion/retirada en la cola: solo {@code ADMINISTRADOR} y
+ *       {@code RECEPCIONISTA} ({@code lista_espera:escribir}, actor Administrativo del CDU14).</li>
  *   <li>Integracion (CDU19, spike): solo {@code ADMINISTRADOR}, lectura y escritura
  *       ({@code integracion:leer}/{@code integracion:escribir}). El spike decide que
  *       la API de sistemas externos, la simulacion de fallos y la auditoria de
@@ -96,6 +100,12 @@ public class ConfigSeguridad {
                         // RECEPCIONISTA (cita:escribir, actor Administrativo del CDU12).
                         .requestMatchers(HttpMethod.GET, "/api/citas/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
                         .requestMatchers("/api/citas/**").hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
+                        // CDU14 (Iter7/CFG-07): lectura para roles con lista_espera:leer (tecnico
+                        // y celador, sin el permiso, fuera); alta/reubicacion/asignacion/retirada
+                        // solo ADMINISTRADOR y RECEPCIONISTA (lista_espera:escribir, actor
+                        // Administrativo del CDU14).
+                        .requestMatchers(HttpMethod.GET, "/api/listas-espera/**").hasAnyRole("ADMINISTRADOR", "MEDICO", "RECEPCIONISTA")
+                        .requestMatchers("/api/listas-espera/**").hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA")
                         // CDU19 (Iter6/CFG-06, spike): la API de integracion es solo de
                         // ADMINISTRADOR (integracion:leer la GET, integracion:escribir la
                         // POST). El resto de roles no monitoriza sistemas externos ni cambia

@@ -1,0 +1,192 @@
+@startuml cdu14-secuencia
+' CDU14 (Iter7) - Secuencia de la cola: alta, duplicado, reubicacion, doble clic, asignacion a dos hilos y cadena
+' Autor: agente (diseno previo al codigo, issue #47) - fuentes PlantUML (D31)
+title CDU14 - Cola de espera: flujo feliz + 409/400/404/403 y dos hilos por el mismo hueco
+
+skinparam sequence {
+  LifeLineParticipant true
+}
+
+actor "Administrativo\n(rol RECEPCIONISTA)" as ADMIN
+actor "Otro Administrativo\n(otro hilo / otra sesion)" as ADMIN2
+actor "Medico\n(rol MEDICO)" as MEDICO
+actor "Celador\n(rol CELADOR)" as CEL
+boundary "ListaEsperaControlador\n/api/listas-espera" as CTRL
+control "ListaEsperaServicio\n(iso2-citas 1.2.0)" as SVC
+entity "ListaEspera\n(JPA, lista_espera\nUNIQUE clave_duplicada)" as ESP
+database "espera_auditoria\n(hash encadenado)" as AUD
+participant "CitaServicio / CitaHueco\n(CDU12, UNIQUE\n(profesional_id, inicio))" as CITA
+participant "PruebaCatalogoFacade\n(CDU16)" as CAT
+participant "JwtAutenticacionFiltro\n(CDU17)" as FILTRO
+
+== Ver la cola ordenada (medico, solo lectura) ==
+MEDICO -> CTRL : GET /api/listas-espera?pruebaCodigo=RX_TORAX\n(Authorization: Bearer <token>)
+CTRL <- FILTRO : token valido: ROLE_MEDICO,\nmatriz concedera listaespera:leer
+CTRL -> SVC : cola(pruebaCodigo, profesionalId null, estado null)
+SVC -> ESP : cola(...) con\nORDER BY prioridad DESC,\nfecha_solicitud ASC, espera_id ASC
+ESP --> SVC : lista en el orden de porOrdenDeEspera()
+SVC --> CTRL : List~EntradaEsperaDTO~ numerada 1..n\n(posicion calculada, total del filtro)
+CTRL --> MEDICO : 200 + lista JSON (position 1 URGENTE,\nposition 2 ORDINARIA antigua, position 3 ORDINARIA nueva)
+note right of SVC
+  La posicion sale de contar la fila en la lista
+  ya ordenada; en la tabla lista_espera no hay
+  columna de posicion. Por eso dos lecturas del
+  mismo instante coinciden entrada por entrada.
+end note
+
+== Alta en la cola (flujo feliz) ==
+ADMIN -> CTRL : POST /api/listas-espera\n{pacienteId: "P-142", pruebaCodigo: "RX_TORAX",\nprofesionalId: "medico", prioridad: "ORDINARIA"}
+CTRL -> SVC : darDeAlta(AltaEsperaDTO)
+SVC -> CAT : buscarPorCodigo("RX_TORAX")
+CAT --> SVC : existe y requiereCita = true\n(si no existiera: 404 PRUEBA_NO_ENCONTRADA)
+SVC -> ESP : alta con estado ACTIVA,\nclaveDuplicada = "P-142|RX_TORAX",\nfechaSolicitud = ahora
+ESP --> SVC : insert correcto (respeta uk espera_id y\nuk clave_duplicada)
+group UNA sola transaccion (lista_espera + espera_auditoria)
+  SVC -> AUD : registrar(ALTA, esperaId, antes null ->\ndespues "ACTIVA", usuario, motivo null,\nhashAnterior = hash del ultimo eslabon)
+end
+SVC --> CTRL : EntradaEsperaDTO(esperaId, estado "activa",\nposicion 4 sobre 4, total 4)
+CTRL --> ADMIN : 201 + EntradaEsperaDTO(JSON)
+
+== Alta repetida del mismo paciente y prueba (409) ==
+ADMIN -> CTRL : POST /api/listas-espera\n{pacienteId: "P-142", pruebaCodigo: "RX_TORAX", ...}
+CTRL -> SVC : darDeAlta(AltaEsperaDTO)
+SVC -> ESP : findByClaveDuplicada("P-142|RX_TORAX")
+ESP --> SVC : ya existe una entrada ACTIVA
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_ALTA_DUPLICADA)
+CTRL --> ADMIN : 409 + ApiError(CONFLICTO_ALTA_DUPLICADA)
+note right of AUD
+  No se escribe ningun eslabon: un rechazo no
+  contamina la cadena. Si los dos alta llegan a
+  la vez y la comprobacion previa no lo ve, la
+  base de datos lo corta con UNIQUE sobre
+  clave_duplicada y el servicio lo traduce al
+  mismo 409 (alta de cola con dos hilos reales).
+end note
+
+== Reubicar la prioridad (sube en la cola) ==
+ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/prioridad\n{prioridad: "URGENTE", motivo: "dolor intenso"}
+CTRL -> SVC : cambiarPrioridad(esperaId, "URGENTE",\n"dolor intenso", usuario del JWT)
+SVC -> ESP : estado ACTIVA y prioridad actual ORDINARIA
+SVC -> SVC : posicion antes: 4 de 4
+SVC -> ESP : cambiarPrioridad(Prioridad.URGENTE)\n(fechaSolicitud NO se toca)
+SVC -> SVC : posicion despues: 1 de 4
+group UNA sola transaccion
+  SVC -> AUD : registrar(REUBICACION, esperaId,\n"ORDINARIA" -> "URGENTE", usuario, motivo,\nhashAnterior = hash del eslabon de ALTA)
+end
+SVC --> CTRL : EntradaEsperaDTO(prioridad "URGENTE",\nposicion 1, total 4)
+CTRL --> ADMIN : 200 + EntradaEsperaDTO(JSON)
+
+== Doble clic en reubicar (409, sin segundo eslabon) ==
+ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/prioridad\n{prioridad: "URGENTE", motivo: "dolor intenso"} (reenvio)
+CTRL -> SVC : cambiarPrioridad(...)
+SVC -> ESP : prioridad actual URGENTE
+SVC -> SVC : la nueva prioridad deja la entrada\nen la MISMA posicion (1 de 4)
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_REUBICACION_REDUNDANTE)
+CTRL --> ADMIN : 409 + ApiError(CONFLICTO_REUBICACION_REDUNDANTE)
+note right of AUD
+  La cadena sigue con los mismos eslabones:
+  ALTA y REUBICACION. El doble clic no anade
+  un segundo eslabon vacio de valor, y por eso
+  el TC de doble clic afirma "total de eslabones
+  sin cambios" ademas del 409.
+end note
+
+== Retirar sin motivo (400) y retirar dos veces (409) ==
+ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/retirar\n{motivo: ""}
+CTRL -> SVC : retirar(esperaId, "")
+SVC --> CTRL : IllegalArgumentException (motivo obligatorio)
+CTRL --> ADMIN : 400 + ApiError(DATOS_INVALIDOS)
+ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/retirar\n{motivo: "paciente ya atendido por su medico"}
+CTRL -> SVC : retirar(esperaId, motivo)
+group UNA sola transaccion
+  SVC -> ESP : estado RETIRADA + motivoFin +\nclaveDuplicada = NULL (libera el duplicado)
+  SVC -> AUD : registrar(RETIRADA, esperaId,\n"ACTIVA" -> "RETIRADA", usuario, motivo)
+end
+CTRL --> ADMIN : 200 + EntradaEsperaDTO(estado "retirada")
+ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/retirar\n{motivo: "otra vez"}
+CTRL -> SVC : retirar(esperaId, motivo)
+SVC -> ESP : esMismaUbicacionQue / esTerminal(): RETIRADA
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_ENTRADA_NO_ACTIVA)
+CTRL --> ADMIN : 409 + ApiError(CONFLICTO_ENTRADA_NO_ACTIVA)
+
+== Dos hilos asignando el mismo hueco desde la cola ==
+note over SVC
+  AsignarColaConcurrenciaTest lanza DOS hilos reales a la
+  vez: mismo esperaId y mismo hueco del mismo profesional.
+end note
+par peticion del hilo A
+  ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/asignar\n{inicio: "2026-11-20T09:00", duracionMinutos: 30}
+  CTRL -> SVC : asignarDesdeCola(esperaId, 2026-11-20T09:00, 30)
+  SVC -> CITA : reutilizar registrar(...): franja CDU13,\ninsert de cita + saveAndFlush de la fila de hueco
+  CITA --> SVC : citaId "C-77" creada
+  SVC -> ESP : estado ASIGNADA + citaId +\nclaveDuplicada = NULL
+  SVC -> AUD : registrar(ASIGNACION, esperaId,\n"ACTIVA" -> "ASIGNADA", usuario, motivo null)
+  CTRL --> ADMIN : 201 + AsignacionResultadoDTO(cita "C-77",\nposicionEnCola 1)
+else peticion del hilo B (mismo esperaId, mismo hueco)
+  ADMIN2 -> CTRL : POST /api/listas-espera/{esperaId}/asignar\n{inicio: "2026-11-20T09:00", duracionMinutos: 30}
+  CTRL -> SVC : asignarDesdeCola(esperaId, 2026-11-20T09:00, 30)
+  SVC -> CITA : reutilizar registrar(...): el hueco parece libre\ny se intenta la misma fila
+  CITA --> SVC : viola uk_cita_hueco_profesional_inicio\n-> CitaConflictoException(HUECO_OCUPADO)
+  CTRL --> ADMIN2 : 409 + ApiError(CONFLICTO_HUECO_OCUPADO)\n(codigo heredado de CDU12)
+end
+note over ESP, AUD
+  Cierre del CDU14: al final hay UNA sola cita (C-77),
+  UNA sola fila en cita_hueco y UNA sola entrada ASIGNADA
+  en lista_espera. Si el hilo A llega a confirmar antes,
+  B corta antes de tocar CDU12 y su 409 es
+  CONFLICTO_ENTRADA_NO_ACTIVA: en ambos casos solo hay
+  un eslabon ASIGNACION en espera_auditoria.
+end note
+
+== Reasignar una entrada ya asignada (409) ==
+ADMIN -> CTRL : POST /api/listas-espera/{esperaId}/asignar\n{inicio: "2026-11-20T09:00"} (de nuevo)
+CTRL -> SVC : asignarDesdeCola(...)
+SVC -> ESP : estaActiva() es falso (ASIGNADA, citaId "C-77")
+SVC --> CTRL : ListaEsperaConflictoException\n(CONFLICTO_ENTRADA_NO_ACTIVA)
+CTRL --> ADMIN : 409 + ApiError(CONFLICTO_ENTRADA_NO_ACTIVA)
+ADMIN2 -> CTRL : POST /api/listas-espera/{esperaId}/prioridad
+CTRL -> SVC : cambiarPrioridad(uuid bien formado y nunca sembrado, ...)
+SVC --> CTRL : ListaEsperaNoEncontradaException
+CTRL --> ADMIN2 : 404 + ApiError(LISTA_ESPERA_NO_ENCONTRADA)
+
+== Verificar la cadena de la cola ==
+ADMIN -> CTRL : GET /api/listas-espera/auditoria-verificable
+CTRL -> SVC : verificarAuditoria()
+SVC -> AUD : findAllByOrderByIdAsc()
+AUD --> SVC : ALTA -> REUBICACION -> ASIGNACION -> RETIRADA
+SVC -> SVC : cadenaIntegra(): recomputar cada hash\ncon el canon y comparar hashAnterior
+SVC --> CTRL : VerificacionAuditoriaDTO(CADENA_INTEGRAL,\ntotalAsientos 4, hashUltimo)
+CTRL --> ADMIN : 200 + VerificacionAuditoriaDTO(JSON)
+note right of AUD
+  El primer eslabon de esta cadena firma con el
+  literal GENESIS y hashAnterior null: el mismo
+  canon de AuditoriaCitas.GENESIS, decision cerrada
+  en el diseno (issue #47). La cadena de
+  espera_auditoria no comparte
+  eslabones con cita_auditoria, asi que manipular
+  la cola no rompe la trazabilidad de CDU12 y al
+  reves. El canon de cada eslabon es:
+  accion | esperaId | antes->despues | usuario |
+  motivo | instante | hashAnterior.
+end note
+
+== Autorizacion: el medico lee, no mueve la cola ==
+CEL -> CTRL : GET /api/listas-espera (token de celador)
+CTRL <- FILTRO : rol CELADOR: sin listaespera:leer
+CTRL --> CEL : 403 + ApiError(FORBIDDEN)\n(sin llegar al servicio)
+MEDICO -> CTRL : POST /api/listas-espera/{esperaId}/prioridad
+CTRL <- FILTRO : rol MEDICO: solo listaespera:leer
+CTRL --> MEDICO : 403 + ApiError(FORBIDDEN)\n(lee la cola, no la reubica)
+CEL -> CTRL : GET /api/listas-espera (sin Authorization)
+CTRL --> CEL : 401 + ApiError(AUTENTICACION_REQUERIDA)\n(el filtro JWT corta antes del controlador)
+note right of CTRL
+  Reparto RBAC del CDU14: listaespera:leer para
+  ADMINISTRADOR, MEDICO y RECEPCIONISTA;
+  listaespera:escribir solo para ADMINISTRADOR y
+  RECEPCIONISTA. CELADOR y TECNICO quedan fuera.
+  No hay endpoints PUT / PATCH: la prioridad solo
+  cambia por la accion de reubicacion, que es la
+  que audita y la que rechaza el doble clic.
+end note
+
+@enduml

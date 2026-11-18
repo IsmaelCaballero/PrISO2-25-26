@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  iso2-server-app · CFG-06 · v0.2.0-SNAPSHOT (Iter6: CDU19 integraciones + CDU12/CDU17)
+  iso2-server-app · CFG-07 · v0.3.0-SNAPSHOT (Iter7: CDU14 listas de espera + CDU19 + CDU12/CDU17)
   Ensambla el catalogo de pruebas (CDU16), la seguridad RBAC+JWT (CDU17), las agendas
   de medicos y tecnicos (CDU13) y las solicitudes de prueba (CDU06) sobre Spring Boot:
   API REST + JPA + Flyway (esquema versionado H2/MySQL) + cadena stateless con filtro JWT.
@@ -19,8 +19,9 @@
        0.1.2 en Iter2/CFG-02; 0.1.3 en Iter3/CDU13; 0.1.4 en Iter4/CDU06;
        0.1.5-SNAPSHOT en la rama de Iter5 (D34 persistencia + CDU12 citas);
        0.2.0-SNAPSHOT en la rama de Iter6 (CDU19 spike de integraciones);
+       0.3.0-SNAPSHOT en la rama de Iter7 (CDU14 listas de espera);
        1.0.0 en CFG-21/R5. -->
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.3.0-SNAPSHOT</version>
   <name>iso2-server-app</name>
   <description>Aplicacion servidora: API REST Spring Boot + JPA (H2 por defecto, MySQL con el perfil mysql, D34). Ensambla los modulos de dominio.</description>
 
@@ -61,20 +62,22 @@
       <artifactId>iso2-solicitudes</artifactId>
       <version>1.2.0-SNAPSHOT</version>
     </dependency>
-    <!-- CDU12 (Iter5/CFG-05): citas pasa de baseline 1.0.0 a 1.1.0 y se ensambla ya con
-         su implementacion de CitaFacade, no como baseline vacio. -->
+    <!-- CDU12 (Iter5/CFG-05) mas CDU14 (Iter7/CFG-07): citas subio a 1.1.0 con el CDU12
+         y a 1.2.0 con las listas de espera; se ensambla ya con sus implementaciones
+         de CitaFacade y ListaEsperaFacade. -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-citas</artifactId>
-      <version>1.1.0-SNAPSHOT</version>
+      <version>1.2.0-SNAPSHOT</version>
     </dependency>
-    <!-- CDU19 (Iter6/CFG-06, spike): integracion pasa de baseline 1.0.0 a 1.1.0 y se
-         ensambla ya con la implementacion de InteropFacade (SSO, historia externa,
-         ping degradado, auditoria). -->
+    <!-- CDU19 (Iter6/CFG-06, spike): integracion pasa de baseline 1.0.0 y en el tren
+         de CFG-07 acompana a 1.2.0-SNAPSHOT sin cambio funcional; conserva la
+         implementacion de InteropFacade (SSO, historia externa, ping degradado,
+         auditoria). -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-integracion</artifactId>
-      <version>1.1.0-SNAPSHOT</version>
+      <version>1.2.0-SNAPSHOT</version>
     </dependency>
     <!-- Resto de modulos: baseline 1.0.0 sin CDU en esta configuracion (matriz CFG-06);
          se iran subiendo a ${iso2.version} cuando les toque su CDU. -->
@@ -164,12 +167,12 @@
          levanta la API real en RANDOM_PORT y la consume con los clientes HTTP reales
          de iso2-client-app (solo en test: en produccion el cliente es un proceso
          aparte, por eso el servidor no depende de el nunca). Version explicita del
-         release train (0.2.0-SNAPSHOT en la rama de Iter6), no ${iso2.version}
+         release train (0.3.0-SNAPSHOT en la rama de Iter7), no ${iso2.version}
          (eso es para los modulos de dominio). -->
     <dependency>
       <groupId>es.uclm.iso2</groupId>
       <artifactId>iso2-client-app</artifactId>
-      <version>0.2.0-SNAPSHOT</version>
+      <version>0.3.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

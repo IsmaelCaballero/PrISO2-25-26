@@ -1,0 +1,152 @@
+
+    // ==================================================================
+    //TC14-B: alta (cdu14-alta.csv)
+    // ==================================================================
+
+    static List<Fila> filasAlta() {
+        return leer("cdu14-alta.csv");
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasAlta")
+    void altaDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f.get("setup"), null);
+        String cuerpo = cuerpoAlta(f);
+        MockHttpServletRequestBuilder peticion = post(URI_BASE).contentType(MediaType.APPLICATION_JSON);
+        if (cuerpo != null) {
+            peticion.content(cuerpo);
+        }
+        MvcResult r = mvc.perform(peticion);
+        verificar(f, r);
+        if ("CREADO".equals(f.get("esperado"))) {
+            JsonNode espera = cuerpo(r).path("espera");
+            org.hamcrest.MatcherAssert.assertThat(espera.path("fechaSolicitud").asText().length(),
+                    greaterThanOrEqualTo(10));
+            org.hamcrest.MatcherAssert.assertThat(
+                    OffsetDateTime.parse(espera.path("fechaSolicitud").asText()).getYear(),
+                    org.hamcrest.Matchers.is(2026));
+        }
+    }
+
+    private String cuerpoAlta(Fila f) {
+        String paciente = switch (f.get("paciente")) {
+            case "VACIO" -> "";
+            case "ESPACIOS" -> "   ";
+            case "MAXIMO" -> "P".repeat(60);
+            case "DELIMITE" -> "P".repeat(61);
+            default -> "pac-" + f.get("id");
+        };
+        String prueba = switch (f.get("prueba")) {
+            case "VACIO" -> "";
+            case "MAXIMO" -> "c".repeat(60);
+            case "DELIMITE" -> "c".repeat(61);
+            case "MINUSCULA" -> PruebasCitas.PRUEBA_DUP;
+            case "DESCONOCIDA" -> "prueba-inexistente";
+            default -> PruebasCitas.PRUEBA;
+        };
+        String prioridad = switch (f.get("prioridad")) {
+            case "VACIA" -> "";
+            case "MINUSCULA" -> "urgente";
+            case "DESDESCONOCIDA" -> "SUPERURGENTE";
+            default -> f.get("prioridad");
+        };
+        String solicitud = switch (f.get("solicitud")) {
+            case "CREADA" -> PruebasCitas.SOL_CREADA;
+            case "CITADA" -> PruebasCitas.SOL_CITADA;
+            case "PRESCRITA" -> PruebasCitas.SOL_PRESCRITA;
+            case "INEXISTENTE" -> "api-sol-no-existe";
+            case "MAL_FORMATADO" -> "no-es-un-id";
+            default -> null;
+        };
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        if (solicitud != null) {
+            cuerpo.put("solicitudId", solicitud);
+        }
+        cuerpo.put("pacienteId", paciente);
+        cuerpo.put("pruebaCodigo", prueba);
+        if (!"AUSENTE".equals(f.get("prioridad"))) {
+            cuerpo.put("prioridad", prioridad);
+        }
+        cuerpo.put("profesionalId", PruebasCitas.PROF_MEDICO);
+        OffsetDateTime fecha = switch (f.get("solicitud")) {
+            case "FECHA_FUTURA" -> OffsetDateTime.of(2026, 12, 1, 9, 0, 0, 0, ZoneOffset.UTC);
+            case "FECHA_MAL" -> null;
+            default -> null;
+        };
+        if ("FECHA_FUTURA".equals(f.get("solicitud"))) {
+            cuerpo.put("fechaSolicitud", fecha.toString());
+        } else if ("FECHA_MAL".equals(f.get("solicitud"))) {
+            cuerpo.put("fechaSolicitud", "el martes que viene");
+        }
+        return mapper.writeValueAsString(cuerpo);
+    }
+
+    // ==================================================================
+    //TC14-C: operaciones sobre la cola y filtros (cdu14-cola.csv)
+    // ==================================================================
+
+    static List<Fila> filasCola() {
+        return leer("cdu14-cola.csv");
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("filasCola")
+    void colaDesdeMatriz(Fila f) throws Exception {
+        aplicarSetup(f.get("setup"), null);
+        switch (f.get("operacion")) {
+            case "DETALLE_ESPERA" -> verificar(f, mvc.perform(get(URI_BASE + "/" + esId(f.get("esperaId")))));
+            case "AUDITORIA_ESPERA" -> {
+                String esperado = f.get("esperado");
+                if ("OK".equals(esperado)) {
+                    verificar(f, mvc.perform(get(URI_BASE + "/" + esId(f.get("esperaId")) + "/auditoria")));
+                    JsonNode lista = cuerpo(mvc.perform(
+                            get(URI_BASE + "/" + esId(f.get("esperaId")) + "/auditoria")).andReturn());
+                    org.hamcrest.MatcherAssert.assertThat(lista.path(0).path("esperaId").asText(),
+                            org.hamcrest.Matchers.not(org.hamcrest.Matchers.emptyString()));
+                    org.hamcrest.MatcherAssert.assertThat(lista.path(0).has("hash").asBoolean(),
+                            org.hamcrest.Matchers.is(true));
+                    org.hamcrest.MatcherAssert.assertThat(lista.path(0).has("hashAnterior").asBoolean(),
+                            org.hamcrest.Matchers.is(true));
+                } else {
+                    verificar(f, mvc.perform(
+                            get(URI_BASE + "/" + esId(f.get("esperaId")) + "/auditoria")));
+                }
+            }
+            case "AUDITORIA_VERIFICABLE" -> verificar(f, mvc.perform(get(URI_BASE + "/auditoria-verificable")));
+            case "PRIORIDAD" -> {
+                String cambio = switch (f.get("cambio")) {
+                    case "MINUSCULA" -> "urgente";
+                    case "DESDESCONOCIDO" -> "VUELO";
+                    case "VACIO" -> "";
+                    default -> f.get("cambio");
+                };
+                Map<String, Object> cuerpo = new LinkedHashMap<>();
+                if (!"AUSENTE".equals(f.get("cambio"))) {
+                    cuerpo.put("prioridad", cambio);
+                }
+                if ("MOTIVO_LARGO".equals(f.get("notaExtra"))) {
+                    cuerpo.put("motivo", "m".repeat(301));
+                } else if (!"SIN_MOTIVO".equals(f.get("notaExtra")) && !"-".equals(f.get("notaExtra"))) {
+                    cuerpo.put("motivo", "reclasificacion " + f.get("id"));
+                }
+                MockHttpServletRequestBuilder peticion =
+                        post(URI_BASE + "/" + esId(f.get("esperaId")) + "/prioridad")
+                                .contentType(MediaType.APPLICATION_JSON);
+                peticion.content(mapper.writeValueAsString(cuerpo));
+                verificar(f, mvc.perform(peticion));
+            }
+            case "RETIRAR" -> {
+                Map<String, Object> cuerpo = new LinkedHashMap<>();
+                if (!"SIN_MOTIVO".equals(f.get("notaExtra")) && !"-".equals(f.get("notaExtra"))) {
+                    cuerpo.put("motivo", "retirado " + f.get("id"));
+                }
+                if ("MOTIVO_LARGO".equals(f.get("notaExtra"))) {
+                    cuerpo.put("motivo", "m".repeat(301));
+                }
+                verificar(f, mvc.perform(post(URI_BASE + "/" + esId(f.get("esperaId")) + "/retirar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(cuerpo))));
+            }
+            default -> throw new IllegalStateException("operacion de cola desconocida: " + f.get("operacion"));
+        }
+    }
