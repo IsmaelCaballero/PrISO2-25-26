@@ -1344,7 +1344,7 @@
         "setup": "SEMILLA-COLA-EMPALTE-BC",
         "esperadoStatus": "OK",
         "esperadoCodigo": "-",
-        "esperadoCola": "A:URGENTE|B:PREFERENTE|C:PREFERENTE",
+        "esperadoCola": "A:URGENTE|B,C:PREFERENTE",
         "nota": "C sube y queda con escalon y marca IDENTICOS a B: decide esperaId ascendente (creada antes), y por eso dos lecturas seguidas dan el mismo orden exacto; el TC afirma el bloque {B,C} y la lectura repetida"
       },
       {

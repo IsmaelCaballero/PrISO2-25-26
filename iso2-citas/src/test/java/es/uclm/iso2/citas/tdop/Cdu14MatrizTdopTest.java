@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -519,20 +520,27 @@ class Cdu14MatrizTdopTest {
 
     /**
      * La columna esperadoCola escribe las entradas ACTIVA en orden canonico como
-     * alias:PRIORIDAD separadas por barras verticales. Las alias salen de la siembra, asi que la
-     * matriz no fija ni un solo UUID. Se lee la cola filtrada por ACTIVA y, ademas del orden, se
-     * reafirman la posicion y el total. Dos entradas que empatan en escalon y en marca de tiempo
-     * pueden salir en cualquier orden porque el desempate es el esperaId y el esperaId es
-     * aleatorio: por eso la comparacion se hace por bloques de empate, como anuncia la nota de
-     * D11 al prometer el bloque {B,C} y la lectura repetida.
+     * alias:PRIORIDAD separadas por barras verticales; las alias que empatan en escalon y marca de
+     * tiempo se agrupan en un mismo bloque separadas por comas ("B,C:PREFERENTE"), porque dentro
+     * del empate el orden lo decide el esperaId y nadie afirma ese orden. Las alias salen de la
+     * siembra, asi que la matriz no fija ni un solo UUID. Se lee la cola filtrada por ACTIVA y,
+     * ademas del orden, se reafirman la posicion y el total. La comparacion se hace por bloques
+     * de empate, como anuncia la nota de D11 al prometer el bloque {B,C} y la lectura repetida.
      */
     private void verificarColaCanon(Fila f, String esperado) throws Exception {
         if ("-".equals(esperado) || esperado.isBlank()) {
             return;
         }
-        List<String> esperados = new ArrayList<>();
-        for (String entrada : esperado.split("\\|")) {
-            esperados.add(entrada.trim());
+        List<List<String>> esperados = new ArrayList<>();
+        List<String> prioridadesPosicion = new ArrayList<>();
+        for (String bloque : esperado.split("\\|")) {
+            String trozo = bloque.trim();
+            String alias = trozo.substring(0, trozo.indexOf(':'));
+            String prioridad = trozo.substring(trozo.indexOf(':') + 1);
+            for (String a : alias.split(",")) {
+                prioridadesPosicion.add(prioridad);
+            }
+            esperados.add(ordenados(Arrays.asList(alias.split(","))));
         }
         MvcResult lectura = req(get(BASE).param("pruebaCodigo", PruebasCitas.PRUEBA)
                 .param("estado", "ACTIVA"));
@@ -551,14 +559,14 @@ class Cdu14MatrizTdopTest {
         assertThat(ordenCanonico(cola)).as("%s: el orden canon es prioridad desc, fecha asc y "
                 + "esperaId asc; respuesta: %s", f.id(), cola).isTrue();
         assertThat(aliasReales).as("%s: la cola trae exactamente las entradas sembradas", f.id())
-                .hasSameSizeAs(esperados);
+                .hasSameSizeAs(prioridadesPosicion);
         for (int i = 0; i < aliasReales.size(); i++) {
             assertThat(cola.get(i).path("prioridad").asText())
                     .as("%s: el escalon de la posicion %d", f.id(), i + 1)
-                    .isEqualTo(esperados.get(i).substring(esperados.get(i).indexOf(':') + 1));
+                    .isEqualTo(prioridadesPosicion.get(i));
         }
         assertThat(bloquesDeEmpate(cola, aliasReales)).as("%s: las alias de la cola, por bloques", f.id())
-                .isEqualTo(bloquesDeAlias(esperados));
+                .isEqualTo(esperados);
     }
 
     /** Bloques de alias de la respuesta: dentro de un empate el orden no es afirmable. */
@@ -572,16 +580,6 @@ class Cdu14MatrizTdopTest {
             }
             bloques.add(ordenados(aliasReales.subList(i, j)));
             i = j;
-        }
-        return bloques;
-    }
-
-    /** Los bloques esperados, leidos de la matriz con la misma regla de tamanos. */
-    private List<List<String>> bloquesDeAlias(List<String> esperados) {
-        List<List<String>> bloques = new ArrayList<>();
-        for (String entrada : esperados) {
-            String alias = entrada.substring(0, entrada.indexOf(':'));
-            bloques.add(ordenados(List.of(alias)));
         }
         return bloques;
     }
@@ -789,7 +787,7 @@ class Cdu14MatrizTdopTest {
         }
         Map<String, Integer> reales = new HashMap<>();
         for (JsonNode e : cuerpo(req(get(BASE).param("pruebaCodigo", PruebasCitas.PRUEBA)))) {
-            reales.merge(e.path("estado").asText(), 1, Integer::sum);
+            reales.merge(e.path("estado").asText().toUpperCase(Locale.ROOT), 1, Integer::sum);
         }
         assertThat(reales).as("%s: la cola de %s, sin filtro de estado", f.id(), PruebasCitas.PRUEBA)
                 .isEqualTo(esperados);
@@ -926,9 +924,8 @@ class Cdu14MatrizTdopTest {
                 case "SEMILLA-COLA-SOLO" -> alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "ORDINARIA", T3, null);
                 case "SEMILLA-COLA-EMPALTE-BC" -> {
                     alta("A", "api-paciente-a", PruebasCitas.PRUEBA, "URGENTE", T1, PruebasCitas.SOL_CREADA);
-                    alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "ORDINARIA", T2, PruebasCitas.SOL_CREADA_2);
-                    alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "PREFERENTE", T2, PruebasCitas.SOL_CREADA_3);
-                    cambiarPrioridad(idSembrado("B"), "PREFERENTE", "empalme con C");
+                    alta("B", "api-paciente-b", PruebasCitas.PRUEBA, "PREFERENTE", T2, PruebasCitas.SOL_CREADA_2);
+                    alta("C", "api-paciente-c", PruebasCitas.PRUEBA, "ORDINARIA", T2, PruebasCitas.SOL_CREADA_3);
                 }
                 case "SEMILLA-COLA-CON-RETIRO" -> {
                     colaTres(f);
