@@ -1,0 +1,89 @@
+#### cdu14-reubicacion.csv ['id', 'escenario', 'objetivo', 'destino', 'motivo', 'esperaId', 'setup', 'esperadoStatus', 'esperadoCodigo', 'esperadoCola', 'nota']
+   id:TC14-D01 ~ escenario:TRES ~ objetivo:A ~ destino:PREFERENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:PREFERENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D02 ~ escenario:TRES ~ objetivo:A ~ destino:ORDINARIA ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:B:PREFERENTE|A:ORDINARIA|C:ORDINARIA
+   id:TC14-D03 ~ escenario:TRES ~ objetivo:A ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:REDUNDANTE ~ esperadoCodigo:CONFLICTO_REUBICACION_REDUNDANTE ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D04 ~ escenario:TRES ~ objetivo:B ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:URGENTE|B:URGENTE|C:ORDINARIA
+   id:TC14-D05 ~ escenario:TRES ~ objetivo:B ~ destino:PREFERENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:REDUNDANTE ~ esperadoCodigo:CONFLICTO_REUBICACION_REDUNDANTE ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D06 ~ escenario:TRES ~ objetivo:B ~ destino:ORDINARIA ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:URGENTE|B:ORDINARIA|C:ORDINARIA
+   id:TC14-D07 ~ escenario:TRES ~ objetivo:C ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:URGENTE|C:URGENTE|B:PREFERENTE
+   id:TC14-D08 ~ escenario:TRES ~ objetivo:C ~ destino:PREFERENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:PREFERENTE
+   id:TC14-D09 ~ escenario:TRES ~ objetivo:C ~ destino:ORDINARIA ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:REDUNDANTE ~ esperadoCodigo:CONFLICTO_REUBICACION_REDUNDANTE ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D10 ~ escenario:EMPALTE_BC ~ objetivo:B ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-EMPALTE-BC ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:URGENTE|B:URGENTE|C:ORDINARIA
+   id:TC14-D11 ~ escenario:EMPALTE_BC ~ objetivo:C ~ destino:PREFERENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-EMPALTE-BC ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:PREFERENTE
+   id:TC14-D12 ~ escenario:CON_RETIRO ~ objetivo:B ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-CON-RETIRO ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:B:URGENTE|C:ORDINARIA
+   id:TC14-D13 ~ escenario:CON_RETIRO ~ objetivo:C ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-CON-RETIRO ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:C:URGENTE|B:PREFERENTE
+   id:TC14-D14 ~ escenario:TERMINALES ~ objetivo:B ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TERMINALES ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA ~ esperadoCola:A:URGENTE
+   id:TC14-D15 ~ escenario:TERMINALES ~ objetivo:C ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TERMINALES ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA ~ esperadoCola:A:URGENTE
+   id:TC14-D16 ~ escenario:TERMINALES ~ objetivo:B ~ destino:PREFERENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TERMINALES,REDUNDANTE ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA ~ esperadoCola:A:URGENTE
+   id:TC14-D17 ~ escenario:SOLO ~ objetivo:C ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-SOLO ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:C:URGENTE
+   id:TC14-D18 ~ escenario:SOLO ~ objetivo:C ~ destino:ORDINARIA ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-SOLO ~ esperadoStatus:REDUNDANTE ~ esperadoCodigo:CONFLICTO_REUBICACION_REDUNDANTE ~ esperadoCola:C:ORDINARIA
+   id:TC14-D19 ~ escenario:NINGUNA ~ objetivo:- ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ENCONTRADA ~ esperadoCodigo:LISTA_ESPERA_NO_ENCONTRADA ~ esperadoCola:-
+   id:TC14-D20 ~ escenario:TRES ~ objetivo:- ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:INEXISTENTE ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:NO_ENCONTRADA ~ esperadoCodigo:LISTA_ESPERA_NO_ENCONTRADA ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D21 ~ escenario:TRES ~ objetivo:- ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:MAL_FORMATADO ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:INVALIDOS ~ esperadoCodigo:DATOS_INVALIDOS ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D22 ~ escenario:TRES ~ objetivo:B ~ destino:ORDINARIA ~ motivo:VACIO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:INVALIDOS ~ esperadoCodigo:DATOS_INVALIDOS ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D23 ~ escenario:TRES ~ objetivo:B ~ destino:ORDINARIA ~ motivo:AUSENTE ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:INVALIDOS ~ esperadoCodigo:DATOS_INVALIDOS ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D24 ~ escenario:TRES ~ objetivo:B ~ destino:ORDINARIA ~ motivo:MAX300 ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoCola:A:URGENTE|B:ORDINARIA|C:ORDINARIA
+   id:TC14-D25 ~ escenario:TRES ~ objetivo:B ~ destino:ORDINARIA ~ motivo:LARGO301 ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:INVALIDOS ~ esperadoCodigo:DATOS_INVALIDOS ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D26 ~ escenario:TRES ~ objetivo:A ~ destino:URGENTE ~ motivo:LARGO301 ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:INVALIDOS ~ esperadoCodigo:DATOS_INVALIDOS ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+   id:TC14-D27 ~ escenario:TRES ~ objetivo:A ~ destino:URGENTE ~ motivo:TEXTO ~ esperaId:AUT ~ setup:SEMILLA-COLA-TRES,ENLAZE:NINGUNA ~ esperadoStatus:REDUNDANTE ~ esperadoCodigo:CONFLICTO_REUBICACION_REDUNDANTE ~ esperadoCola:A:URGENTE|B:PREFERENTE|C:ORDINARIA
+
+#### cdu14-secuencias.csv ['id', 'secuencia', 'setup', 'esperadoStatus', 'esperadoCodigo', 'esperadoEslabones', 'esperadoCola', 'esperadoCitas', 'nota']
+   id:TC14-E01 ~ secuencia:ALTA_ALTA ~ setup:SEMILLA-VACIA ~ esperadoStatus:ALTA_DUPLICADA ~ esperadoCodigo:CONFLICTO_ALTA_DUPLICADA ~ esperadoEslabones:GENESIS,ALTA ~ esperadoCola:1 ACTIVA ~ esperadoCitas:0
+   id:TC14-E02 ~ secuencia:ALTA_RETIRAR_ALTA ~ setup:SEMILLA-VACIA ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoEslabones:GENESIS,ALTA,RETIRADA / GENESIS,ALTA ~ esperadoCola:1 ACTIVA + 1 RETIRADA ~ esperadoCitas:0
+   id:TC14-E03 ~ secuencia:ALTA_ASIGNAR_ALTA ~ setup:SEMILLA-VACIA ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoEslabones:GENESIS,ALTA,ASIGNACION / GENESIS,ALTA ~ esperadoCola:1 ACTIVA + 1 ASIGNADA ~ esperadoCitas:1
+   id:TC14-E04 ~ secuencia:ALTA_RETIRAR_RETIRAR ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA ~ esperadoEslabones:GENESIS,ALTA,RETIRADA ~ esperadoCola:1 RETIRADA ~ esperadoCitas:0
+   id:TC14-E05 ~ secuencia:ALTA_PRIORIDAD_VUELTA ~ setup:SEMILLA-VACIA ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoEslabones:GENESIS,ALTA,REUBICACION,REUBICACION ~ esperadoCola:1 ACTIVA ~ esperadoCitas:0
+   id:TC14-E06 ~ secuencia:ALTA_PRIORIDAD_IGUAL_IGUAL ~ setup:SEMILLA-VACIA ~ esperadoStatus:REDUNDANTE ~ esperadoCodigo:CONFLICTO_REUBICACION_REDUNDANTE ~ esperadoEslabones:GENESIS,ALTA,REUBICACION ~ esperadoCola:1 ACTIVA ~ esperadoCitas:0
+   id:TC14-E07 ~ secuencia:ALTA_ASIGNAR_ASIGNAR ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA ~ esperadoEslabones:GENESIS,ALTA,ASIGNACION ~ esperadoCola:1 ASIGNADA ~ esperadoCitas:1
+   id:TC14-E08 ~ secuencia:ASIGNAR_CONCURRENTES ~ setup:SEMILLA-VACIA ~ esperadoStatus:UN_OK_Y_OTRO_409 ~ esperadoCodigo:- ~ esperadoEslabones:GENESIS,ALTA,ASIGNACION ~ esperadoCola:1 ASIGNADA ~ esperadoCitas:1
+   id:TC14-E09 ~ secuencia:ALTA_ALTA_CONCURRENTES ~ setup:SEMILLA-VACIA ~ esperadoStatus:UN_OK_Y_OTRO_409 ~ esperadoCodigo:- ~ esperadoEslabones:GENESIS,ALTA ~ esperadoCola:1 ACTIVA ~ esperadoCitas:0
+   id:TC14-E10 ~ secuencia:RETIRAR_CONCURRENTES ~ setup:SEMILLA-VACIA ~ esperadoStatus:UN_OK_Y_OTRO_409 ~ esperadoCodigo:- ~ esperadoEslabones:GENESIS,ALTA,RETIRADA ~ esperadoCola:1 RETIRADA ~ esperadoCitas:0
+   id:TC14-E11 ~ secuencia:ASIGNAR_MISMO_HUECO_ENTRADAS_DISTINTAS ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:HUECO_OCUPADO ~ esperadoCodigo:CONFLICTO_HUECO_OCUPADO ~ esperadoEslabones:GENESIS,ALTA,ASIGNACION / GENESIS,ALTA ~ esperadoCola:1 ASIGNADA + 2 ACTIVA ~ esperadoCitas:1
+   id:TC14-E12 ~ secuencia:ALTA_ALTA_DISTINTOS ~ setup:SEMILLA-VACIA ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoEslabones:GENESIS,ALTA / GENESIS,ALTA ~ esperadoCola:2 ACTIVA ~ esperadoCitas:0
+
+#### cdu14-auditoria.csv ['id', 'caso', 'setup', 'esperadoStatus', 'esperadoCodigo', 'esperadoVerificable', 'esperadoEslabones', 'nota']
+   id:TC14-G01 ~ caso:ALTA_PURA ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:true ~ esperadoEslabones:GENESIS,ALTA
+   id:TC14-G02 ~ caso:CON_REUBICACION ~ setup:SEMILLA-COLA-EMPALTE-BC ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:true ~ esperadoEslabones:GENESIS,ALTA,REUBICACION
+   id:TC14-G03 ~ caso:CON_RETIRADA ~ setup:SEMILLA-CON-RETIRO ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:true ~ esperadoEslabones:GENESIS,ALTA,REUBICACION,RETIRADA
+   id:TC14-G04 ~ caso:MANIPULA-CONTENIDO ~ setup:SEM-TAMPER:ENLAZE ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:false ~ esperadoEslabones:-
+   id:TC14-G05 ~ caso:MANIPULA-BORRADO ~ setup:SEM-TAMPER:BORRADO ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:false ~ esperadoEslabones:-
+   id:TC14-G06 ~ caso:MANIPULA-REORDEN ~ setup:SEM-TAMPER:REORDEN ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:false ~ esperadoEslabones:-
+   id:TC14-G07 ~ caso:SOLO-GENESIS ~ setup:SEMILLA-SOLO ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:true ~ esperadoEslabones:GENESIS
+   id:TC14-G08 ~ caso:CADENAS-INDEPENDIENTES ~ setup:SEMILLA-CITA-OCUPA ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:true ~ esperadoEslabones:GENESIS,ALTA,ASIGNACION
+   id:TC14-G09 ~ caso:SIN-ACCIONES ~ setup:SEMILLA-VACIA ~ esperadoStatus:OK ~ esperadoCodigo:- ~ esperadoVerificable:true ~ esperadoEslabones:GENESIS
+   id:TC14-G10 ~ caso:RETIRADA-SIN-MOTIVO ~ setup:SEMILLA-CON-RETIRO ~ esperadoStatus:INVALIDOS ~ esperadoCodigo:DATOS_INVALIDOS ~ esperadoVerificable:true ~ esperadoEslabones:-
+   id:TC14-G11 ~ caso:REUBICAR-TERMINAL ~ setup:SEMILLA-CON-RETIRO ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA ~ esperadoVerificable:true ~ esperadoEslabones:-
+   id:TC14-G12 ~ caso:PRIORIDAD-REPETIDA ~ setup:SEMILLA-COLA-TRES ~ esperadoStatus:REDUNDANTE ~ esperadoCodigo:CONFLICTO_REUBICACION_REDUNDANTE ~ esperadoVerificable:true ~ esperadoEslabones:GENESIS,ALTA
+
+#### cdu14-operaciones.csv ['id', 'operacion', 'estadoEntrada', 'inicio', 'setup', 'esperadoStatus', 'esperadoCodigo', 'nota']
+   id:TC14-C01 ~ operacion:DETALLE_ESPERA ~ estadoEntrada:ACTIVA ~ inicio:- ~ setup:SEM-ESTADO:ACTIVA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C02 ~ operacion:DETALLE_ESPERA ~ estadoEntrada:ASIGNADA ~ inicio:- ~ setup:SEM-ESTADO:ASIGNADA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C03 ~ operacion:DETALLE_ESPERA ~ estadoEntrada:RETIRADA ~ inicio:- ~ setup:SEM-ESTADO:RETIRADA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C04 ~ operacion:DETALLE_ESPERA ~ estadoEntrada:NINGUNA ~ inicio:- ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ENCONTRADA ~ esperadoCodigo:LISTA_ESPERA_NO_ENCONTRADA
+   id:TC14-C05 ~ operacion:AUDITORIA_ESPERA ~ estadoEntrada:ACTIVA ~ inicio:- ~ setup:SEM-ESTADO:ACTIVA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C06 ~ operacion:AUDITORIA_ESPERA ~ estadoEntrada:ASIGNADA ~ inicio:- ~ setup:SEM-ESTADO:ASIGNADA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C07 ~ operacion:AUDITORIA_ESPERA ~ estadoEntrada:RETIRADA ~ inicio:- ~ setup:SEM-ESTADO:RETIRADA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C08 ~ operacion:AUDITORIA_ESPERA ~ estadoEntrada:NINGUNA ~ inicio:- ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ENCONTRADA ~ esperadoCodigo:LISTA_ESPERA_NO_ENCONTRADA
+   id:TC14-C09 ~ operacion:AUDITORIA_VERIFICABLE ~ estadoEntrada:ACTIVA ~ inicio:- ~ setup:SEM-ESTADO:ACTIVA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C10 ~ operacion:AUDITORIA_VERIFICABLE ~ estadoEntrada:ASIGNADA ~ inicio:- ~ setup:SEM-ESTADO:ASIGNADA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C11 ~ operacion:PRIORIDAD ~ estadoEntrada:ACTIVA ~ inicio:- ~ setup:SEM-ESTADO:ACTIVA,SEM-PRI:SUBIR ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C12 ~ operacion:PRIORIDAD ~ estadoEntrada:ASIGNADA ~ inicio:- ~ setup:SEM-ESTADO:ASIGNADA ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C13 ~ operacion:PRIORIDAD ~ estadoEntrada:RETIRADA ~ inicio:- ~ setup:SEM-ESTADO:RETIRADA ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C14 ~ operacion:PRIORIDAD ~ estadoEntrada:NINGUNA ~ inicio:- ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ENCONTRADA ~ esperadoCodigo:LISTA_ESPERA_NO_ENCONTRADA
+   id:TC14-C15 ~ operacion:PRIORIDAD ~ estadoEntrada:ASIGNADA ~ inicio:- ~ setup:SEM-ESTADO:ASIGNADA,REDUNDANTE ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C16 ~ operacion:RETIRAR ~ estadoEntrada:ACTIVA ~ inicio:- ~ setup:SEM-ESTADO:ACTIVA ~ esperadoStatus:OK ~ esperadoCodigo:-
+   id:TC14-C17 ~ operacion:RETIRAR ~ estadoEntrada:ASIGNADA ~ inicio:- ~ setup:SEM-ESTADO:ASIGNADA ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C18 ~ operacion:RETIRAR ~ estadoEntrada:RETIRADA ~ inicio:- ~ setup:SEM-ESTADO:RETIRADA ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C19 ~ operacion:RETIRAR ~ estadoEntrada:RETIRADA ~ inicio:- ~ setup:SEM-ESTADO:RETIRADA,REDUNDANTE ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C20 ~ operacion:RETIRAR ~ estadoEntrada:NINGUNA ~ inicio:- ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ENCONTRADA ~ esperadoCodigo:LISTA_ESPERA_NO_ENCONTRADA
+   id:TC14-C21 ~ operacion:ASIGNAR ~ estadoEntrada:ACTIVA ~ inicio:AUT ~ setup:SEM-ESTADO:ACTIVA ~ esperadoStatus:ASIGNADO ~ esperadoCodigo:-
+   id:TC14-C22 ~ operacion:ASIGNAR ~ estadoEntrada:ASIGNADA ~ inicio:AUT ~ setup:SEM-ESTADO:ASIGNADA ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C23 ~ operacion:ASIGNAR ~ estadoEntrada:RETIRADA ~ inicio:AUT ~ setup:SEM-ESTADO:RETIRADA,SEM-HUECO-DEST:EXACTO ~ esperadoStatus:NO_ACTIVA ~ esperadoCodigo:CONFLICTO_ENTRADA_NO_ACTIVA
+   id:TC14-C24 ~ operacion:ASIGNAR ~ estadoEntrada:NINGUNA ~ inicio:AUT ~ setup:SEMILLA-VACIA ~ esperadoStatus:NO_ENCONTRADA ~ esperadoCodigo:LISTA_ESPERA_NO_ENCONTRADA
+   id:TC14-C25 ~ operacion:ASIGNAR ~ estadoEntrada:ACTIVA ~ inicio:AUT ~ setup:SEM-ESTADO:ACTIVA,ENLAZE:CITADA,SEM-HUECO-DEST:LIBRE ~ esperadoStatus:SOLICITUD_NO_APTA ~ esperadoCodigo:CONFLICTO_SOLICITUD_NO_APTA
+   id:TC14-C26 ~ operacion:ASIGNAR ~ estadoEntrada:ACTIVA ~ inicio:AUT ~ setup:SEM-ESTADO:ACTIVA,ENLAZE:CITADA,SEM-HUECO-DEST:EXACTO ~ esperadoStatus:SOLICITUD_NO_APTA ~ esperadoCodigo:CONFLICTO_SOLICITUD_NO_APTA
+   id:TC14-C27 ~ operacion:ASIGNAR ~ estadoEntrada:ACTIVA ~ inicio:AUT ~ setup:SEM-ESTADO:ACTIVA,ENLAZE:NINGUNA ~ esperadoStatus:SOLICITUD_NO_APTA ~ esperadoCodigo:CONFLICTO_SOLICITUD_NO_APTA
+   id:TC14-C28 ~ operacion:ASIGNAR ~ estadoEntrada:ACTIVA ~ inicio:AUT ~ setup:SEM-ESTADO:ACTIVA,SEM-HUECO-DEST:EXACTO ~ esperadoStatus:HUECO_OCUPADO ~ esperadoCodigo:CONFLICTO_HUECO_OCUPADO
+   id:TC14-C29 ~ operacion:ASIGNAR ~ estadoEntrada:ACTIVA ~ inicio:PASADA_CIERRE ~ setup:SEM-ESTADO:ACTIVA ~ esperadoStatus:FUERA_DE_FRANJA ~ esperadoCodigo:CONFLICTO_FUERA_DE_FRANJA
+   id:TC14-C30 ~ operacion:ASIGNAR ~ estadoEntrada:ACTIVA ~ inicio:PASADA_CIERRE ~ setup:SEM-ESTADO:ACTIVA,SEM-HUECO-DEST:EXACTO ~ esperadoStatus:FUERA_DE_FRANJA ~ esperadoCodigo:CONFLICTO_FUERA_DE_FRANJA
+

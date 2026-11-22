@@ -1,0 +1,32 @@
+== profesional setupPor=null
+   MEDICO | api-medico, con franja 08:00-15:00 todos los dias salvo festivo | setup=null
+   SIN_AGENDA | api-sin-agenda existe como id pero no tiene agenda: el AgendaNoEncontradoException de CDU13 se traduce a conflicto de franja | setup=null
+   DESCONOCIDO | api-profesional-que-no-existe | setup=null
+   VACIO | profesionalId= en el cuerpo | setup=null
+   AUSENTE | sin clave profesionalId en el cuerpo | setup=null
+== inicio setupPor=null
+   AUT | INICIO_TARDE 13:00 de PruebasCitas, dentro de franja y libre salvo que el setup diga lo contrario | setup=null
+   APERTURA_JUSTA | 08:00 en punto, el primer minuto de la franja | setup=null
+   CIERRE_LIMITRO | 14:30, ultima cita de 30 minutos que cabe antes del cierre | setup=null
+   PASADA_CIERRE | 15:00 en punto, coincide con el cierre | setup=null
+   ANTERIOR_APERTURA | 07:00, antes de la apertura | setup=null
+   FESTIVO | 09:00 del 2026-11-10, festivo declarado en la agenda falsa | setup=null
+   DOMINGO | 13:00 de un domingo: la franja falsa cubre todos los dias | setup=null
+   MAL_FORMATADO | inicio=manana al mediodia | setup=null
+   AUSENTE | sin clave inicio en el cuerpo | setup=null
+== duracion setupPor=null
+   AUSENTE | sin clave duracionMinutos en el cuerpo: CitaServicio la pide al catalogo (api-prueba fija 30) | setup=null
+   D30 | 30 minutos explicitos | setup=null
+   D1 | 1 minuto: la cita mas corta que se puede agendar | setup=null
+   D0 | 0 minutos: el canon de CDU12 lo trata como no fijada y usa la del catalogo | setup=null
+   EXCESIVA | 600 minutos desde cualquier inicio de la franja | setup=null
+   D_NEGATIVA | -5 minutos | setup=null
+== hueco setupPor={"LIBRE": "SEM-HUECO-DEST:LIBRE", "EXACTO": "SEM-HUECO-DEST:EXACTO", "SOLAPE": "SEM-HUECO-DEST:SOLAPE", "FANTASMA_EXACTO": "SEM-HUECO-DEST:FANTASMA"}
+   LIBRE | nadie ocupa el tramo pedido | setup=null
+   EXACTO | otra cita ocupa exactamente el mismo inicio y duracion del pedido | setup=null
+   SOLAPE | otra cita sembrada respecto al inicio de la propia fila que solapa quince minutos | setup=null
+   FANTASMA_EXACTO | la cita que ocupaba ese inicio fue CANCELADA y su hueco liberado | setup=null
+== solicitud setupPor={"CREADA": "ENLAZE:CREADA", "CITADA": "ENLAZE:CITADA", "NINGUNA": "ENLAZE:NINGUNA"}
+   CREADA | la entrada enlaza una solicitud CREADA sin cita | setup=null
+   CITADA | la solicitud enlazada ya tiene cita detras | setup=null
+   NINGUNA | la entrada no tiene solicitudId | setup=null

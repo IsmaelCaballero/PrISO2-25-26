@@ -1,0 +1,111 @@
+keys=['id', 'kind', 'csv', 'nombre', 'solicitud', 'tipoTC', 'puerta', 'columnas', 'filas']
+id: "H"
+kind: "conjetura"
+csv: "tdop-cdu14-conjetura.csv"
+nombre: "conjetura de errores sobre la cola: entrada ilegitima, colision de ruta, dobles intentos y metodos no declarados"
+solicitud: "varias rutas de /api/listas-espera"
+tipoTC: "error (conjetura)"
+puerta: "AF robustez: ningun ataque ni descuido del cliente convierte la cola en un 500 ni en una respuesta que miente al cliente, y los codigos de Spring (405/415/404 de ruta) se mantienen estables sin cuerpo ApiError"
+columnas: ["id", "ataque", "metodo", "ruta", "setup", "esperadoStatus", "esperadoCodigo", "nota"]
+{"ataque": "CUERPO-ILEGIBLE", "metodo": "POST", "ruta": "/api/listas-espera", "setup": "SEMILLA-VACIA", "esperadoStatus": "CUERPO_ILEGIBLE", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "texto suelto donde va el JSON del alta: 400 con codigo estable, nunca 500 (leccion de CDU12 y CDU19)"}
+{"ataque": "CONTENT-TIPO-ERRONEO", "metodo": "POST", "ruta": "/api/listas-espera", "setup": "SEMILLA-VACIA", "esperadoStatus": "CONTENIDO", "esperadoCodigo": "-", "nota": "enviar el alta como text/plain: Spring responde 415 sin cuerpo ApiError propio; es el canon, no se persigue 400 aqui"}
+{"ataque": "QUERY-CON-PARAMS-EN-ALTA", "metodo": "POST", "ruta": "/api/listas-espera?pruebaCodigo=api-prueba", "setup": "SEMILLA-VACIA", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "intentar colar los obligatorios por query en lugar de cuerpo: el alta solo lee el cuerpo, asi que faltan y es 400; si alguna vez diera 201, HALLAZGO"}
+{"ataque": "PRIORIDAD-INVENTADA-EN-ALTA", "metodo": "POST", "ruta": "/api/listas-espera", "setup": "SEMILLA-VACIA", "esperadoStatus": "CREADO", "esperadoCodigo": "-", "nota": "prioridad=' URGENTE ' con espacios y minusculas: canon de CDU06, se recorta y normaliza; la cola la sirve como URGENTE en la cuspide"}
+{"ataque": "COLISION-RUTA-VARIABLE", "metodo": "POST", "ruta": "/api/listas-espera/auditoria-verificable/prioridad", "setup": "SEMILLA-VACIA", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "usar la palabra auditoria-verificable como esperaId en la ruta de prioridad: el metodo coincide (todo en cola es POST) y la colision cae en el path variable de UUID, que la rechaza con 400 DATOS_INVALIDOS (HALLAZGO 3 de CDU19, corregido en CDU12: MAL_FORMATADO es INVALIDOS, no NO_ENCONTRADA); con PUT en cambio Spring daria 405 antes de mirar el UUID"}
+{"ataque": "FILTRO-CON-PARAM-REPETIDO", "metodo": "GET", "ruta": "/api/listas-espera?pruebaCodigo=api-prueba&pruebaCodigo=api-otra", "setup": "SEMILLA-MIXTA", "esperadoStatus": "OK", "esperadoCodigo": "-", "nota": "el cliente manda el mismo filtro dos veces con valores distintos: Spring se queda con el primer valor (canon MultiValueMap), se sirve la cola de api-prueba y no hay 500 (es la trampa del diseno: al reves, esta fila estaria en rojo)"}
+{"ataque": "PRUEBA-FUERA-DE-CATALOGO-EN-FILTRO", "metodo": "GET", "ruta": "/api/listas-espera?pruebaCodigo=NO-EXISTE", "setup": "SEMILLA-MIXTA", "esperadoStatus": "FILTRO_INVALIDO", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "filtrar por una prueba que no esta en el catalogo: se prefiere 400 DATOS_INVALIDOS a servir una cola vacia que parece legitima (precedencia fijada en la nota de la tabla A; el 404 se reserva para el alta, donde la prueba si es una referencia que falta)"}
+{"ataque": "ESTADO-ABSURDO-EN-FILTRO", "metodo": "GET", "ruta": "/api/listas-espera?estado=VOLANDO", "setup": "SEMILLA-MIXTA", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "estado=VOLANDO en el filtro: 400, nunca una cola vacia que miente (leccion de CDU12 TC12-07)"}
+{"ataque": "COLISION-RUTA-LITERAL", "metodo": "GET", "ruta": "/api/listas-espera/auditoria-verificable", "setup": "SEMILLA-VACIA", "esperadoStatus": "OK", "esperadoCodigo": "-", "nota": "GET /api/listas-espera/auditoria-verificable: el segmento literal no debe ser secuestrado por la ruta /{esperaId}; Spring da prioridad al literal y responde la verificacion, no un 400 por UUID ilegible (es la trampa del diseno: al reves, esta fila estaria en rojo)"}
+{"ataque": "METODO-NO-DECLARADO", "metodo": "POST", "ruta": "/api/listas-espera/{esperaId}/auditoria", "setup": "SEMILLA-VACIA", "esperadoStatus": "METODO", "esperadoCodigo": "-", "nota": "hacer POST (en lugar de GET) sobre la ruta de auditoria, con un esperaId UUID bien formado pero nunca sembrado: la ruta coincide y el metodo no, asi que Spring da 405 Method Not Allowed sin cuerpo ApiError propio; estabilizado en CDU19 y debe seguir igual"}
+{"ataque": "RETIRAR-SIN-ID", "metodo": "DELETE", "ruta": "/api/listas-espera", "setup": "SEMILLA-VACIA", "esperadoStatus": "METODO", "esperadoCodigo": "-", "nota": "borrar la coleccion entera por descuido: 405, no un 204 que vacie la cola del Servicio de Salud (conjetura de desastre)"}
+{"ataque": "ASIGNAR-CON-PARAMS-EN-QUERY", "metodo": "POST", "ruta": "/api/listas-espera/{esperaId}/asignar?profesionalId=api-medico&inicio=2026-11-13T13:00", "setup": "SEMILLA-COLA-TRES", "esperadoStatus": "INVALIDOS", "esperadoCodigo": "DATOS_INVALIDOS", "nota": "intentar pasar el hueco por query en lugar del cuerpo: el controlador solo lee el cuerpo, asi que faltan obligatorios y es 400; si alguna vez diera 201 habria dos contratos distintos conviviendo (HALLAZGO)"}
+{"ataque": "DOBLE-ASIGNAR", "metodo": "POST", "ruta": "/api/listas-espera/{esperaId}/asignar", "setup": "SEMILLA-COLA-TRES", "esperadoStatus": "NO_ACTIVA", "esperadoCodigo": "CONFLICTO_ENTRADA_NO_ACTIVA", "nota": "el doble clic real sobre el boton de asignar: la montura ejecuta dos intentos seguidos sobre la misma entrada y se comprueba el segundo (el primero debe dar 201). El segundo encuentra la entrada ASIGNADA: por la precedencia fijada la maquina de estados gana a la reserva de hueco, asi que es 409 ENTRADA_NO_ACTIVA sin llegar a consultar la agenda. La red fisica la prueba otra fila (E ASIGNAR_MISMO_HUECO_ENTRADAS_DISTINTAS: ahi si es HUECO_OCUPADO por el UNIQUE de cita_hueco). Si el segundo diera 201, la SEG de no duplicar hueco estaria reventada (D140) y esta fila quedaria en rojo como HALLAZGO"}
+
+=== leyendaTokens
+{
+ "SEMILLA-VACIA": "banco de pruebas sin ninguna entrada en la cola (y sin solicitudes ni citas)",
+ "SEMILLA-MIXTA": "cinco entradas ACTIVA de la prueba api-prueba con las tres prioridades y marcas de tiempo distintas (A,B,C,D,E)",
+ "SEMILLA-EMPALTE-FECHA": "dos entradas ACTIVA de prioridades distintas con la MISMA marca de tiempo: la prioridad decide y la fecha no aporta nada",
+ "SEMILLA-EMPALTE-TODO": "dos entradas ACTIVA con prioridad y marca de tiempo identicas: solo esperaId desempata, y por eso el orden es unico entre dos lecturas consecutivas",
+ "SEMILLA-TERMINALES": "dos entradas ACTIVA y dos terminales (ASIGNADA con cita en 09:00 y RETIRADA con motivoFin): sin filtro se sirven las cuatro, el filtro estado deja fuera las terminales",
+ "SEMILLA-SOLO-TERMINALES": "una ASIGNADA y una RETIRADA, ninguna ACTIVA: el filtro estado=ACTIVA debe dar 200 con cola vacia",
+ "SEMILLA-COLA-TRES": "cola canonicA de tres entradas ACTIVA etiquetadas A (URGENTE, t1), B (PREFERENTE, t2) y C (ORDINARIA, t3), las tres de api-paciente con api-prueba y marcas de tiempo ordenadas",
+ "SEMILLA-COLA-EMPALTE-BC": "como SEMILLA-COLA-TRES pero B y C comparten marca de tiempo gemela: el desempate por esperaId es lo unico que rompe el empate",
+ "SEMILLA-COLA-CON-RETIRO": "A RETIRADA mas B PREFERENTE y C ORDINARIA activas: la cola activa se renumera porque la posicion se calcula",
+ "SEMILLA-COLA-TERMINALES": "A ACTIVA URGENTE, B ASIGNADA (cita en 09:00) PREFERENTE y C RETIRADA ORDINARIA: montura de los rechazos por estado terminal",
+ "SEMILLA-COLA-SOLO": "una sola entrada C ORDINARIA ACTIVA: reubicar en una cola unitaria y comprobar que la posicion 1 sigue saliendo en el JSON",
+ "SEMILLA-DUP": "entrada ACTIVA de api-paciente con api-prueba sembrada ANTES del alta que se va a pedir: el alta es repetido (doble clic de alta)",
+ "SEMILLA-DUP-RETIRADA": "igual que SEMILLA-DUP pero la entrada previa esta RETIRADA: su clave anti-duplicado paso a NULL y el alta nueva es legal",
+ "SEMILLA-DUP-ASIGNADA": "igual que SEMILLA-DUP pero la entrada previa esta ASIGNADA: tambien es terminal y libera la clave anti-duplicado",
+ "SEMILLA-OTRO-PACIENTE": "entrada ACTIVA de OTRO paciente para la misma prueba: demuestra que la clave anti-duplicado es el par paciente|prueba",
+ "SEMILLA-OTRA-PRUEBA": "entrada ACTIVA del mismo paciente para OTRA prueba (api-prueba-dup): idem por la otra pata de la clave",
+ "SEMILLA-SOL:<tipo>": "solicitud sembrada del tipo indicado (CREADA, CITADA con cita detras, PRESCRITA o inexistente) para el campo solicitudId del alta",
+ "SEM-ESTADO:<estado>": "una unica entrada etiquetada OBJ en el estado indicado (ACTIVA, ASIGNADA o RETIRADA), prioridad PREFERENTE: es la entrada sobre la que se dirige la operacion de la fila",
+ "SEM-PRI:SUBIR": "moldeador de peticion: el cuerpo de la reubicacion pide el escalon inmediatamente superior al que tiene la entrada sembrada",
+ "REDUNDANTE": "moldeador de peticion: el cuerpo de la reubicacion repite el escalon que ya tiene la entrada sembrada (doble clic de reubicacion)",
+ "ENLAZE:<enlace>": "fija la solicitudId de la entrada OBJ: CREADA, CITADA (con cita detras), PRESCRITA, NINGUNA (solicitudId nula) o NO_ENCONTRADA",
+ "SEM-HUECO-DEST:LIBRE": "el hueco que va a pedir la fila esta libre en la agenda falsa del profesional",
+ "SEM-HUECO-DEST:EXACTO": "hueco sembrado que empieza justo en el inicio que pide la fila: choque exacto",
+ "SEM-HUECO-DEST:SOLAPE": "hueco sembrado que empieza quince minutos antes y cruza el inicio pedido: choque por solape, no por coincidencia exacta",
+ "SEM-HUECO-DEST:FANTASMA": "hueco ocupado sin cita detras (hueco hueso): solo lo protege la restriccion unica, no la maquina de estados de las citas",
+ "SEM-CITA-OCUPA": "cita ya creada por CDU12 en 2026-11-13T09:00 con su hueco y su eslabon en cita_auditoria: sirve para comprobar que las dos cadenas de auditoria no se pisan",
+ "AUT": "valor autocoadyuvante: el esperaId o el inicio que la propia montura acaba de sembrar (esperaId de OBJ, o inicio 2026-11-13T13:00 dentro de la franja 08:00-15:00)",
+ "INEXISTENTE": "esperaId bien formado (UUID valido) que no existe en la tabla",
+ "MAL_FORMATADO": "segmento de ruta que no es un UUID: la conversion del path variable falla antes de entrar en el controlador",
+ "VACIO": "cadena vacia o solo espacios en un campo o parametro obligatorio",
+ "AUSENTE": "se omite la clave del cuerpo o el parametro de consulta",
+ "TEXTO": "texto de motivo corriente, dentro de clase",
+ "MAX": "valor de 40 caracteres: ultima longitud que cabe en paciente_id y en codigo_prueba",
+ "LARGO": "valor de 41 caracteres: primera longitud que no cabe en paciente_id o codigo_prueba",
+ "MAX300": "motivo de 300 caracteres: ultima longitud que cabe en motivo_fin y en el eslabon de auditoria",
+ "LARGO301": "motivo de 301 caracteres: primera longitud que no cabe (se corta en el servicio, no en la base de datos)",
+ "ESPACIOS": "valor valido con espacios delante y detras: recortar lo deja reconocible (leccion de CDU12)",
+ "ILEGAL": "instante con formato invalido donde se espera una fecha-hora ISO",
+ "ANTERIOR_APERTURA": "2026-11-13T07:00: antes de la apertura de la franja falsa",
+ "APERTURA_JUSTA": "2026-11-13T08:00: borde inferior exacto de la franja",
+ "CIERRE_LIMITRO": "2026-11-13T14:30: ultimo inicio que cabe con la duracion de 30 minutos",
+ "PASADA_CIERRE": "2026-11-13T15:00: primera hora que desborda el cierre de la franja",
+ "FESTIVO": "2026-11-10T09:00: dia sin franja en la agenda falsa",
+ "DOMINGO": "2026-11-15T13:00: domingo; la agenda falsa tiene franja 08:00-15:00 TODOS los dias salvo el festivo, asi que el domingo es clase valida dentro de franja y solo se usa para montar el hueco fantasma"
+}
+=== _notas
+[
+ "Matrices TDOP de la CDU14 (Iter 7, CFG-07): listas de espera con prioridad, reordenacion determinista,",
+ "reubicacion con autor y motivo, y proteccion del doble clic en tres capas. Unica fuente de verdad (D33):",
+ "esta spec genera los CSV de la matriz y los TC humanos; nadie edita los CSV a mano.",
+ "Dos hechos del diseno condicionan TODA la matriz y son lo que las tablas prueban:",
+ " (1) LA POSICION NO SE ALMACENA: se calcula aplicando el comparador total ListaEspera.porOrdenDeEspera()",
+ "     (prioridad desc, fechaSolicitud asc y esperaId asc como ultimo desempate). Por eso cada fila que",
+ "     termina en estado de exito reafirma el invariante: la cola servida por GET coincide elemento a",
+ "     elemento con el orden del comparador aplicado al repositorio y el campo posicion vale 1..n. Es la",
+ "     puerta de la iteracion ('reordenacion determinista probada') desde la capa HTTP y desde la dominante.",
+ " (2) EL DOBLE CLIC se corta en tres capas y cada capa tiene su tabla: alta repetida (tabla B, clave",
+ "     anti-duplicado paciente|prueba mientras la entrada esta ACTIVA), reubicacion redundante (tabla D,",
+ "     que ademas exige que NO se escriba un segundo eslabon de auditoria) y asignacion repetida (tabla E,",
+ "     capa de estado y capa de hueco con UNIQUE (profesional_id, inicio) y @Version de CDU12).",
+ "Espejo de factores: factores -> niveles -> reglas -> estado esperado, igual que en CDU12 y CDU19. Los",
+ "niveles marcados 'valido: false' salen a proposito: se combinan con los validos (noCombinaInvalidos)",
+ "para comprobar que la API los rechaza con un codigo estable y un unico motivo atribuible.",
+ "Jerarquia de tablas: A orden y determinismo de la cola (lectura), B altas y clases de equivalencia de la",
+ "entrada, C transiciones operacion x estado (enumerada), D reubicacion y reordenacion (enumerada con cola",
+ "esperada escrita), E doble clic e idempotencia (secuencias escritas a mano, como la E de CDU12), F",
+ "asignacion contra huecos y solicitud (parejas, heredando los valores limite de franja de CDU12), G",
+ "auditoria de reubicaciones y su cadena (enumerada) y H conjetura de errores del contrato nuevo.",
+ "Los valores esperados salen del contrato REAL que se va a implementar en CFG-07 (ListaEsperaControlador,",
+ "ListaEsperaManejadorErrores, ListaEsperaServicio, ListaEspera.porOrdenDeEspera y AuditoriaEspera), no al",
+ "reves. Las precedencias que fijan el ORDEN de las reglas de cada tabla son las leidas en CitaServicio y",
+ "las decididas en la issue #47:",
+ " - alta: la sintaxis manda (400) > la prueba existe (404 PRUEBA_NO_ENCONTRADA) > la solicitud referenciada",
+ "   existe (404 SOLICITUD_NO_ENCONTRADA) > la clave anti-duplicado (409 ALTA_DUPLICADA). Un cuerpo fuera de",
+ "   clase nunca se convierte en entrada en cola, y una prueba inexistente se responde antes de mirar la",
+ "   solicitud porque la prueba es el eje de la cola. El alta NO mira el estado de la solicitud: entrar en",
+ "   cola con una solicitud ya citada o prescrita es legal; la aptitud se comprueba al asignar.",
+ " - reubicar y retirar: la sintaxis manda (400) > la entrada existe (404) > la entrada esta ACTIVA (409) >",
+ "   el cambio es efectivo (409 REDUNDANTE). El motivo obligatorio pertenece a la sintaxis, asi que un",
+ "   motivo en blanco o demasiado largo se responde 400 aunque la reubicacion fuera tambien redundante: es",
+ "   la misma decision de CDU12 (la guarda precede a la busqueda) y mantiene el contrato estable.",
+ " - asignar: la sintaxis manda (400) > la entrada existe (404) > la entrada esta ACTIVA (409) > la",
+ "   solicitud enlazada es apta (409 SOLICITUD_NO_APTA, incluido solicitudId nulo) > la cita cabe en la",
+ "   franja del profesional (409 FUERA_DE_FRANJA; aqui cae tambien el profesional sin agenda, porque",
+ "   CitaServicio.franjasDelProfesional traduce el AgendaNoEncontradoException de CDU13 al conflicto de",
+ "   CDU12 y CitaServicioTest deja esa traduccion fijada) > el hueco esta libre (409 H

@@ -38,8 +38,8 @@ le faltaban entonces los **TC humanos (D28)** y la **fusión con su tag (D29/D30
 | Fase | Estado |
 |---|---|
 | Inicio (Iter0) | ✔ **Completada, etiquetada y publicada** — PR #7 fusionado a `develop` (`641e72d`), tag `cfg-iter00`; **R0 publicada en `main`**: PR #19 fusionado (merge `e165622`) con el tag anotado **`v0.1.0`** (regla **D30**: release desde `release/R0`) |
-| Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) CERRADA EL 15/11**: código fusionado por Ismael con el **PR #42** (merge `08a7ed8`) y matriz D33 de 172 casos con el **PR #43** (merge `cbb1901`), **tip actual de `develop` = `0ef4f1a`** tras el **PR #45** de Iter6. tag anotado **`cfg-iter05` → `cbb1901`** y **#40 cerrada a mano** (D29). **Iter6 (CDU19 / CFG-06) CERRADA EL 15/11 (sesión 24, cierre asumido por el agente por orden de Ismael)**: código en `feature/iter06-cdu19-integracion` (issue **#44**) **fusionado por el agente con el PR #45** (merge **`0ef4f1a`**, check `construir` en verde, rama **borrada** en remoto y local): modelo + módulo `iso2-integracion` + **203 pruebas (10 clases)** con la **matriz TDOP de 126 casos en verde** (`Cdu19MatrizTdopTest`, spec de 8 tablas A-H subida en `c104d78`), **TC humanos proyectados y ejecutados** (`docs/tc/cdu19-tc-humanos.md` + evidencia HTTP en `docs/tc/evidencia/cdu19/`), **informe de spike** (`docs/informes/spike-cdu19.md`, en `2388b7e`) y **reactor revalidado en 839 tests**; la wiki **`Iter6-CDU19-integracion` publicada** (`9b7f513` en `master` del repo wiki). Lo que cierra la sesión 24: **evidencia HTTP versionada**, **tabla manual de TC humanos rellena**, **D37 revalidado con DEF-14/DEF-15** y **PR de cierre** de `docs/iter06-cierre` → `develop` con el **tag `cfg-iter06` sobre su fusión** y la **#44 cerrada con artefacto detrás**. Ojo: los **TC humanos de CDU19 los ejecutó el agente**, así que la **validación D28 de Ismael sigue pendiente** en esa CDU. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** —y la **validación D28 de los de CDU19**, que los ejecutó el agente— y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
-| Construcción (Iter7–20) | ⏳ Pendiente |
+| Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) CERRADA EL 15/11**: código fusionado por Ismael con el **PR #42** (merge `08a7ed8`) y matriz D33 de 172 casos con el **PR #43** (merge `cbb1901`), **tip actual de `develop` = `207a506`** (el código de Iter6 entró con el **PR #45** → `0ef4f1a` y su cierre documental con el **PR #46** → `207a506`, sobre el que está el tag `cfg-iter06`). tag anotado **`cfg-iter05` → `cbb1901`** y **#40 cerrada a mano** (D29). **Iter6 (CDU19 / CFG-06) CERRADA EL 15/11 (sesión 24, cierre asumido por el agente por orden de Ismael)**: código en `feature/iter06-cdu19-integracion` (issue **#44**) **fusionado por el agente con el PR #45** (merge **`0ef4f1a`**, check `construir` en verde, rama **borrada** en remoto y local): modelo + módulo `iso2-integracion` + **203 pruebas (10 clases)** con la **matriz TDOP de 126 casos en verde** (`Cdu19MatrizTdopTest`, spec de 8 tablas A-H subida en `c104d78`), **TC humanos proyectados y ejecutados** (`docs/tc/cdu19-tc-humanos.md` + evidencia HTTP en `docs/tc/evidencia/cdu19/`), **informe de spike** (`docs/informes/spike-cdu19.md`, en `2388b7e`) y **reactor revalidado en 839 tests**; la wiki **`Iter6-CDU19-integracion` publicada** (`9b7f513` en `master` del repo wiki). Lo que cierra la sesión 24: **evidencia HTTP versionada**, **tabla manual de TC humanos rellena**, **D37 revalidado con DEF-14/DEF-15** y **PR de cierre** de `docs/iter06-cierre` → `develop` con el **tag `cfg-iter06` sobre su fusión** y la **#44 cerrada con artefacto detrás**. Ojo: los **TC humanos de CDU19 los ejecutó el agente**, así que la **validación D28 de Ismael sigue pendiente** en esa CDU. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** —y la **validación D28 de los de CDU19**, que los ejecutó el agente— y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
+| Construcción (Iter7–20) | 🟡 **En curso** — **Iter7 (CDU14 · listas de espera / CFG-07) ejecutada y en rama** (18/11): **PR borrador #48** `feature/iter07-cdu14-listas-espera` → `develop` con el check `construir` **en verde** (estrella `21d9a3c`). Hecho: **matriz D33 de CDU14 en verde 253/253** (`Cdu14MatrizTdopTest`, 8 tablas A-H), reactor **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo de reactor **86,7 % líneas y 76,8 % ramas** (cumplen las puertas de R2), wiki **`Iter7-CDU14-listas-espera` publicada** y **D37 revalidado con DEF-16/17/18**. Le faltan cuatro gestos, todos de Ismael: **fusionar el #48**, **tag `cfg-iter07`**, **cerrar #47** y los **TC humanos TC14-01…09 (D28)** |
 | Transición (Iter21) | ⏳ Pendiente — cierre 14/12, entrega 15/12 |
 
 **Avance cuantificado (15/11/2026), sobre el plan de `docs/planificacion-iteraciones+Calidad.csv`:** el total
@@ -50,6 +50,10 @@ fusión de cierre de esta sesión**). **Cerradas del todo, con TC humanos hechos
 Iter1 (CFG-01) e Iter6 (CFG-06) = 98 h ≈ 16,0 %**, con el matiz de que **los TC humanos de CDU19 los ejecutó el
 agente** y a Ismael le queda la validación D28; a Iter2/3/4/5 les siguen faltando los TC humanos (D28). En
 calendario vamos por delante: el plan ponía Iter4-6 del 16/11 al 20/11 y la Iter6 ya estaba fusionada el 15/11.
+**Actualizado 18/11:** la **Iter7 (22 h) está ejecutada en rama a falta solo de fusión y tag**, así que si Ismael
+fusiona el **#48** van **8 de 22 iteraciones = 250 h ≈ 40,8 %** del esfuerzo, cuando el plan colocaba la Iter7
+entre el 20/11 y el 27/11. Sigue sin cerrarse del todo (TC humanos, D28) Iter2/CDU17, Iter3/CDU13, Iter4/CDU06,
+Iter5/CDU12 y la propia Iter7.
 
 **Iteración cerrada (y siguiente):** **Iter6 · CDU19 integrar con sistemas externos (CFG-06) — CERRADA el
 15/11 en la sesión 24**. La issue **#44** (abierta por Ismael el 15/11) fijaba el alcance: spike de viabilidad del
@@ -139,12 +143,13 @@ técnicas, la D33 y sus TC humanos.
   esté en `develop`: `git diff --stat origin/develop...origin/main` queda vacío, así que la publicación de
   R1 no arrastrará restos del PR #17. Rama `release/R0` **borrada** en remoto y local el 09/11 (el tag `v0.1.0`
   ya fija ese punto).
-- **Open / en curso (15/11, sesión 23):** al empezar la sesión no había **ningún PR abierto** (el de cierre de CFG-05,
-  **PR #43**, se fusionó el 15/11 08:52 → `cbb1901`). Al cerrarla sí lo hay: **PR borrador #45** de la Iter6
-  (`feature/iter06-cdu19-integracion` → `develop`, con `Ref: #44` y **sin `Closes`**): lo fusiona y cierra Ismael
-  (D29). **Issue abierta: la #44** (Iter6 · CDU19 / CFG-06), abierta por Ismael el 15/11 y
-  **en curso** en `feature/iter06-cdu19-integracion`; es la que lleva el DoD de esta iteración y solo Ismael la
-  cerrará (D29). Histórico de la sesión 17: **#35** (pruebas D33) la cerró Ismael a mano el **09/11 00:26** antes
+- **Open / en curso (18/11, sesión 26):** un solo PR abierto, el **PR borrador #48** de la Iter7
+  (`feature/iter07-cdu14-listas-espera` → `develop`, con `Ref: #47` y **sin `Closes`**): **CI `construir` en verde**
+  (ejecución 44335613731, 3 m 33 s) y lo **fusiona Ismael**, que además cierra la issue y pone el tag (D29/D30).
+  **Issue abierta: la #47** (Iter7 · CDU14 listas de espera / CFG-07), abierta por Ismael el 16/11, con su DoD
+  escrito el 18/11 en un comentario; **solo Ismael la cierra** (D29). El árbol local está limpio y la rama está
+  volcada en `origin` estrella **`21d9a3c`**, con los **33 commits** del tramo `cfg-iter06..HEAD` y el commit de
+  cierre documental de esta sesión encima. Histórico de la sesión 17: **#35** (pruebas D33) la cerró Ismael a mano el **09/11 00:26** antes
   de que llegara el trabajo (PRs **#36** y **#37**) y **no se reabre**; **#34** (persistencia D34) se cerró **a la
   vez sin trabajo detrás**, se reabrió el 11/11 y **quedó implementada y cerrada** esa misma semana (PR #41 →
   merge `d4749e3`).
@@ -292,6 +297,9 @@ técnicas, la D33 y sus TC humanos.
 | 16 | 08/11/2026 | **Cierre de Iter4 en GitHub + nueva estrategia de pruebas (D33) y arranque de la persistencia MySQL (Prompt 14):** Ismael fusiona **PR #31** (merge `a3fe109`) y **PR #32** (merge `3b02718`), CI verde. El agente crea y sube el tag anotado **`cfg-iter04` sobre `a3fe109`** (el merge del código, no el documental posterior) y borra la rama `feature/iter04-cdu06-solicitudes` (remoto y local). Wiki: página nueva **`Iter4-CDU06-solicitudes.md`** con 4 PNG en `images/` y `Home.md` enlazado (merge `5207bae` del repo wiki). Creada la plantilla que faltaba, **`docs/tc/cdu06-tc-humanos.md`** (14 casos TC06-01…TC06-14 sobre la superficie real: `POST /api/solicitudes`, `GET /mias`, `GET /{id}`, `GET /{id}/integridad`, semillas `SEM-RX-TORAX`/`SEM-RM-RODILLA`). Detectada **nueva desviación de D30**: el PR #29 fusionó `develop` → `main` (merge `d12388b`, 19:01) sin etiqueta de release. Nuevas directrices de Ismael: **D33** — diseñar los casos con **clases de equivalencia + teorema del valor límite + conjetura de errores**, composarlos con **pairwise**, ejecutarlos con **JUnit/Maven** y usar **esos mismos casos** en las plantillas de TC humanos; el agente genera casos y plantillas; se empieza por **las pruebas de la Iteración 1**, con **JavaDoc** en los ficheros de test y la wiki al día **identificando la clase probada**; y **persistencia MySQL** con **Docker (MySQL + phpMyAdmin)**, usuario `gestoroperaciones` y patrones **DAO** y **Agente** particularizado en **`AgenteMySQL`** (ADR **D34** al implementarse) | — |
 | 17 | 09/11/2026 | **Iter1/CFG-01 cerrada del todo: método D33 sobre CDU16 + TC humanos (Prompts 15 y 16):** rama `feature/iter01-pruebas-d33` desde `develop`. Primero la **spec** (`355ade9`): `docs/test/iter01/tdop-cdu16-espec.json` con las clases de equivalencia, los puntos límite y la conjetura de errores de CDU16, y dos generadores nuevos en `tools/` — **`pairwise.py`** (compone con pairwise sobre restricciones y generadores de valores, sin librerías) y **`tc_plantillas.py`** (proyecta la matriz a la plantilla de TC humanos entre `<!-- TDOP:BEGIN -->`/`<!-- TDOP:END -->`). Matrices generadas: **A33 + B15 + C36 + D9 + E22 = 115 casos** en `docs/test/iter01/tdop-cdu16.md` y en `iso2-catalogo/src/test/resources/tdop/`. Rojo real: **16 fallos** sobre 115, que destaparon los huecos de D35 y **dos discrepancias de spec** (`CODIGO_DUPLICADO`, y el 400 por tamaño de página) → **se arregla la spec, no el test**. Fixes (`b2f7356`, D35): `LímitesCatalogo` valida las cotas en el servicio devolviendo 400 en vez de reventar contra la BD, y se valida `pagina`/`tamano`; antes, **el `.puml` de iter01** (`3a17a9a`, D31). Verde (`f73ac80`): **115/115 TDOP** y **139 tests en `iso2-catalogo`**, **JaCoCo 97,5 % líneas (195/200) y 82,5 % ramas (33/40)** sobre la puerta real `jacoco.line.min=0.60`. **PR #36 → `develop` fusionado por Ismael** (merge `f43721c`), CI verde. Wiki rehecha (merge `7b36c5c`) con la matriz, la clase probada y los 16 fallos del rojo. **TC humanos de CDU16 rellenados y ejecutados por el agente** (excepción puntual a D28, anotada en el doc): TC16-01…06 en 16 pasos, 5 asientos de auditoría nuevos y el doc corregido (decía 5 TC, son 6) → **PR #37 fusionado** (commit `e70bc50`, merge `3601fd6`, tip de `develop`). Tag **`cfg-iter01` reanotado** sobre `df09bca` (objeto `af95aff` → `429d67f`, `--force-with-lease`) con el bloque «Reanotado el 09/11/2026». Comentario de cierre en **#35** (Ismael la había cerrado a mano a las 00:26). **Borradas 12 ramas remotas y 12 locales** fusionadas. Detectado: **#34 quedó cerrada a la vez (00:26) sin trabajo de D34 detrás**. BD H2 local `./data/iso2-server` **conservada** con las filas `TC16H-*` y los asientos de auditoría | — |
 | 18 | 11/11/2026 | **D34 implementada: MySQL 8.4 en Docker + Flyway dual + capa DAO/Agente (Prompt 17, issue #34 reabierta):** rama `feature/iter05-persistencia-mysql` desde `develop` (`737b932`, merge del PR #38). Commits: `b15d927` (`docker/`: `mysql:8.4` en host **3307** + phpMyAdmin **8081** + volumen `iso2-mysql-datos` + `init/01-usuarios.sql` con `gestoroperaciones` solo DML y `iso2_flyway` con DDL; root `Iso2Curso25-26-Root`), `64e92eb` (Flyway **dual** `db/migration/h2` + `db/migration/mysql` elegida **por perfil** — descartado `{vendor}` porque Flyway 11 escanea ambas subcarpetas y produce versiones duplicadas; perfil `mysql` en el `application.yml`; `mysql-connector-j` + `flyway-mysql`; apps subidas a **0.1.5-SNAPSHOT**, tren de la release CFG-05), `ae40ad7` (diseño-primero D31: `docs/modelo/iter05/persistencia-clases.{puml,png}` + README **antes** del código) y `bba56f8` (paquete **nuevo** `es.uclm.iso2.server.persistencia`: interfaz `Agente` + `AgenteH2`/`AgenteMySQL` elegidos por `DatabaseMetaData.getDatabaseProductName()`, DAO JDBC `DiagnosticoPersistenciaDao`, REST `GET /api/persistencia/diagnostico` solo ADMINISTRADOR (regla nueva en `ConfigSeguridad`), 9 tests de API en H2 + 3 Testcontainers contra `mysql:8.4` real, incluido TC-D34-MY-03: `gestoroperaciones` no puede hacer DDL → error 1142). **Incidente Testcontainers/Docker:** el BOM de Boot 3.5.4 gestiona TC 1.21.3, que habla la API Docker 1.32, y Docker Engine 29 rechaza clientes < 1.40 → HTTP 400 → los tests se **saltaban en silencio**; fix = importar **`testcontainers-bom` 1.21.4 ANTES** de `spring-boot-dependencies` en el padre (la propiedad `testcontainers.version` no vale con BOM importado) + JaCoCo del padre **0.8.12 → 0.8.15** (Java 25). Decisión de Ismael sobre el punto suelto de D34: **JPA sigue siendo el acceso primario del dominio; DAO + Agente es capa nueva en `iso2-server-app`**, no sustituye a los `Repository`. Puertas en verde: `mvn -B -ntp clean verify` = **356 tests, 0 saltados** (server-app 60→72) con JaCoCo y javadoc estricto OK; los tests de MySQL autodesactivables sin Docker (`disabledWithoutDocker`). **PR pendiente** a `develop`; Ismael debe cerrar **#34** a mano al fusionar y refrendar los TC humanos de CDU16 en la H2 nueva; **#40** creada con el prompt de Iter5/CDU12 | — |
+| 25 | 16-17/11/2026 | **Iter7 · CDU14 listas de espera (CFG-07, issue #47) — implementación servidora completa; ejecutor TDOP aún sin cerrar:** rama `feature/iter07-cdu14-listas-espera` (subida hasta `47a6601`). Commits: `d9c0766` inventario de la base, `410bf15` diagramas D31, `080fd09` **diseño TDOP de 253 filas** (8 tablas A-H en `docs/test/iter07/tdop-cdu14-espec.json`, semilla 20261116, CSVs regenerados y verificados byte a byte) + plantilla `docs/tc/cdu14-tc-humanos.md`, `9fd5eff`+`18a5b78` alineación del modelo (Agente B), `741fdfe` tren de versiones 1.2.0-SNAPSHOT + `tools/cdu14_smoke.py`, `6168156` contratos en `iso2-common`, `1fda042` dominio (comparador determinista prioridad↓/fechaSolicitud↑/esperaId↑ + auditoría `REUBICACION` encadenada propia en `espera_auditoria` con génesis virtual), `f6dda51`+`23627f7` repositorios y asignación con profesional, `dfe87aa` servicio + auditoría, `2c7ea4e` capa web con consejos de error, `99578f9` RBAC `lista_espera:leer/escribir` + Flyway **V1.6.0 dual h2+mysql** + semillas, `7891e61` notas del ejecutor al doc TDOP, `d8f95fe` **arreglo del hallazgo TC14-E10**: control optimista `@Version` en `ListaEspera` → 409 `CONFLICTO_ENTRADA_NO_ACTIVA` + columna `version` en V1.6.0 (modelo D31 alineado), `47a6601` doble `PRUEBA_DUP` y borrador del ejecutor guardado en `docs/test/iter07/borrador-ejecutor/`. **Estado honesto:** reactor `iso2-citas`+`iso2-server-app` en verde (`mvn -B -pl iso2-citas,iso2-server-app -am test`: **238 tests** en citas —los de siempre, **ninguna clase de test nueva de CDU14 compila todavía**— y **90** en server-app con 3 saltados), así que la **puerta de la matriz CFG-07 sigue ABIERTA**: `Cdu14MatrizTdopTest` (253 casos 1:1) no existe aún. Ensayo **TC14-H05 en verde contra el servidor real** (5 ALTAs 201, tres lecturas de cola idénticas, `auditoria/verificar` → verificable=true con 8 eslabones, retirar 200). Hallazgo anotado: `AgendaNoEncontradoException` del asignar no está mapeada en el consejo de citas → 500 `ERROR_INTERNO` (afecta a F16/F17/F48/F50) | — |
+
+| 26 | 18/11/2026 | **Iter7/CFG-07 cerrada del lado del repo: matriz TDOP de CDU14 a 253/253, wiki, D37 revalidado y PR borrador #48 (Prompt 25):** sesión de relevo en el equipo nuevo sobre `feature/iter07-cdu14-listas-espera` (verificado: el relevo del 17/11, `b4edce0`, **sí es ancestro de `HEAD`**, no se perdió nada). Se terminan los seis handlers que faltaban del ejecutor — `operacionDesdeMatriz` (C · 30), `reubicacionDesdeMatriz` (D · 27), `secuenciaDesdeMatriz` (E · 12), `asignarDesdeMatriz` (F · 64), `auditoriaDesdeMatriz` (G · 12) y `conjeturaDesdeMatriz` (H · 13) — y la **matriz queda verde: 253/253**. Rojos y su vía D33: (1) **defecto real**: el consejo *catch-all* de `ListaEsperaManejadorErrores` se comía el `HttpMediaTypeNotSupportedException` y el 415 salía como **500 `ERROR_INTERNO`** (TC14-H02) → `medioNoSoportado` devuelve **415 con el código estable `CONTENIDO_NO_ACEPTADO`** (`b38c149` + `21d9a3c`, misma convención D35 de `CatalogoManejadorErrores:94-97`); (2) **spec mal fijada**: E02/E03/E12 ponían `OK` en secuencias que terminan en un alta que responde **201**, y **H06** asumía **200 con el primer valor** ante `?pruebaCodigo=api-prueba&pruebaCodigo=api-otra` cuando **Spring une los parámetros repetidos** en una sola cadena (`api-prueba,api-otra`) y responde **400 `DATOS_INVALIDOS`** → se corrige `docs/test/iter07/tdop-cdu14-espec.json` y se **regeeran** CSV, proyecciones y el bloque `<!-- TDOP:BEGIN -->` con `tools/pairwise.py` + `tools/tc_plantillas.py` (nunca a mano); (3) las semillas `SEMILLA-SIN-AGENDA` (**409 `FUERA_DE_FRANJA`**, no 500) y las de `UN_OK_Y_OTRO_409` se alinean con el comportamiento confirmado. Métricas **medidas** con `mvn -o -ntp verify`: reactor **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo de reactor **2059/2376 líneas (86,7 %) y 621/809 ramas (76,8 %)**, `iso2-citas` **93,5 % líneas / 89,5 % ramas**, `iso2-common` sigue en **0 de 164 líneas y 0 de 56 ramas** (deuda **D-08**); LOC **15.454 en `src/main` (191 ficheros)** y **12.377 en `src/test` (64)** con ratio **0,80**, y **57 ficheros nuevos + 16 modificados** en `cfg-iter06..HEAD`; *pairwise* verificado ficha a ficha: **715/715 pares** (A 90/90, B 186/186, F 439/439) y **159 filas** de las 37.770 teóricas. Cierre material: wiki **`Iter7-CDU14-listas-espera`** publicada en `master` del repo wiki (**`3dd871d`**) con los 4 PNG de `docs/modelo/iter07`, la fila nueva en `Home.md` y las fichas Javadoc enlazadas (D32: 404 hasta el merge); **comentario con el DoD en la #47**; **PR borrador #48** → `develop` con `Ref: #47` y **sin `Closes`**, **CI `construir` en verde** (ejecución 44335613731); **D37 revalidado** en `TASADEFECTOS.md` con **DEF-16** (F4: el 415 tragado por el consejo), **DEF-17** (F4: **falta de control optimista `@Version`** en `ListaEspera`, hallado por TC14-E10 → 409 `CONFLICTO_ENTRADA_NO_ACTIVA` + columna `version` en `V1.6.0` dual, mismo error que en Iter5) y **DEF-18** (F3: **familia** de expectativas de spec mal fijadas): fila Iter7 **33 commits · 0 F1 · 0 F2 · 1 F3 · 2 F4 · 3 totales · 9,1/100** y total histórico **162 · 18 · 13 fugados · 11,1/100**, con §2-§6 rehechos con datos medidos (CI 87 ejecuciones, matrices D33 ya en **666 filas** = 115+172+126+253). **Deliberadamente no hecho:** fusionar el PR, cerrar #47, el tag `cfg-iter07` y los **TC14-01…09** (D28/D29) son de Ismael; y la **tarjeta Kanban de la Iter7** queda pendiente porque al token le falta el alcance `project` (`gh auth refresh -h github.com -s project` falló con *context deadline exceeded*). |
 
 ## Deuda / pendientes inmediatos
 
@@ -444,7 +452,33 @@ técnicas, la D33 y sus TC humanos.
     borrador #45 **ya quedó fusionado el 15/11 en la sesión 24** (merge `0ef4f1a`), así que ese bloqueo está
     levantado: el *worktree* puede crearse desde el tip actual de `develop`.
 
-## Punto exacto de continuación para la próxima sesión
+27. **Iter7 · CDU14 (CFG-07) — ejecutada y en PR, sin cerrar del todo (18/11, sesión 26; issue #47)**:
+    (a) **hecho** — **`Cdu14MatrizTdopTest`: 253 casos leídos de los 8 CSV, en verde**, con las proyecciones
+    autogeneradas en `docs/test/iter07/tdop-cdu14.md` y la plantilla `docs/tc/cdu14-tc-humanos.md` regenerada;
+    (b) **hecho** — reactor verde **1092 pruebas** y puertas de **R2 alfa** cumplidas con holgura (86,7 % líneas ≥ 70 %,
+    76,8 % ramas ≥ 55 %, TC RBAC para los 8 endpoints nuevos = TC14-08);
+    (c) **hecho** — wiki **`Iter7-CDU14-listas-espera`** (`3dd871d` en `master` del repo wiki) nombrando la clase
+    probada, con los 4 diagramas y las cifras medidas;
+    (d) **hecho** — **D37 revalidado** con DEF-16/17/18 y la fila Iter7 en `TASADEFECTOS.md`;
+    (e) **hecho** — **PR borrador #48** (`Ref: #47`, sin `Closes`) con **CI verde** y **DoD escrito en la #47**;
+    (f) **pendiente de Ismael** — **fusionar el #48**, **tag anotado `cfg-iter07`** sobre esa fusión (D30),
+    **cerrar la #47** (D29) y borrar la rama; al taguear hay que **revalidar el conte de la fila Iter7** de
+    `TASADEFECTOS.md` (§3), que pasará de 33 a unos **36 commits** y la tasa de **9,1 a unos 8,3 por 100**;
+    (g) **pendiente de Ismael (D28)** — los **TC humanos TC14-01…TC14-09** de `docs/tc/cdu14-tc-humanos.md` sobre el
+    servidor real; ojo: **no hay ningún test automatizado de 401/403 que toque `/api/listas-espera`**, los permisos
+    solo se afirman en `MatrizPermisosTest` de `iso2-seguridad`, así que el control real de RBAC de la cola depende
+    de ese TC14-08;
+    (h) **pendiente** — la **tarjeta de la Iter7 en el GitHub Project** (tablero Kanban, tarjeta #23): hace falta el
+    alcance `project` del token de `gh`, y `gh auth refresh -h github.com -s project` dio *context deadline exceeded*
+    (el código de dispositivo no llegó a autorizarse). Se reintenta con Ismael delante.
+28. **Propuesta de salvaguarda mecánica contra el olvido de `@Version` (pendiente de aceptar por Ismael, no numerada
+    como deuda)**: DEF-17 repite el mismo despiste de Iter5 (`Cita` sí lleva control optimista, `ListaEspera` no).
+    Como no es un problema de comprensión sino de omisión, la mitigación barata es un **test de ArchUnit** en
+    `iso2-server-app`/cada CDU que exija `@Version` en toda entidad `@Entity` persistente, para que el olvido reviente
+    en CI en vez de salir en un TC de concurrencia. No se ha escrito todavía y **no se numera como deuda hasta que
+    Ismael la acepte**; si se acepta, entra como una fila más de D37 en la iteración siguiente.
+
+## Punto exacto de continuación para la próxima sesión *(escrito el 15/11; **superado** por «Punto de continuación — 18/11/2026», al final del fichero — se deja como histórico)*
 
 **La Iter5 / CFG-05 está CERRADA del lado del repo** (15/11, sesiones 21-22): los 12 commits de código entraron
 con el **PR #42** (merge `08a7ed8`, 14/11 22:25) y la **matriz D33 de 172 casos** con el **PR #43** (merge
@@ -465,29 +499,43 @@ desde la rama `docs/iter06-cierre` con su PR a `develop`, **tag anotado `cfg-ite
 **`v0.2.0-alpha`** (ALFA-1 / R1), que se materializa publicando **`release/R1` → `main`** (D30), y el **refrendo
 de los TC humanos** que ejecutó el agente (D28): esa ejecución es evidencia útil, no sustituye su validación.
 
-**Lo que sigue es la Iter7 / CFG-07 · CDU14 «listas de espera»** sobre `iso2-citas` **1.2.0** (inversión D23:
-CDU14 antes que CDU01). Ventana del plan **23-27/11/2026**, fase Construcción, actor **Administrativo**, pareja
-responsable P-A, **22 h con IA**. Foco de calidad ISO 25010: **Adec. Funcional (corrección)**, **Usabilidad
+**La Iter7 / CFG-07 · CDU14 «listas de espera» está EN CURSO desde el 16/11 (sesión 25)** sobre `iso2-citas`
+**1.2.0-SNAPSHOT** (inversión D23: CDU14 antes que CDU01), en la rama `feature/iter07-cdu14-listas-espera`
+(subida hasta `47a6601`). Ventana del plan **23-27/11/2026** (vamos por delante), fase Construcción, actor
+**Administrativo**, pareja responsable P-A, **22 h con IA**. Foco de calidad ISO 25010: **Adec. Funcional (corrección)**, **Usabilidad
 (operabilidad y protección)** y **Seguridad (no repudio y responsabilidad)**. Puertas de CFG-07 en
 `docs/planificacion-iteraciones+Calidad.csv`: **reordenación determinista probada** y **auditoría de
 reubicaciones**. Sus condiciones de trabajo están en el apartado **2-ter**.
 
-Primeros pasos de la sesión que arranque la Iter7:
+**Hecho ya en la Iter7** (ver sesión 25 del registro): inventario (`d9c0766`), diagramas D31 (`410bf15`), diseño
+TDOP de 253 filas con spec canonica + plantilla de TC humanos (`080fd09`), modelo alineado del Agente B
+(`9fd5eff`+`18a5b78`), tren de versiones 1.2.0 + smoke (`741fdfe`), contratos en `iso2-common` (`6168156`),
+dominio con cola determinista y auditoría `REUBICACION` (`1fda042`), repositorios (`f6dda51`+`23627f7`), servicio
+(`dfe87aa`), capa web (`2c7ea4e`), RBAC + Flyway V1.6.0 dual (`99578f9`), notas del ejecutor (`7891e61`) y control
+optimista `@Version` del hallazgo TC14-E10 (`d8f95fe`). **La puerta grande sigue abierta: el ejecutor
+`Cdu14MatrizTdopTest` de los 253 casos no existe todavía** (solo el borrador en
+`docs/test/iter07/borrador-ejecutor/`), y no hay ninguna clase de test nueva de CDU14 compilando. Pasos
+siguientes, en orden:
 
-1. **Abrir la issue CFG-07** (`gh`, D29) con el alcance y el DoD, y desde ahí la rama
-   `feature/iter07-cdu14-listas-espera` **partiendo del tip de `develop` tras el cierre de la Iter6**.
-2. **Diseñar los conjuntos de casos de prueba de CDU14** con las cuatro técnicas de la D33 (clases de
-   equivalencia, conjetura de errores, valores límite y *pairwise*), escribir la spec
-   `docs/test/iter07/tdop-cdu14-espec.json`, generar los CSV con `python tools/pairwise.py` y proyectar los TC
-   humanos con `python tools/tc_plantillas.py`.
-3. **Informe del diseño de los conjuntos de prueba** (nuevo, pedido por Ismael el 15/11): documentar el diseño
-   en sí, no solo el resultado, porque tiene valor pedagógico. Sitio elegido:
-   `docs/informes/diseno-conjuntos-prueba.md`.
-4. **Agente B en paralelo** (opcional, Deuda nº 26): *worktree* `C:\ProgIA\PrISO2-iter07` desde `develop`,
-   acotado a `docs/modelo/iter07/` y `docs/test/iter07/`, sin tocar `src/`, `pom.xml` ni los registros.
-5. **Repartirse la deuda heredada**: `D-01..D-07` del spike (`docs/informes/spike-cdu19.md`) y las tres nuevas
-   del cierre: **D-08** (puerta JaCoCo de `iso2-common`), **D-09** (401 en rutas sin mapear) y **D-10** (código
-   esperado distinto entre matriz aislada y aplicación montada).
+1. **Cerrar la matriz TDOP (prioridad nº 1):** escribir `Cdu14MatrizTdopTest` en
+   `iso2-citas/src/test/java/es/uclm/iso2/citas/tdop/` siguiendo el patrón de `Cdu12MatrizTdopTest`: lectura de
+   los 9 CSVs, tabla de esperados, ayuda `aplicarSetup` (semillas `SEMILLA-COLA-*` por API y `SEM-TAMPER:*` con
+   los hooks `setHashParaPruebas`/`setMotivoParaPruebas`), y las 8 tablas A-H. El sembrado usa **un único
+   paciente** (`api-paciente`) y la colisión de clave se dispara con `api-prueba-dup` (`PRUEBA_DUP` en
+   `PruebasCitas`). Regla D33: si un caso sale rojo, se corrige el código o la spec JSON y se regeneran los
+   CSVs con `python tools/pairwise.py docs/test/iter07/tdop-cdu14-espec.json --resources
+   iso2-citas/src/test/resources/tdop`; nunca editar CSVs ni el ejecutor a mano.
+2. **Hallazgo que destapará la tabla F (F16/F17/F48/F50):** `AgendaNoEncontradoException` del asignar no está
+   mapeada en `ListaEsperaManejadorErrores` y cae a 500 `ERROR_INTERNO`. Decidir (con Ismael si hace falta) si
+   se mapea a 404/409 o la spec acepta `ERROR_INTERNO`, y dejarlo consignado.
+3. **TC humanos:** la plantilla `docs/tc/cdu14-tc-humanos.md` ya proyecta las 8 tablas; el ensayo del flujo
+   TC14-H05 contra el servidor real ya salió verde (evidencia en el registro sesión 25). Rellenado y refrendo,
+   de Ismael (D28).
+4. **Wiki (D32):** página `Iter7-CDU14-listas-espera.md` (espejo de `Iter6-CDU19-integracion.md`), PNGs a
+   `images/iter07-cdu14-*.png` y fila de Iter7 en `Home.md`.
+5. **Cierre CFG-07 (D29, solo por orden de Ismael):** PR `feature/iter07-cdu14-listas-espera` → `develop`
+   (sin `Closes`), fusión y cierre de **#47** a mano, tag anotado `cfg-iter07` sobre el merge y refresco de
+   `TASADEFECTOS.md` (D37).
 
 ### 0) Arranque en el equipo nuevo (10/11/2026)
 
@@ -549,7 +597,7 @@ trae el hito **`v0.2.0-alpha`** (ALFA-1 / R1). Orden de lectura al llegar: `CONT
 (D28-D37) → `STATUS.md` → `PLAN.md` §4 → fila CFG-06 del mapa. Al cerrar: **revalidación D37** en
 `TASADEFECTOS.md` (Deuda nº 22) y wiki con la **clase probada** nombrada (D33).
 
-### 2-ter) Iter7 · CDU14 listas de espera (CFG-07) — la que sigue: las condiciones del trabajo
+### 2-ter) Iter7 · CDU14 listas de espera (CFG-07) — ~~la que sigue~~ → **ejecutada 16-18/11, en el PR #48 a falta de fusión, tag y TC humanos**
 
 Rama `feature/iter07-cdu14-listas-espera`, abierta **desde el tip de `develop` tras el cierre de la Iter6** y con
 `Ref: #NN` (la issue CFG-07, que hay que abrir antes) en cada commit. Versión esperada: `iso2-citas` **1.2.0**
@@ -589,6 +637,28 @@ módulos no se tocan. Fase **Construcción**, fecha objetivo **27/11/2026**, **2
   (rutas sin mapear → 401 con cuerpo `ApiError` incluso con token válido) y **D-10** (la matriz aislada espera un
   código distinto del de la aplicación montada). Son deuda de prueba/contrato: caben en Iter7 sin ahogar los
   22 h de CDU14, pero hay que decirlas en la issue para no repartirlas a ojo.
+
+**Cómo quedó ejecutada realmente (18/11, sesiones 25-26), y en qué se desvió de esta receta:**
+
+- **Puerta 1, cumplida**: comparador determinista en la propia entidad (`ListaEspera.porOrdenDeEspera()`, `ListaEspera.java:244`) con el canon
+  escalón de prioridad ↓ → fecha de solicitud ↑ → `esperaId` ↑, probado en las tablas A (cola, 40) y D (reubicación, 27)
+  y con las filas de empates comparadas **por bloques**, porque dentro de un empate el orden es `esperaId`.
+- **Puerta 2, cumplida con un matiz de diseño**: la acción **`REUBICACION`** existe y cada asiento lleva autor, motivo
+  e instante encadenados con SHA-256, pero la cadena de la cola es **propia** (`espera_auditoria`, con su literal
+  `GENESIS`), no se añaden asientos a la cadena de `AuditoriaCitas` de CDU12. Se reutiliza la **técnica**, no la tabla;
+  así la cola no depende de que exista una cita. Decisión cerrada en el diseño y anotada en la **#47**.
+- **Flyway dual**: se usó el slot previsto, **`V1.6.0__cdu14_listas_espera.sql`** en `h2/` **y** `mysql/`. En el camino
+  le entró una columna más de la que anunciaba el plan: **`version`** para el control optimista (DEF-17).
+- **RBAC**: `lista_espera:leer` / `lista_espera:escribir` sobre los **8 endpoints** de `/api/listas-espera`
+  (lectura: ADMINISTRADOR, MÉDICO, RECEPCIONISTA; escritura: ADMINISTRADOR, RECEPCIONISTA). La puerta «un TC RBAC por
+  endpoint nuevo» de R2 se cubre con el **TC14-08 humano**, que aún no está ejecutado: **no hay test automatizado
+  401/403 contra esos endpoints** (Deuda nº 27-g).
+- **Método D33**: la spec quedó en **8 tablas A-H y 253 filas** (no las cinco familias de CDU16), con las proyecciones
+  y la plantilla regeneradas por `tools/pairwise.py` + `tools/tc_plantillas.py`. El informe pedagógico
+  `docs/informes/diseno-conjuntos-prueba.md` **sigue sin escribirse**: se ha ido documentando el diseño dentro de las
+  propias matrices y de la wiki de cada CDU; queda como tarea propia si Ismael lo quiere fuera.
+- **Deuda heredada**: **D-01..D-07 no se tocaron** (son de `iso2-integracion` y su hueco natural es Iter8-16) y
+  **D-08..D-10 siguen abiertas**; D-08 re-medida: `iso2-common` **0 de 164 líneas y 0 de 56 ramas**, sin puerta.
 ### 2-bis) Iter5 · CDU12 (CFG-05) — ~~siguiente iteración~~ → ejecutada y cerrada el 15/11
 
 ~~Receta tal como se escribió, cerrada con el PR #42 (`08a7ed8`), el PR #43 (`cbb1901`) y el tag `cfg-iter05`.
@@ -914,3 +984,114 @@ del punto de vista del usuario sigue siendo de Ismael, y el hito `v0.2.0-alpha` 
   Ismael cambia la forma de trabajar en pruebas: **los TC los diseña el agente** con **clases de equivalencia +
   conjetura de errores + teoría pesada de valores límite + *pairwise***, y el diseño se documenta en un **informe
   con valor pedagógico** (`docs/informes/diseno-conjuntos-prueba.md`), no solo el resultado.
+
+
+---
+
+## Punto de continuación — 18/11/2026 (sesión 26): CFG-07 terminada y en el PR #48, a falta de los gestos de Ismael
+
+* **Dónde está el repo**: rama `feature/iter07-cdu14-listas-espera` estrella **`21d9a3c`**, **volcada en `origin` y
+  con el árbol limpio**. `develop` = **`207a506`** (tip del cierre de Iter6, tag `cfg-iter06`), `main` = `d12388b`.
+  **CFG-07 está terminada del lado del código**: matriz **253/253** verdes en `Cdu14MatrizTdopTest`, reactor
+  **1092 pruebas / 0 fallos / 0 saltadas**, CI del PR **en verde**. El **PR borrador #48** (`Ref: #47`, **sin
+  `Closes`**) espera fusión, y la issue **#47** lleva su DoD escrito en un comentario del 18/11.
+* **Lo que le falta a la Iter7, y es todo de Ismael** (D29/D30/D28): **(1)** fusionar el **#48** a `develop`;
+  **(2)** **tag anotado `cfg-iter07`** sobre ese merge (patrón `cfg-iter06`); **(3)** **cerrar la #47**;
+  **(4)** borrar la rama en remoto y local; **(5)** ejecutar los **TC humanos TC14-01…09** de
+  `docs/tc/cdu14-tc-humanos.md` contra el servidor real (TC14-08 es el que cubre la puerta RBAC: **no hay test
+  automatizado 401/403 sobre `/api/listas-espera`**). Al taguear, **revalidar el conte de `TASADEFECTOS.md` §3**:
+  la fila Iter7 pasará de **33** a unos **36 commits** y la tasa de **9,1** a unos **8,3 por 100**.
+* **Pendiente operativo**: la **tarjeta Kanban de la Iter7** en el GitHub Project (tarjeta #23) no se ha podido
+  escribir porque al token de `gh` le falta el alcance `project`; `gh auth refresh -h github.com -s project` devolvió
+  *context deadline exceeded*. Reintentarlo con Ismael delante introduciendo el código de dispositivo.
+* **Pregunta sin responder desde la sesión 24**: la **identidad git** del repo sigue siendo
+  `IsmaelCaballero <IsmaelCaballero@users.noreply.github.com>`; si se prefiere `Ismael.Caballero@uclm.es` hay que
+  cambiar `git config user.email` y decidir si se reescriben los commits futuros solo o también los actuales.
+* **Trucos de esta sesión, para no repetir tropiezos**:
+  * `mvn -pl iso2-citas -o -ntp -Dtest=Cdu14MatrizTdopTest#tdopTablaH test` ejecuta **cero pruebas en silencio**: los
+    ocho cañones son `@ParameterizedTest` + `@MethodSource` y Surefire no encuentra método con ese nombre. O se usa la
+    clase entera (`-Dtest=Cdu14MatrizTdopTest -Dsurefire.failIfNoSpecifiedTests=false -am`) o se añade un método
+    testigo. La matriz entera (253 filas) corre en **2 m 14 s**, no en media hora.
+    * `jacoco.csv` **solo lo escribe `verify`**, no `test`: medir cobertura con `mvn test` da cero líneas leídas.
+  * PowerShell **no distingue mayúsculas en nombres de variable**: `$bc` y `$BC` son la misma y produjeron un acumulado
+    falso de ramas. En los scripts de métricas, nombres distintos y siempre `[double]` explícito.
+  * Hay que **guardar los logs** de la matriz y del `verify`: el buffer de la consola se pierde y sin log no hay
+    métrica honesta.
+  * En el repo wiki, **`fetch` + `merge --ff-only origin/master` antes de escribir** (el remoto puede ir por delante).
+  * Orden de trabajo no negociable: **escribir trozo → verificar en disco → `git add` → commit → push inmediato**.
+* **Qué toca después (Iter8)**: el plan sigue pidiendo Construcción; las deudas **D-01..D-10** y la de **`iso2-common`
+  sin puerta** (D-08) esperan ahí, y la **propuesta de ArchUnit para `@Version`** (Deuda nº 28) está a la espera de
+  que Ismael la acepte antes de numerarse. El informe `docs/informes/diseno-conjuntos-prueba.md` (pedido el 15/11)
+  sigue sin escribirse.
+
+---
+
+## Punto de continuación — 17/11/2026 (superado por el bloque anterior; se deja como histórico): CFG-07 abierta y matriz TDOP de CDU14 a 95/253
+
+*(Escrito al cerrar la sesión del 17/11; el trabajo sigue en otro equipo, así que este bloque es el relevo completo.)*
+
+* **Dónde queda el repo**: rama `feature/iter07-cdu14-listas-espera` en **`f1c3764`**, volcada en `origin` y con el árbol de trabajo **limpio** (no hay nada sin commitear). **CFG-06 cerrada**: el reactor de 14 módulos está verde con **238 pruebas** en `iso2-citas`. **CFG-07 abierta**: de las **253** filas de los 8 CSV de la matriz están ejecutadas y verdes **95** (tabla A · cola: 40, y tabla B · alta: 55). El **#47** sigue abierto y solo lo cierra Ismael (**D29**), igual que la PR.
+* **Lo que ya tiene `Cdu14MatrizTdopTest.java`** (624 líneas, en HEAD): montura `@SpringBootTest(classes = ConfigTdopWeb.class)` + `@AutoConfigureMockMvc` + `@DirtiesContext`, mundo limpio en `@BeforeEach`, lectura de los CSV y de `cdu14-esperados.csv`, motor de siembra **por la propia API HTTP** (`alta`, `cambiarPrioridad`, `retirar`, `asignar`, `colaTres`, `semEstado`), verificador del canon de orden **D11** y los dos handlers hechos: `colaDesdeMatriz` y `altaDesdeMatriz`.
+* **Lo que falta, en este orden**:
+  1. Los seis handlers restantes con su `filasXxx`: `reubicacionDesdeMatriz` (D · 27), `secuenciaDesdeMatriz` (E · 12), `operacionDesdeMatriz` (C · 30), `asignarDesdeMatriz` (F · 64), `auditoriaDesdeMatriz` (G · 12) y `conjeturaDesdeMatriz` (H · 13), más los helpers `objetivoDe`, `esperaIdDe`, `inicioDe`, `duracionDe`, `motivoDe`, `prioridadPedida`, `setupValor`, `cadenaDe`, `multiset`, `verificarColaEsperada`, `verificarVerificable`, la siembra del hueco (`SEM-HUECO-DEST:EXACTO|SOLAPE|FANTASMA`, con la FANTASMA creada y **cancelada** por HTTP) y los ataques `SEM-TAMPER` (hooks `setMotivoParaPruebas` / `setHashParaPruebas` y `AuditoriaEsperaRepositorio`).
+  2. Corregir tres semillas del `switch` de setup: `SEMILLA-COLA-EMPALTE-BC` pasa a ser exactamente `colaTres()` (D10 y D11), `SEMILLA-COLA-CON-RETIRO` es `colaTres()` más retirar a `A`, y `SEMILLA-CON-RETIRO` (G03, G10, G11) es **una sola** entrada con alta + reubicación + retiro; falta `SEMILLA-CITA-OCUPA` (G08).
+  3. Añadir en `ListaEsperaManejadorErrores` un `@ExceptionHandler` de `HttpMediaTypeNotSupportedException` que devuelva **415** sin cuerpo (**TC14-H02**): hoy se lo lleva el *catch-all* y responde 500. El **405** de H10 y H11 ya lo da Spring y no se toca.
+  4. Desajuste conocido de la spec: **E02, E03 y E12** fijan `esperadoStatus: OK` (200) en secuencias que terminan en un alta que responde **201**, así que tocarán rojo. Vía **D33**: se corrige `tdop-cdu14-espec.json` a `CREADO` y se regeran los CSV con `python tools/pairwise.py docs/test/iter07/tdop-cdu14-espec.json --resources iso2-citas/src/test/resources/tdop`; **nunca** se edita la matriz a mano ni se adapta el test.
+  5. Ejecutar por tramos (`-Dtest=Cdu14MatrizTdopTest#reubicacionDesdeMatriz` y compañía, siempre con `-am`), luego `mvn -o -ntp -pl iso2-citas -am test` con las 253 + 238, y al final el reactor. Con `@DirtiesContext` por método, la matriz sola cuesta **20-30 min por ejecución**: limitar a cuatro o cinco corridas completas.
+  6. Cierre de la iteración: página **Iter7/CDU14** en la wiki (`PrISO2-25-26.wiki.git`, rama `master`, con los 4 PNG de `docs/modelo/iter07` copiados a `images/`), revalidación de **D37** en `TASADEFECTOS.md`, actualización de `STATUS.md` y `PROMPTS.md`, y tag anotado `cfg-iter07`.
+* **Pérdida registrada**: los tests unitarios de cola escritos el 17/11 y una versión larga del ejecutor **nunca llegaron a commit**, y `git fsck` solo devuelve objetos de Iter3/Iter5/Iter6, así que son irrecuperables. La cifra real de pruebas de `iso2-citas` es **238**, no las que anunciaban los apuntes de esa sesión. Queda como regla de trabajo: escribir trozo → comprobar en disco → `git add` → commit → **push inmediato**, y **nunca** `git clean`, `git reset --hard` ni `git restore .`, que son las únicas operaciones que borran el trabajo sin dejar rastro en el reflog.
+* **Relevo al equipo nuevo**: en `docs/test/iter07/notas-ejecutor/` están los volcados derivados de las tablas C, D, E, F, G y H y de los factores y reglas de F, para no releer la spec de 105 KB; en `docs/test/iter07/borrador-ejecutor/` quedan las dos partes del borrador del ejecutor. El equipo nuevo necesita su **`~/.m2` relleno**, porque todo se compila y se prueba con `mvn -o` (sin descarga).
+
+---
+
+## Cierre de la jornada del 17/11/2026 (relevo en el otro equipo)
+
+**Todo esta en GitHub**: rama `feature/iter07-cdu14-listas-espera`, ultimo commit pusheado `b4edce0`.
+Antes de apagar: se teclearon los canones **D (reubicacion, 27 filas)** y **E (secuencias, 12 filas)**
+del ejecutor `iso2-citas/src/test/java/es/uclm/iso2/citas/tdop/Cdu14MatrizTdopTest.java`, y **compilan**
+(`mvn -o -q -ntp -pl iso2-citas -am test-compile` sin errores). No se han **ejecutado todavia**: Docker
+Desktop ya estaba caido, y las pruebas TDOP levantan Postgres con Testcontainers. Por eso los unicos
+datos reales de matriz siguen siendo los de `525ce6c`: **95/253** (tablas A y B).
+
+Estado del ejecutor: 8 handlers (uno por tabla), 4 escritos (A y B verdes; D y E escritos sin correr) y 4 por escribir
+(C operaciones, F asignar-con-hueco, G auditoria, H conjeturas). Lo que ya aporta el codigo nuevo:
+
+- Canon D: compara el `esperadoCola` alias:PRIORIDAD por **bloques de empate** (dos entradas con igual
+  escalon y igual marca de tiempo salen en orden aleatorio porque el desempate es `esperaId`), y afirma
+  posicion 1..n, total y orden canonico D11. La cadena de auditoria se compara **antes/despues**: un
+  alta legitima anade `REUBICACION`, un rechazo deja la cadena igual (eso es lo que prueba D03, D16,
+  D18 y D26 sin inventar identificador).
+- Canon E: secuencias montadas a mano por el token `secuencia`, con los pasos intermedios afirmados con
+  `paso(id, resultado, esperado)` (la columna solo describe la ultima operacion). Concurrencia **real**
+  con dos `CountDownLatch` (`alMismoTiempo`), y el invariante `UN_OK_Y_OTRO_409` se comprueba como
+  "exactamente un 2xx y otro >= 409" sin fijar codigo, porque el perdedor puede acabar en 409 de maquina
+  de estados, en 409 de hueco por UNIQUE o en conflicto optimista por `@Version`.
+- Semillas nuevas que hacian falta: `SEMILLA-COLA-CON-RETIRO`, `SEMILLA-CON-RETIRO`,
+  `SEMILLA-CITA-OCUPA`, y `colaTres(f)` respeta `ENLAZE:NINGUNA` (tres entradas sin solicitud, que es lo
+  que piden D24-D27). Ademas `alta()` **omite la clave `prioridad`** cuando viene nula, que es como las
+  filas AUSENTE de la matriz esperan un 400.
+
+Correccion de una cifra que estaba mal escrita en el bloque anterior: la matriz completa no cuesta
+"20-30 min por corrida". Correr **las 253 filas + los 238 test del modulo** es un solo `mvn test` de
+**2-4 min**; lo que cuesta es el ciclo edicion-correccion-verificacion: cada vuelta conlleva un `mvn
+-am test-compile` y una corrida, y con 158 filas por escribir se estima **10-16 vueltas**, es decir
+**1 h 30 - 2 h 30 de reloj** (y unos 150k-200k tokens de contexto, con compactado incluido).
+
+### Como se retoma en el otro equipo
+
+1. `git clone https://github.com/IsmaelCaballero/PrISO2-25-26.git` (o `git pull` si ya existe) y
+   `git checkout feature/iter07-cdu14-listas-espera`. Levantar Docker Desktop. La primera `mvn` baja
+   dependencias: **no usar `-o`** hasta que la pila local este rellena.
+2. Correr D y E y arreglar lo que salga rojo por D33 (tocar codigo o JSON de spec, nunca CSV ni test):
+   `mvn -ntp -pl iso2-citas -am -Dtest=Cdu14MatrizTdopTest#reubicacionDesdeMatriz test`
+3. Riesgo ya previsto para E02, E03 y E12: el `esperadoStatus` de la matriz dice `OK` (200) en filas
+   cuya ultima operacion es un alta, y el alta responde **201**. Son tres filas de spec mal fijadas:
+   se corrige `docs/test/iter07/tdop-cdu14-espec.json` (crear tokens `ACTIVA_PRIMERA_OK`/`ACTIVA_ULTIMA_200`
+   con el diseno que se acuerde) y se **regeeran los CSV** con `python tools/pairwise.py
+   docs/test/iter07/tdop-cdu14-espec.json --resources iso2-citas/src/test/resources/tdop`.
+4. Quedan los bloques C, F, G y H (119 filas) mas dos piezas de siembra que el codigo aun no tiene:
+   `huecoDestino` (plantar cita que ocupe/solape el hueco pedido) y `tamper` (hooks de prueba en
+   `ListaEsperaServicio` para romper el hash o borrar/reordenar eslabones de `cita_auditoria`). Las
+   reglas de validacion del hueco, ya leidas en `CitaServicio.exigeHuecoLibre`, estan volcadas en
+   `docs/test/iter07/notas-ejecutor/`; recuerda que `SEMILLA-SIN-AGENDA` es **409 FUERA_DE_FRANJA**, no
+   404: esa correccion ya esta aplicada en el JSON.

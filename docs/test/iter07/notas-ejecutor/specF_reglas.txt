@@ -1,0 +1,175 @@
+keys=['id', 'kind', 'csv', 'nombre', 'solicitud', 'tipoTC', 'puerta', 'noCombinaInvalidos', 'filasBase', 'estadosBase', 'codigosError', 'factores', 'reglas']
+id: "F"
+kind: "pairwise"
+csv: "tdop-cdu14-asignar.csv"
+nombre: "asignar cita desde la cola: franja horaria, proteccion del hueco y aptitud de la solicitud"
+solicitud: "POST /api/listas-espera/{esperaId}/asignar"
+tipoTC: "feliz + error (TDOP)"
+puerta: "SEG ninguna cita doble ocupa un hueco + AF correccion: la asignacion delega en CDU12 sin debilitar sus guardas, y la precedencia franja-antes-que-hueco y solicitud-antes-que-franja queda probada fila a fila"
+noCombinaInvalidos: true
+estadosBase: ["ASIGNADO", "INVALIDOS", "NO_ENCONTRADA", "NO_ACTIVA", "SOLICITUD_NO_APTA", "FUERA_DE_FRANJA", "HUECO_OCUPADO"]
+codigosError: {"INVALIDOS": "DATOS_INVALIDOS", "NO_ENCONTRADA": "LISTA_ESPERA_NO_ENCONTRADA", "NO_ACTIVA": "CONFLICTO_ENTRADA_NO_ACTIVA", "SOLICITUD_NO_APTA": "CONFLICTO_SOLICITUD_NO_APTA", "FUERA_DE_FRANJA": "CONFLICTO_FUERA_DE_FRANJA", "HUECO_OCUPADO": "CONFLICTO_HUECO_OCUPADO"}
+REGLAS:
+[
+ {
+  "si": {
+   "factor": "profesional",
+   "invalido": true
+  },
+  "estado": "INVALIDOS",
+  "codigo": "DATOS_INVALIDOS",
+  "porque": "profesionalId ausente o en blanco: IAE de CitaServicio, la guarda de sintaxis corre antes que cualquier llamada"
+ },
+ {
+  "si": {
+   "factor": "inicio",
+   "invalido": true
+  },
+  "estado": "INVALIDOS",
+  "codigo": "DATOS_INVALIDOS",
+  "porque": "inicio ausente o ilegible: la deserializacion o IAE lo cortan con 400"
+ },
+ {
+  "si": {
+   "factor": "duracion",
+   "invalido": true
+  },
+  "estado": "INVALIDOS",
+  "codigo": "DATOS_INVALIDOS",
+  "porque": "duracion negativa: IAE la duracion no puede ser negativa"
+ },
+ {
+  "si": {
+   "factor": "esperaId",
+   "invalido": true
+  },
+  "estado": "INVALIDOS",
+  "codigo": "DATOS_INVALIDOS",
+  "porque": "PathVariableTypeMismatch: el consejo propio traduce el error de tipo de la ruta a ApiError"
+ },
+ {
+  "si": {
+   "factor": "esperaId",
+   "igual": "INEXISTENTE"
+  },
+  "estado": "NO_ENCONTRADA",
+  "codigo": "LISTA_ESPERA_NO_ENCONTRADA",
+  "porque": "no hay entrada que asignar: 404 antes de mirar estados ni huecos"
+ },
+ {
+  "si": {
+   "factor": "estadoEntrada",
+   "igual": "ASIGNADA"
+  },
+  "estado": "NO_ACTIVA",
+  "codigo": "CONFLICTO_ENTRADA_NO_ACTIVA",
+  "porque": "la maquina de la cola manda sobre la franja y el hueco: la entrada ya tiene su cita"
+ },
+ {
+  "si": {
+   "factor": "estadoEntrada",
+   "igual": "RETIRADA"
+  },
+  "estado": "NO_ACTIVA",
+  "codigo": "CONFLICTO_ENTRADA_NO_ACTIVA",
+  "porque": "retirada: nadie puede ser asignado desde fuera de la cola"
+ },
+ {
+  "si": {
+   "factor": "solicitud",
+   "igual": "CITADA"
+  },
+  "estado": "SOLICITUD_NO_APTA",
+  "codigo": "CONFLICTO_SOLICITUD_NO_APTA",
+  "porque": "guarda propia fail-fast: una solicitud con cita no admite otra, y esto se comprueba antes de consultar huecos"
+ },
+ {
+  "si": {
+   "factor": "solicitud",
+   "igual": "NINGUNA"
+  },
+  "estado": "SOLICITUD_NO_APTA",
+  "codigo": "CONFLICTO_SOLICITUD_NO_APTA",
+  "porque": "sin prescripcion no hay cita que crear: la guarda incluye solicitudId nula"
+ },
+ {
+  "si": {
+   "factor": "profesional",
+   "igual": "SIN_AGENDA"
+  },
+  "estado": "FUERA_DE_FRANJA",
+  "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+  "porque": "sin agenda no hay ninguna franja donde quepa el hueco: CitaServicio.franjasDelProfesional ya traduce el AgendaNoEncontradoException de CDU13 al conflicto del CDU12, y esa traduccion la fija CitaServicioTest"
+ },
+ {
+  "si": {
+   "factor": "profesional",
+   "igual": "DESCONOCIDO"
+  },
+  "estado": "FUERA_DE_FRANJA",
+  "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+  "porque": "mismo camino: el id del profesional no se valida contra un directorio en CDU12 ni en CDU14, asi que sin agenda simplemente no cabe"
+ },
+ {
+  "si": {
+   "factor": "inicio",
+   "igual": "FESTIVO"
+  },
+  "estado": "FUERA_DE_FRANJA",
+  "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+  "porque": "el 2026-11-10 esta marcado como festivo en la agenda falsa"
+ },
+ {
+  "si": {
+   "factor": "inicio",
+   "igual": "PASADA_CIERRE"
+  },
+  "estado": "FUERA_DE_FRANJA",
+  "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+  "porque": "15:00 coincide con el cierre: el inicio queda fuera de [08:00, 15:00)"
+ },
+ {
+  "si": {
+   "factor": "inicio",
+   "igual": "ANTERIOR_APERTURA"
+  },
+  "estado": "FUERA_DE_FRANJA",
+  "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+  "porque": "07:00 esta antes de la apertura"
+ },
+ {
+  "si": {
+   "factor": "duracion",
+   "igual": "EXCESIVA"
+  },
+  "estado": "FUERA_DE_FRANJA",
+  "codigo": "CONFLICTO_FUERA_DE_FRANJA",
+  "porque": "600 minutos desbordan el cierre desde cualquier inicio de la franja: el fin de la cita tambien debe caber"
+ },
+ {
+  "si": {
+   "factor": "hueco",
+   "igual": "EXACTO"
+  },
+  "estado": "HUECO_OCUPADO",
+  "codigo": "CONFLICTO_HUECO_OCUPADO",
+  "porque": "colision exacta: CDU12 mantiene su proteccion del hueco bajo la asignacion de CDU14"
+ },
+ {
+  "si": {
+   "factor": "hueco",
+   "igual": "SOLAPE"
+  },
+  "estado": "HUECO_OCUPADO",
+  "codigo": "CONFLICTO_HUECO_OCUPADO",
+  "porque": "un minuto de solape basta para el rechazo: la interseccion se calcula por tramos, no por inicio exacto"
+ },
+ {
+  "si": {},
+  "estado": "ASIGNADO",
+  "codigo": "-",
+  "porque": "asignacion feliz: 201 con la cita creada por CitaServicio, entrada ASIGNADA con citaId y eslabon ASIGNACION en la auditoria de la cola"
+ }
+]
+FACTORES:
+[{"nombre": "esperaId", "niveles": [{"valor": "AUT", "valido": true, "motivo": "id de la entrada sembrada por el escenario", "criterio": "clase valida tipica"}, {"valor": "INEXISTENTE", "valido": true, "motivo": "UUID bien formado que nunca se sembro", "criterio": "valor limite: formato correcto, inexistencia real"}, {"valor": "MAL_FORMATADO", "valido": false, "motivo": "no-es-un-uuid en una ruta tipada a UUID", "criterio": "clase invalida: el tipado de la ruta lo corta antes del servicio"}]}, {"nombre": "estadoEntrada", "setupPor": {"ACTIVA": "SEM-ESTADO:ACTIVA", "ASIGNADA": "SEM-ESTADO:ASIGNADA", "RETIRADA": "SEM-ESTADO:RETIRADA"}, "niveles": [{"valor": "ACTIVA", "valido": true, "motivo": "entrada en la cola", "criterio": "clase valida tipica"}, {"valor": "ASIGNADA", "valido": true, "motivo": "terminal con cita en 09:00", "criterio": "clase valida de estado terminal: se rechaza con codigo de estado"}, {"valor": "RETIRADA", "valido": true, "motivo": "terminal con motivo de fin", "criterio": "clase valida de estado terminal"}]}, {"nombre": "profesional", "niveles": [{"valor": "MEDICO", "valido": true, "motivo": "api-medico, con franja 08:00-15:00 todos los dias salvo festivo", "criterio": "clase valida tipica"}, {"valor": "SIN_AGENDA", "valido": true, "motivo": "api-sin-agenda existe como id pero no tiene agenda: el AgendaNoEncontradoException de CDU13 se traduce a conflicto de franja", "criterio": "valor limite: heredado de CDU12, se responde 409 CONFLICTO_FUERA_DE_FRANJA porque sin agenda no hay franja donde quepa el hueco (CitaServicioTest lo deja fijado)"}, {"valor": "DESCONOCIDO", "valido": true, "motivo": "api-profesional-que-no-existe", "criterio": "valor limite: mismo camino que SIN_AGENDA porque nadie valida el id contra un directorio"}, {"valor": "VACIO", "valido": false, "motivo": "profesionalId= en el cuerpo", "criterio": "clase invalida: CitaServicio lanza IAE la cita necesita un profesional"}, {"valor": "AUSENTE", "valido": false, "motivo": "sin clave profesionalId en el cuerpo", "criterio": "clase invalida: obligatorio ausente"}]}, {"nombre": "inicio", "niveles": [{"valor": "AUT", "valido": true, "motivo": "INICIO_TARDE 13:00 de PruebasCitas, dentro de franja y libre salvo que el setup diga lo contrario", "criterio": "clase valida tipica"}, {"valor": "APERTURA_JUSTA", "valido": true, "motivo": "08:00 en punto, el primer minuto de la franja", "criterio": "valor limite: borde inferior de la franja"}, {"valor": "CIERRE_LIMITRO", "valido": true, "motivo": "14:30, ultima cita de 30 minutos que cabe antes del cierre", "criterio": "valor limite: borde superior con duracion justa"}, {"valor": "PASADA_CIERRE", "valido": true, "motivo": "15:00 en punto, coincide con el cierre", "criterio": "valor limite: un minuto mas alla del borde superior"}, {"valor": "ANTERIOR_APERTURA", "valido": true, "motivo": "07:00, antes de la apertura", "criterio": "valor limite: un minuto antes del borde inferior... mas alla: franja entera por debajo"}, {"valor":

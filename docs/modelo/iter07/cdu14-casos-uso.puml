@@ -1,0 +1,120 @@
+@startuml cdu14-casos-uso
+' CDU14 (Iter7) - Casos de uso de "Gestionar listas de espera, prioridades y huecos"
+' Autor: agente (diseno previo al codigo, issue #47) - fuentes PlantUML (D31)
+title CDU14 - Gestionar listas de espera, prioridades y huecos (cola ordenada y determinista)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Administrativo\n(ROL: RECEPCIONISTA o ADMINISTRADOR)" as ADMIN
+actor "Medico\n(ROL: MEDICO, solo lectura de la cola)" as MEDICO
+actor "Sistema\n(filtro JWT + reglas de dominio)" as SYS #D9D9D9
+
+rectangle "ISO2 Radiodiagnostico - CDU14" {
+  usecase "UC14.1\nDar de alta en la\nlista de espera" as UC1
+  usecase "UC14.2\nConsultar la cola\nordenada (con filtros)" as UC2
+  usecase "UC14.3\nReubicar la prioridad\nde una entrada" as UC3
+  usecase "UC14.4\nRetirar una entrada\nde la cola (con motivo)" as UC4
+  usecase "UC14.5\nAsignar un hueco\nlibre desde la cola" as UC5
+  usecase "UC14.6\nVerificar la auditoria\nde la cola" as UC6
+  usecase "UC14.7\nVer el detalle\nde una entrada" as UC7
+  usecase "UC17.5-6\nAutenticar y autorizar\n(CDU17)" as UC17 #FFFFFF
+  usecase "UC12.12\nRegistrar la auditoria\ncon hash encadenado\n(canon CDU12)" as UC12AUD #FFFFFF
+}
+
+rectangle "CDU12 (ya construido, iter5)" #DDDDDD {
+  usecase "UC12.2\nAgendar una cita\nsobre hueco libre" as UC12
+  usecase "UC12.1\nVer huecos libres\nde un profesional" as UC12H
+}
+
+ADMIN --> UC1
+ADMIN --> UC2
+ADMIN --> UC3
+ADMIN --> UC4
+ADMIN --> UC5
+ADMIN --> UC6
+ADMIN --> UC7
+MEDICO --> UC2
+MEDICO --> UC7
+
+SYS --> UC1 : la clave\nduplicada
+SYS --> UC3 : rechaza el\ndoble clic
+SYS --> UC5 : un hueco,\nuna cita
+SYS --> UC12AUD : asienta el\ncanon hash-chain
+
+UC1 ..> UC17 : <<include>>
+UC2 ..> UC17 : <<include>>
+UC3 ..> UC17 : <<include>>
+UC4 ..> UC17 : <<include>>
+UC5 ..> UC17 : <<include>>
+UC6 ..> UC17 : <<include>>
+UC7 ..> UC17 : <<include>>
+
+UC1 ..> UC12AUD : <<include>>
+UC3 ..> UC12AUD : <<include>>
+UC4 ..> UC12AUD : <<include>>
+UC5 ..> UC12AUD : <<include>>
+
+UC5 ..> UC12 : <<extend>>
+UC5 ..> UC12H : <<include>>
+
+note right of UC1
+  El alta es idempotente por duplicidad:
+  mientras la entrada este ACTIVA, la clave
+  (pacienteId, pruebaCodigo) es UNIQUE en la
+  tabla lista_espera. Un alta repetida se
+  rechaza con CONFLICTO_ALTA_DUPLICADA (409)
+  y no se escribe un segundo asiento.
+end note
+
+note bottom of UC2
+  Orden de salida SIEMPRE determinista
+  (comparador ListaEspera.porOrdenDeEspera()):
+  1. prioridad, de mayor a menor
+  2. fechaSolicitud, mas antigua primero
+  3. esperaId, ascendente, para desempatar
+  La cola es un orden total: dos lecturas
+  iguales dan el mismo listado. La posicion
+  es un dato calculado, no se guarda.
+end note
+
+note left of UC3
+  Cambiar la prioridad reubica la entrada en
+  la cola (arriba o abajo). Si la nueva
+  prioridad deja la entrada en la misma
+  posicion, se rechaza con
+  CONFLICTO_REUBICACION_REDUNDANTE (409)
+  para no llenar la cadena de asientos
+  vacios de valor.
+  El motivo del cambio es obligatorio.
+end note
+
+note bottom of UC4
+  Retirada: motivo obligatorio, estado
+  RETIRADA (terminal). Desde un estado
+  terminal ya no se reubica, no se retira
+  dos veces y no se asigna:
+  CONFLICTO_ENTRADA_NO_ACTIVA (409).
+end note
+
+note bottom of UC5
+  El hueco no se inventa aqui: es un hueco
+  libre del motor de CDU12 (agendas CDU13).
+  Al asignar se reutiliza CitaServicio.registrar
+  y la entrada sale de la cola (ASIGNADA,
+  con citaId). Un hueco, UNA sola cita: si
+  dos hilos tiran del mismo hueco, uno crea
+  la cita y el otro cae con los codigos de
+  CDU12 (CONFLICTO_HUECO_OCUPADO) o con
+  CONFLICTO_ENTRADA_NO_ACTIVA.
+end note
+
+note bottom of UC6
+  Trazabilidad de la cola con el mismo canon
+  hash-chain de CDU12: accion | esperaId |
+  antes->despues | usuario | motivo | instante |
+  hashAnterior. La cadena de la cola es
+  independiente de la cadena de citas.
+end note
+
+@enduml

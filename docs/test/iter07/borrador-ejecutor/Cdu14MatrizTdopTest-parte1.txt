@@ -1,0 +1,200 @@
+package es.uclm.iso2.citas.tdop;
+
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import es.uclm.iso2.citas.dominio.AuditoriaEspera;
+import es.uclm.iso2.citas.dominio.CitaHueco;
+import es.uclm.iso2.citas.repositorio.AuditoriaCitasRepositorio;
+import es.uclm.iso2.citas.repositorio.AuditoriaEsperaRepositorio;
+import es.uclm.iso2.citas.repositorio.CitaHuecoRepositorio;
+import es.uclm.iso2.citas.repositorio.CitaRepositorio;
+import es.uclm.iso2.citas.repositorio.ListaEsperaRepositorio;
+import es.uclm.iso2.citas.servicio.PruebasCitas;
+import es.uclm.iso2.citas.web.CitaControlador;
+import es.uclm.iso2.citas.web.CitaManejadorErrores;
+import es.uclm.iso2.citas.web.ListaEsperaControlador;
+import es.uclm.iso2.citas.web.ListaEsperaManejadorErrores;
+import es.uclm.iso2.common.auditoria.ApiError;
+import es.uclm.iso2.common.citas.CitaFacade.NuevoCitaDTO;
+import es.uclm.iso2.common.errors.AlreadyExistsException;
+import es.uclm.iso2.common.errors.NotFoundException;
+import es.uclm.iso2.common.errors.ValidationException;
+import es.uclm.iso2.common.solicitudes.SolicitudFacade;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+
+/**
+ * Matrices TDOP de CDU14 (Iter7/CFG-07, TC14-B/C/D/E/F/G/H): se ejecutan 1:1 desde los
+ * CSVs generados por {@code tools/pairwise.py} con la especificacion
+ * {@code docs/test/iter07/tdop-cdu14-espec.json}, que es la unica fuente canonica; los
+ * CSVs jamas se editan a mano y los casos esperados viven en {@code cdu14-esperados.csv}.
+ * Si un caso falla, se corrige el codigo o la especificacion, nunca la matriz ni el test.
+ *
+ * <p>Cada fila empieza con el mundo limpio (colas, auditorias, citas, huecos y dobles).
+ * Las entradas de cola sembradas se crean por la propia API para respetar invariantes,
+ * y sus {@code esperaId} reales se guardan en un mapa con el nombre del caso
+ * (A/B/C/OBJ/AUT/INEXISTENTE/MAL_FORMATADO): las matrices hablan de simbolos, no de UUIDs.
+ * Las cadenas de auditoria se comprueban eslabon a eslabon contra
+ * {@code AuditoriaEspera.cadenaIntegra}.</p>
+ *
+ * <p>Nota de sembrado (registrada en la memory de iteraicion): la clave anti-reincidencia
+ * {@code pacienteId|pruebaCodigo} exige que cada entrada ACTIVA sembrada use un paciente
+ * distinto (sem-paciente-A/B/C), aunque la legenda del doc nombre A/B/C a las propias
+ * entradas. El genesis de la cola es virtual en el modulo: la primera fila real firma con
+ * {@code hash_anterior} nulo, igual que en el doc describe para la base del servidor.</p>
+ *
+ * @since Iter7 (CFG-07, CDU14)
+ */
+@SpringBootTest(classes = Cdu14MatrizTdopTest.ConfigTdopWeb.class)
+@AutoConfigureMockMvc
+class Cdu14MatrizTdopTest {
+
+    private static final String URI_BASE = "/api/listas-espera";
+
+    /** Dia, hora y duracion tipicos del escenario fijo del modulo (igual que CDU12). */
+    private static final LocalDate DIA = LocalDate.of(2026, 11, 13);
+    private static final LocalTime HORA = LocalTime.of(9, 0);
+    private static final LocalDateTime INICIO = LocalDateTime.of(DIA, HORA);
+    private static final LocalDateTime INICIO_13 = LocalDateTime.of(DIA, LocalTime.of(13, 0));
+    private static final int DURACION = 30;
+
+    /** Tabla canonica esperado -&gt; (status, codigo) leida de cdu14-esperados.csv. */
+    private static final Map<String, String[]> ESPERADOS = leerEsperados();
+
+    @Autowired
+    private MockMvc mvc;
+
+    @Autowired
+    private ObjectMapper mapper;
+
+    @Autowired
+    private ListaEsperaRepositorio esperas;
+
+    @Autowired
+    private AuditoriaEsperaRepositorio auditoria;
+
+    @Autowired
+    private CitaRepositorio citas;
+
+    @Autowired
+    private CitaHuecoRepositorio huecos;
+
+    @Autowired
+    private AuditoriaCitasRepositorio auditoriaCitas;
+
+    /** Simbolo -&gt; esperaId real sembrado en el mundo de la fila actual. */
+    private final Map<String, String> idsSembrados = new LinkedHashMap<>();
+
+    /** Fila que pasa = mundo limpio: colas, cadenas, citas, huecos y dobles a cero. */
+    @BeforeEach
+    void limpiar() {
+        auditoria.deleteAllInBatch();
+        auditoriaCitas.deleteAllInBatch();
+        esperas.deleteAllInBatch();
+        huecos.deleteAllInBatch();
+        citas.deleteAllInBatch();
+        idsSembrados.clear();
+        ((PruebasCitas.SolicitudesFalsas) solicitudes).reiniciar();
+    }
+
+    @Autowired
+    private SolicitudFacade solicitudes;
+
+    // ==================================================================
+    //LECTURA DE MATRICES
+    // ==================================================================
+
+    private record Fila(Map<String, String> celdas) {
+
+        String get(String columna) {
+            return celdas.get(columna);
+        }
+
+        String id() {
+            return get("id").replace("TC14-", "");
+        }
+    }
+
+    private static List<Fila> leer(String nombre) {
+        List<Path> candidatos = List.of(
+                Paths.get("iso2-citas", "src", "test", "resources", "tdop", nombre),
+                Paths.get("src", "test", "resources", "tdop", nombre));
+        Path path = candidatos.stream().filter(Files::exists).findFirst()
+                .orElseThrow(() -> new IllegalStateException("No se encuentra la matriz " + nombre));
+        try {
+            List<String> lineas = Files.readAllLines(path, StandardCharsets.UTF_8);
+            String[] cabecera = lineas.get(0).split(";", -1);
+            List<Fila> filas = new ArrayList<>();
+            for (String linea : lineas.subList(1, lineas.size())) {
+                if (linea.isBlank()) {
+                    continue;
+                }
+                String[] celdas = linea.split(";", -1);
+                Map<String, String> fila = new LinkedHashMap<>();
+                for (int i = 0; i < cabecera.length; i++) {
+                    fila.put(cabecera[i].trim(), i < celdas.length ? celdas[i].trim() : "");
+                }
+                filas.add(new Fila(fila));
+            }
+            return filas;
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo leer la matriz " + nombre, e);
+        }
+    }
+
+    private static Map<String, String[]> leerEsperados() {
+        Map<String, String[]> tabla = new LinkedHashMap<>();
+        for (Fila f : leer("cdu14-esperados.csv")) {
+            tabla.put(f.get("esperado"),
+                    new String[] { f.get("esperadoStatus"), f.get("esperadoCodigo") });
+        }
+        return tabla;
+    }

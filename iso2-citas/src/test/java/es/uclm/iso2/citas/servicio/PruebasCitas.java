@@ -17,10 +17,13 @@ import es.uclm.iso2.common.solicitudes.SolicitudFacade.SolicitudDTO;
 import es.uclm.iso2.common.solicitudes.SolicitudFacade.SolicitudNuevaDTO;
 import es.uclm.iso2.common.solicitudes.SolicitudFacade.SolicitudPrescripcionDTO;
 import es.uclm.iso2.common.solicitudes.SolicitudFacade.TrazabilidadSolicitudDTO;
+import es.uclm.iso2.common.citas.ListaEsperaFacade;
 import es.uclm.iso2.common.solicitudes.SolicitudNoEncontradaException;
 import es.uclm.iso2.citas.repositorio.AuditoriaCitasRepositorio;
+import es.uclm.iso2.citas.repositorio.AuditoriaEsperaRepositorio;
 import es.uclm.iso2.citas.repositorio.CitaHuecoRepositorio;
 import es.uclm.iso2.citas.repositorio.CitaRepositorio;
+import es.uclm.iso2.citas.repositorio.ListaEsperaRepositorio;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -77,6 +80,13 @@ public class PruebasCitas {
     /** Codigo de prueba del catalogo falso: duracion 30 min y plazo de cancelacion de 24 h. */
     public static final String PRUEBA = "api-prueba";
 
+    /**
+     * Segunda prueba que solo sabe resolver codigo, no listarse a si misma. CDU14 la
+     * usa en el par de conjetura (paciente, prueba) distinto: alta con y sin solicitud
+     * (CF-01) sobre un par que no interfiere con las filas de api-prueba.
+     */
+    public static final String PRUEBA_DUP = "api-prueba-dup";
+
     /** Solicitud falsa en estado creada, apta para cita. */
     public static final String SOL_CREADA = "api-sol-creada";
 
@@ -85,6 +95,17 @@ public class PruebasCitas {
 
     /** Solicitud falsa en estado prescrita: no admite cita. */
     public static final String SOL_PRESCRITA = "api-sol-prescrita";
+
+    /**
+     * Segunda solicitud falsa en creada. Aditiva para CDU14: montar dos altas con
+     * solicitud apta en la misma corrida (el alta marca la solicitud como citada al
+     * asignar, y el alta de la cola exige una solicitud propia). No altera a las
+     * {@code api-sol-*} de CDU12.
+     */
+    public static final String SOL_CREADA_2 = "api-sol-creada-2";
+
+    /** Tercera solicitud falsa en creada, por el mismo motivo CDU14 (E11 y F). */
+    public static final String SOL_CREADA_3 = "api-sol-creada-3";
 
     /** Solicitud inexistente. */
     public static final String SOL_INEXISTENTE = "api-sol-que-no-existe";
@@ -112,6 +133,28 @@ public class PruebasCitas {
             AuditoriaCitasRepositorio auditoria, AgendaFacade agendas, PruebaCatalogoFacade catalogo,
             SolicitudFacade solicitudes) {
         return new CitaServicio(citas, huecos, auditoria, agendas, catalogo, solicitudes,
+                Clock.fixed(AHORA, ZoneOffset.UTC));
+    }
+
+    /**
+     * Servicio real de listas de espera del CDU14 (CDU14), con los repositorios JPA
+     * de la cola y el motor de citas de arriba, reloj fijo igual que {@link #citaServicio}
+     * y las mismas fachadas falsas. Lo consume {@code ListaEsperaControlador} al escanear
+     * el paquete web; sin este bean el contexto de las pruebas web no arranca desde que
+     * existe la cola.
+     *
+     * @param esperas      repositorio JPA de entradas de la cola
+     * @param auditoria    repositorio JPA del rastro encadenado de la cola
+     * @param catalogo     fachada de catalogo falsa
+     * @param solicitudes  fachada de solicitudes falsa
+     * @param citaServicio motor de citas real del CDU12 para asignar desde la cola
+     * @return fachada de lista de espera de prueba
+     */
+    @Bean
+    public ListaEsperaFacade listaEsperaFacade(ListaEsperaRepositorio esperas,
+            AuditoriaEsperaRepositorio auditoria, PruebaCatalogoFacade catalogo,
+            SolicitudFacade solicitudes, CitaServicio citaServicio) {
+        return new ListaEsperaServicio(esperas, auditoria, catalogo, solicitudes, citaServicio,
                 Clock.fixed(AHORA, ZoneOffset.UTC));
     }
 
@@ -208,11 +251,17 @@ public class PruebasCitas {
 
         @Override
         public Optional<PruebaImagenDTO> buscarPorCodigo(String codigo) {
-            if (!PRUEBA.equals(codigo)) {
-                return Optional.empty();
+            if (PRUEBA.equals(codigo)) {
+                return Optional.of(new PruebaImagenDTO(codigo, "Radiografia de prueba", "RX", true,
+                        DURACION, true, new ProtocoloDTO("Preparacion standard", 0, "ninguna"),
+                        new PoliticaDTO(24, 3)));
             }
-            return Optional.of(new PruebaImagenDTO(codigo, "Radiografia de prueba", "RX", true, DURACION, true,
-                    new ProtocoloDTO("Preparacion standard", 0, "ninguna"), new PoliticaDTO(24, 3)));
+            if (PRUEBA_DUP.equals(codigo)) {
+                return Optional.of(new PruebaImagenDTO(codigo, "Radiografia de prueba duplicada", "RX",
+                        true, DURACION, true, new ProtocoloDTO("Preparacion standard", 0, "ninguna"),
+                        new PoliticaDTO(24, 3)));
+            }
+            return Optional.empty();
         }
 
         @Override
@@ -258,6 +307,8 @@ public class PruebasCitas {
             datos.clear();
             fallaDevolverACreada = false;
             datos.put(SOL_CREADA, nueva(SOL_CREADA, "creada"));
+            datos.put(SOL_CREADA_2, nueva(SOL_CREADA_2, "creada"));
+            datos.put(SOL_CREADA_3, nueva(SOL_CREADA_3, "creada"));
             datos.put(SOL_CITADA, nueva(SOL_CITADA, "citada"));
             datos.put(SOL_PRESCRITA, nueva(SOL_PRESCRITA, "prescrita"));
         }

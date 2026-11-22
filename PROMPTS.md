@@ -978,3 +978,61 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
 - **Lo que se pide para delante en pruebas** (y se estrena en la Iter7): los TC los diseña el agente con **clases
   de equivalencia + conjetura de errores + valores límite + *pairwise***, y hay que escribir un **informe
   detallado del diseño** de esos conjuntos porque tiene valor pedagógico → `docs/informes/diseno-conjuntos-prueba.md`.
+
+### Prompt 25 — Cerrar Iter7/CFG-07: matriz CDU14 a verde, wiki, D37 revalidado, PR y tarjeta de tablero [✔ ejecutado, salvo el tablero]
+
+> Lanzado por Ismael el 18/11/2026 en el equipo nuevo. *(No se conserva el texto literal: el encargo era rematar la
+> Iter7 — terminar la matriz TDOP de CDU14 y el cierre material de la iteración: wiki, `TASADEFECTOS.md`,
+> `STATUS.md`/`PROMPTS.md`, PR a `develop` y la tarjeta del GitHub Project.)*
+>
+> *(Nota de numeración: la sesión del 16-17/11 —**fila 25** de `STATUS.md`— quedó **sin entrada de prompt** aquel día.
+> Esta entrada es la de la continuación del 18/11, que en el registro de sesiones es la **sesión 26**.)*
+
+- **Relevo verificado antes de tocar nada**: el último commit anunciado el 17/11, **`b4edce0`, sí es ancestro de
+  `HEAD`** (`git cat-file -t` + `git merge-base --is-ancestor`), así que los cañones D y E escritos aquel día estaban
+  en la rama. Se comprueba también que la matriz tenía **95/253** verdes y que los seis handlers que faltaban eran
+  C, F, G y H.
+- **Matriz TDOP de CDU14 terminada y verde: 253/253**. Añadidos `operacionDesdeMatriz` (C · 30),
+  `reubicacionDesdeMatriz` (D · 27), `secuenciaDesdeMatriz` (E · 12), `asignarDesdeMatriz` (F · 64),
+  `auditoriaDesdeMatriz` (G · 12) y `conjeturaDesdeMatriz` (H · 13), más las semillas que hacían falta
+  (`huecoDestino` con `SEM-HUECO-DEST:EXACTO|SOLAPE|FANTASMA`, `SEM-TAMPER:ENLAZE|BORRADO|REORDEN` sobre la cadena de `espera_auditoria`,
+  `SEMILLA-CITA-OCUPA`) para el hueco que ya tenía una cita detrás.
+- **Dos aprendizajes de herramienta, caros en tiempo**: (1) **`-Dtest=Cdu14MatrizTdopTest#tdopTablaH` ejecuta cero
+  pruebas en silencio** — los ocho cañones son `@ParameterizedTest` + `@MethodSource` y Surefire no ve ese método, así
+  que los «0 fallos» que salían no decían nada; (2) **`jacoco.csv` solo lo escribe `verify`**, y en PowerShell los
+  nombres de variable **no distinguen mayúsculas** (`$bc` y `$BC` eran la misma y el acumulado de ramas salió falso).
+  Regla practicada: **guardar el log** de cada corrida (`$env:TEMP\verify_iter07_final.log`) y medir sobre los ficheros
+  de `target/`, nunca de memoria.
+- **Los rojos y su vía D33** (se toca código o spec, nunca CSV ni test): el único defecto real de la matriz fue el
+  **415 tragado por el consejo *catch-all*** de `ListaEsperaManejadorErrores` → `medioNoSoportado` con
+  **415 `CONTENIDO_NO_ACEPTADO`** (`b38c149`, y `21d9a3c` para alinear el código estable con la convención D35 de
+  `CatalogoManejadorErrores:94-97`). El resto era spec mal fijada: **E02/E03/E12** pedían 200 en secuencias que
+  terminan en un alta que responde **201**, y **H06** asumía **200 con el primer valor** de
+  `?pruebaCodigo=api-prueba&pruebaCodigo=api-otra` cuando **Spring junta los parámetros
+  repetidos en una sola cadena** (`api-prueba,api-otra`) y responde **400 `DATOS_INVALIDOS`**. Corregido el JSON y
+  **regeerados** los 8 CSV, `cdu14-esperados.csv`, la proyección `docs/test/iter07/tdop-cdu14.md` y el bloque
+  `<!-- TDOP:BEGIN -->` de la plantilla de TC humanos.
+- **Métricas medidas en el reactor** (`mvn -o -ntp verify`): **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo
+  **2059/2376 líneas (86,7 %) y 621/809 ramas (76,8 %)** — `iso2-citas` **93,5 % / 89,5 %**, `iso2-common` sigue en
+  **0/164 y 0/56 sin puerta (D-08)** —, LOC **15.454 líneas en 191 ficheros de `src/main`** y **12.377 en 64 de
+  `src/test`** (ratio **0,80**, sin cambios), y **57 ficheros nuevos + 16 modificados** en `cfg-iter06..HEAD`. Ojo con
+  el *pairwise*: los **715/715 pares** se cumplen **por tabla** (A 90/90, B 186/186, F 439/439) y **159 filas** de las
+  37.770 teóricas; C, D, E, G y H van enumeradas, no emparejadas.
+- **Cierre material**: wiki **`Iter7-CDU14-listas-espera`** publicada en `master` del repo wiki (**`3dd871d`**, tras
+  `fetch` + `merge --ff-only`, porque el clon iba por detrás), con los 4 PNG de `docs/modelo/iter07` copiados a
+  `images/iter07-cdu14-*.png`, la fila nueva en `Home.md` y las fichas Javadoc enlazadas (D32: darán 404 hasta que la
+  rama se fusione a `develop`); **comentario con el DoD en la #47**; **PR borrador #48** → `develop` con `Ref: #47` y
+  **sin `Closes`**, **CI `construir` en verde** (ejecución 44335613731, 3 m 33 s). El cuerpo del PR se **corrigió y se volvió a leer del remoto**
+  con `gh pr view`: fuera la cifra errónea de «**33 ficheros nuevos**» (lo medido en `cfg-iter06..HEAD` es **57 nuevos
+  + 16 modificados**) y fuera toda métrica heredada de Iter6; el texto vivo se reprobó contra los números medidos.
+- **D37 revalidado** en `TASADEFECTOS.md`: **DEF-16** (F4, el 415), **DEF-17** (F4, **falta de `@Version`** en la cola,
+  hallado por TC14-E10 → 409 `CONFLICTO_ENTRADA_NO_ACTIVA` + columna `version` en `V1.6.0`) y **DEF-18** (F3,
+  **familia** de expectativas de spec mal fijadas: `sin agenda` 409 `FUERA_DE_FRANJA`, `CREADO` en E02/E03/E12 y H06).
+  Fila Iter7 **33 commits · 0 F1 · 0 F2 · 1 F3 · 2 F4 · 3 · 9,1/100**; total **162 · 18 · 13 fugados · 11,1/100**.
+  Veredicto de §6: **Iter6 e Iter7 cierran sin F1**, y aun así **no se pide un modelo más potente**; se propone un
+  **test de ArchUnit que exija `@Version`** en toda entidad (mitigación mecánica de un olvido repetido), a la espera de
+  que Ismael la acepte para numerarla como deuda.
+- **No hecho a propósito**: fusionar, taguear, cerrar la #47 y los **TC14-01…09** son de Ismael (D28/D29/D30).
+  **Y sin hacer por bloqueo real**: la **tarjeta de la Iter7 en el GitHub Project** — el token de `gh` no tiene el
+  alcance `project` y `gh auth refresh -h github.com -s project` dio *context deadline exceeded* (el código de
+  dispositivo `FD99-0D44` no llegó a autorizarse). Queda anotado en la Deuda nº 27-h para reintentarlo.
