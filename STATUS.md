@@ -1,7 +1,20 @@
 # STATUS.md — Estado vivo del proyecto
 
-**Última actualización:** 2026-11-15 (sesión 24 · **Iter6 · CDU19 / CFG-06 CERRADA por el agente, por orden
-de Ismael**: «iter06/CFG-06 cerrado. Haz tú lo que queda»). Ya está **fusionado el PR #45**
+**Última actualización:** 2026-11-22 (sesión 27 · **Iter7 · CDU14 / CFG-07 CERRADA EN GITHUB por el agente,
+por orden de Ismael**, mismo esquema que el cierre de la Iter6 en la sesión 24). **PR #48 fusionado** a
+`develop` (merge **`af8fde6`**, `construir` en verde), **cierre documental** en `docs/iter07-cierre` con su PR,
+**tag anotado `cfg-iter07` sobre la fusión de cierre** (receta de `docs/mapa-configuraciones.md`, patrón
+`cfg-iter06`), **issue #47 cerrada con comentario de DoD detrás** (D29) y **ramas borradas** en remoto y local.
+**D37 revalidado en `TASADEFECTOS.md` §3**: tramo `cfg-iter06..cfg-iter07` = **39 commits · 0 F1 · 0 F2 · 1 F3 ·
+2 F4 · 3 totales · 0 fugados · 7,7/100**; total 168 · 18 · 13 fugados · 10,7/100. **Lo único que sigue pendiente
+de la Iter7 son los TC humanos TC14-01…09 (D28, de Ismael)** — TC14-08 cubre la puerta RBAC, que no tiene test
+automatizado sobre `/api/listas-espera`. Y arranca la **Iter8 · CDU11 administrativo de pacientes (CFG-08)**
+(fila 8 del plan: `iso2-pacientes` + `iso2-integracion` a 1.2.0, puertas *unicidad verificada* y
+*reconciliación con adaptador probada*, 22 h, calendario 23–27/11). Registro cronológico en `PROMPTS.md`
+(Prompt 26).
+
+**Sesión 24 (15/11), conservada:** **Iter6 · CDU19 / CFG-06 CERRADA por el agente, por orden
+de Ismael**: «iter06/CFG-06 cerrado. Haz tú lo que queda». Ya está **fusionado el PR #45**
 (`feature/iter06-cdu19-integracion` → `develop`, merge **`0ef4f1a`**, check `construir` en verde) y su rama
 esta **borrada** en remoto y en local. Los **TC humanos de CDU19 se han ejecutado contra el servidor real**
 (puerto 8080, H2 en fichero) y su **evidencia HTTP esta versionada** en `docs/tc/evidencia/cdu19/` — 5 scripts
@@ -39,7 +52,7 @@ le faltaban entonces los **TC humanos (D28)** y la **fusión con su tag (D29/D30
 |---|---|
 | Inicio (Iter0) | ✔ **Completada, etiquetada y publicada** — PR #7 fusionado a `develop` (`641e72d`), tag `cfg-iter00`; **R0 publicada en `main`**: PR #19 fusionado (merge `e165622`) con el tag anotado **`v0.1.0`** (regla **D30**: release desde `release/R0`) |
 | Elaboración (Iter1–6) | 🟡 En curso — **Iter5 (CDU12 / CFG-05) CERRADA EL 15/11**: código fusionado por Ismael con el **PR #42** (merge `08a7ed8`) y matriz D33 de 172 casos con el **PR #43** (merge `cbb1901`), **tip actual de `develop` = `207a506`** (el código de Iter6 entró con el **PR #45** → `0ef4f1a` y su cierre documental con el **PR #46** → `207a506`, sobre el que está el tag `cfg-iter06`). tag anotado **`cfg-iter05` → `cbb1901`** y **#40 cerrada a mano** (D29). **Iter6 (CDU19 / CFG-06) CERRADA EL 15/11 (sesión 24, cierre asumido por el agente por orden de Ismael)**: código en `feature/iter06-cdu19-integracion` (issue **#44**) **fusionado por el agente con el PR #45** (merge **`0ef4f1a`**, check `construir` en verde, rama **borrada** en remoto y local): modelo + módulo `iso2-integracion` + **203 pruebas (10 clases)** con la **matriz TDOP de 126 casos en verde** (`Cdu19MatrizTdopTest`, spec de 8 tablas A-H subida en `c104d78`), **TC humanos proyectados y ejecutados** (`docs/tc/cdu19-tc-humanos.md` + evidencia HTTP en `docs/tc/evidencia/cdu19/`), **informe de spike** (`docs/informes/spike-cdu19.md`, en `2388b7e`) y **reactor revalidado en 839 tests**; la wiki **`Iter6-CDU19-integracion` publicada** (`9b7f513` en `master` del repo wiki). Lo que cierra la sesión 24: **evidencia HTTP versionada**, **tabla manual de TC humanos rellena**, **D37 revalidado con DEF-14/DEF-15** y **PR de cierre** de `docs/iter06-cierre` → `develop` con el **tag `cfg-iter06` sobre su fusión** y la **#44 cerrada con artefacto detrás**. Ojo: los **TC humanos de CDU19 los ejecutó el agente**, así que la **validación D28 de Ismael sigue pendiente** en esa CDU. **Iter1 (CDU16 / CFG-01) CERRADA DEL TODO el 09/11**: puertas técnicas (tag `cfg-iter01`, reanotado sobre `df09bca`), **D33 aplicado** (PR #36 → merge `f43721c`) y **TC humanos de CDU16 hechos** (PR #37 → merge `3601fd6`). Iter2 (CDU17) y Iter3 (CDU13) cerradas en ramas y tagueadas (`cfg-iter02` → `870524e`, `cfg-iter03` → `b072b34`) pero **aún sin TC humanos**; Iter4 (CDU06) fusionada (PR #31 → merge `a3fe109`, tag `cfg-iter04`) y **sin TC humanos** (plantilla `docs/tc/cdu06-tc-humanos.md` creada, 14 casos). Lo que queda vivo: los **TC humanos de CDU12/CDU17/CDU13/CDU06** —y la **validación D28 de los de CDU19**, que los ejecutó el agente— y **extender el método D33 a Iter2/Iter3**. Las evidencias de modelado quedan resueltas con PlantUML (`.puml` + `.png` versionados, D31; StarUML descartado) |
-| Construcción (Iter7–20) | 🟡 **En curso** — **Iter7 (CDU14 · listas de espera / CFG-07) ejecutada y en rama** (18/11): **PR borrador #48** `feature/iter07-cdu14-listas-espera` → `develop` con el check `construir` **en verde** (estrella `21d9a3c`). Hecho: **matriz D33 de CDU14 en verde 253/253** (`Cdu14MatrizTdopTest`, 8 tablas A-H), reactor **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo de reactor **86,7 % líneas y 76,8 % ramas** (cumplen las puertas de R2), wiki **`Iter7-CDU14-listas-espera` publicada** y **D37 revalidado con DEF-16/17/18**. Le faltan cuatro gestos, todos de Ismael: **fusionar el #48**, **tag `cfg-iter07`**, **cerrar #47** y los **TC humanos TC14-01…09 (D28)** |
+| Construcción (Iter7–20) | 🟡 **En curso** — **Iter7 (CDU14 · listas de espera / CFG-07) FUSIONADA Y TAGEADA EL 22/11 (sesión 27, cierre asumido por el agente por orden de Ismael)**: **PR #48 fusionado** (merge **`af8fde6`**, `construir` en verde), **tag `cfg-iter07` sobre la fusión de cierre**, **#47 cerrada con DoD detrás** y rama borrada. Hecho en Iter7: **matriz D33 de CDU14 en verde 253/253** (`Cdu14MatrizTdopTest`, 8 tablas A-H), reactor **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo de reactor **86,7 % líneas y 76,8 % ramas** (cumplen las puertas de R2), wiki **`Iter7-CDU14-listas-espera` publicada** y **D37 revalidado con DEF-16/17/18, 0 fugados**. De la Iter7 solo quedan los **TC humanos TC14-01…09 (D28, de Ismael)**. **Iter8 (CDU11 · administrativo de pacientes / CFG-08) ARRANCA EL 22/11**: issue nueva con su alcance, rama `feature/iter08-cdu11-pacientes` desde el tip de `develop`, ciclo diseño-primero (D31) y matriz TDOP después |
 | Transición (Iter21) | ⏳ Pendiente — cierre 14/12, entrega 15/12 |
 
 **Avance cuantificado (15/11/2026), sobre el plan de `docs/planificacion-iteraciones+Calidad.csv`:** el total
@@ -50,10 +63,11 @@ fusión de cierre de esta sesión**). **Cerradas del todo, con TC humanos hechos
 Iter1 (CFG-01) e Iter6 (CFG-06) = 98 h ≈ 16,0 %**, con el matiz de que **los TC humanos de CDU19 los ejecutó el
 agente** y a Ismael le queda la validación D28; a Iter2/3/4/5 les siguen faltando los TC humanos (D28). En
 calendario vamos por delante: el plan ponía Iter4-6 del 16/11 al 20/11 y la Iter6 ya estaba fusionada el 15/11.
-**Actualizado 18/11:** la **Iter7 (22 h) está ejecutada en rama a falta solo de fusión y tag**, así que si Ismael
-fusiona el **#48** van **8 de 22 iteraciones = 250 h ≈ 40,8 %** del esfuerzo, cuando el plan colocaba la Iter7
-entre el 20/11 y el 27/11. Sigue sin cerrarse del todo (TC humanos, D28) Iter2/CDU17, Iter3/CDU13, Iter4/CDU06,
-Iter5/CDU12 y la propia Iter7.
+**Actualizado 22/11:** **Iter7 fusionada y tagueada** (PR #48 → merge `af8fde6`, tag `cfg-iter07`), así que van
+**8 de 22 iteraciones = 250 h ≈ 40,8 %** del esfuerzo, cuando el plan colocaba la Iter7 entre el 20/11 y el
+27/11 — seguimos unos días por delante. Sigue sin cerrarse del todo (TC humanos, D28) Iter2/CDU17, Iter3/CDU13,
+Iter4/CDU06, Iter5/CDU12 y la propia Iter7; **Iter8 (22 h) arranca el 22/11**, el mismo día que el plan fijaba
+su inicio (23/11).
 
 **Iteración cerrada (y siguiente):** **Iter6 · CDU19 integrar con sistemas externos (CFG-06) — CERRADA el
 15/11 en la sesión 24**. La issue **#44** (abierta por Ismael el 15/11) fijaba el alcance: spike de viabilidad del
@@ -143,13 +157,15 @@ técnicas, la D33 y sus TC humanos.
   esté en `develop`: `git diff --stat origin/develop...origin/main` queda vacío, así que la publicación de
   R1 no arrastrará restos del PR #17. Rama `release/R0` **borrada** en remoto y local el 09/11 (el tag `v0.1.0`
   ya fija ese punto).
-- **Open / en curso (18/11, sesión 26):** un solo PR abierto, el **PR borrador #48** de la Iter7
-  (`feature/iter07-cdu14-listas-espera` → `develop`, con `Ref: #47` y **sin `Closes`**): **CI `construir` en verde**
-  (ejecución 44335613731, 3 m 33 s) y lo **fusiona Ismael**, que además cierra la issue y pone el tag (D29/D30).
-  **Issue abierta: la #47** (Iter7 · CDU14 listas de espera / CFG-07), abierta por Ismael el 16/11, con su DoD
-  escrito el 18/11 en un comentario; **solo Ismael la cierra** (D29). El árbol local está limpio y la rama está
-  volcada en `origin` estrella **`21d9a3c`**, con los **33 commits** del tramo `cfg-iter06..HEAD` y el commit de
-  cierre documental de esta sesión encima. Histórico de la sesión 17: **#35** (pruebas D33) la cerró Ismael a mano el **09/11 00:26** antes
+- **Open / en curso (22/11, sesión 27):** **cero PRs abiertos y cero issues abiertas**. El **PR #48** de la Iter7
+  quedó **fusionado por el agente a `develop` el 22/11** (merge **`af8fde6`**, `construir` en verde) por orden de
+  Ismael, y su **cierre documental** va en el PR de `docs/iter07-cierre` → `develop`, sobre cuya fusión se pone el
+  tag anotado **`cfg-iter07`** (patrón `cfg-iter06`, que está sobre la fusión del PR #46 de cierre, `207a506`). La
+  **issue #47 se cierra con el comentario de DoD detrás** (D29), y las ramas `feature/iter07-cdu14-listas-espera` y
+  `docs/iter07-cierre` se **borran** en remoto y local. Lo único vivo a partir de ahora es la **Iter8 (CDU11 /
+  CFG-08)**: issue nueva + rama `feature/iter08-cdu11-pacientes` desde el tip de `develop`.
+  **Estado de las ramas:** `main` = `d12388b` (intocada, D30); `develop` = tip tras el cierre de Iter7; tags
+  `cfg-iter00`..`cfg-iter07` y `v0.1.0`/`v0.2.0-alpha`. Histórico de la sesión 17: **#35** (pruebas D33) la cerró Ismael a mano el **09/11 00:26** antes
   de que llegara el trabajo (PRs **#36** y **#37**) y **no se reabre**; **#34** (persistencia D34) se cerró **a la
   vez sin trabajo detrás**, se reabrió el 11/11 y **quedó implementada y cerrada** esa misma semana (PR #41 →
   merge `d4749e3`).
@@ -300,6 +316,8 @@ técnicas, la D33 y sus TC humanos.
 | 25 | 16-17/11/2026 | **Iter7 · CDU14 listas de espera (CFG-07, issue #47) — implementación servidora completa; ejecutor TDOP aún sin cerrar:** rama `feature/iter07-cdu14-listas-espera` (subida hasta `47a6601`). Commits: `d9c0766` inventario de la base, `410bf15` diagramas D31, `080fd09` **diseño TDOP de 253 filas** (8 tablas A-H en `docs/test/iter07/tdop-cdu14-espec.json`, semilla 20261116, CSVs regenerados y verificados byte a byte) + plantilla `docs/tc/cdu14-tc-humanos.md`, `9fd5eff`+`18a5b78` alineación del modelo (Agente B), `741fdfe` tren de versiones 1.2.0-SNAPSHOT + `tools/cdu14_smoke.py`, `6168156` contratos en `iso2-common`, `1fda042` dominio (comparador determinista prioridad↓/fechaSolicitud↑/esperaId↑ + auditoría `REUBICACION` encadenada propia en `espera_auditoria` con génesis virtual), `f6dda51`+`23627f7` repositorios y asignación con profesional, `dfe87aa` servicio + auditoría, `2c7ea4e` capa web con consejos de error, `99578f9` RBAC `lista_espera:leer/escribir` + Flyway **V1.6.0 dual h2+mysql** + semillas, `7891e61` notas del ejecutor al doc TDOP, `d8f95fe` **arreglo del hallazgo TC14-E10**: control optimista `@Version` en `ListaEspera` → 409 `CONFLICTO_ENTRADA_NO_ACTIVA` + columna `version` en V1.6.0 (modelo D31 alineado), `47a6601` doble `PRUEBA_DUP` y borrador del ejecutor guardado en `docs/test/iter07/borrador-ejecutor/`. **Estado honesto:** reactor `iso2-citas`+`iso2-server-app` en verde (`mvn -B -pl iso2-citas,iso2-server-app -am test`: **238 tests** en citas —los de siempre, **ninguna clase de test nueva de CDU14 compila todavía**— y **90** en server-app con 3 saltados), así que la **puerta de la matriz CFG-07 sigue ABIERTA**: `Cdu14MatrizTdopTest` (253 casos 1:1) no existe aún. Ensayo **TC14-H05 en verde contra el servidor real** (5 ALTAs 201, tres lecturas de cola idénticas, `auditoria/verificar` → verificable=true con 8 eslabones, retirar 200). Hallazgo anotado: `AgendaNoEncontradoException` del asignar no está mapeada en el consejo de citas → 500 `ERROR_INTERNO` (afecta a F16/F17/F48/F50) | — |
 
 | 26 | 18/11/2026 | **Iter7/CFG-07 cerrada del lado del repo: matriz TDOP de CDU14 a 253/253, wiki, D37 revalidado y PR borrador #48 (Prompt 25):** sesión de relevo en el equipo nuevo sobre `feature/iter07-cdu14-listas-espera` (verificado: el relevo del 17/11, `b4edce0`, **sí es ancestro de `HEAD`**, no se perdió nada). Se terminan los seis handlers que faltaban del ejecutor — `operacionDesdeMatriz` (C · 30), `reubicacionDesdeMatriz` (D · 27), `secuenciaDesdeMatriz` (E · 12), `asignarDesdeMatriz` (F · 64), `auditoriaDesdeMatriz` (G · 12) y `conjeturaDesdeMatriz` (H · 13) — y la **matriz queda verde: 253/253**. Rojos y su vía D33: (1) **defecto real**: el consejo *catch-all* de `ListaEsperaManejadorErrores` se comía el `HttpMediaTypeNotSupportedException` y el 415 salía como **500 `ERROR_INTERNO`** (TC14-H02) → `medioNoSoportado` devuelve **415 con el código estable `CONTENIDO_NO_ACEPTADO`** (`b38c149` + `21d9a3c`, misma convención D35 de `CatalogoManejadorErrores:94-97`); (2) **spec mal fijada**: E02/E03/E12 ponían `OK` en secuencias que terminan en un alta que responde **201**, y **H06** asumía **200 con el primer valor** ante `?pruebaCodigo=api-prueba&pruebaCodigo=api-otra` cuando **Spring une los parámetros repetidos** en una sola cadena (`api-prueba,api-otra`) y responde **400 `DATOS_INVALIDOS`** → se corrige `docs/test/iter07/tdop-cdu14-espec.json` y se **regeeran** CSV, proyecciones y el bloque `<!-- TDOP:BEGIN -->` con `tools/pairwise.py` + `tools/tc_plantillas.py` (nunca a mano); (3) las semillas `SEMILLA-SIN-AGENDA` (**409 `FUERA_DE_FRANJA`**, no 500) y las de `UN_OK_Y_OTRO_409` se alinean con el comportamiento confirmado. Métricas **medidas** con `mvn -o -ntp verify`: reactor **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo de reactor **2059/2376 líneas (86,7 %) y 621/809 ramas (76,8 %)**, `iso2-citas` **93,5 % líneas / 89,5 % ramas**, `iso2-common` sigue en **0 de 164 líneas y 0 de 56 ramas** (deuda **D-08**); LOC **15.454 en `src/main` (191 ficheros)** y **12.377 en `src/test` (64)** con ratio **0,80**, y **57 ficheros nuevos + 16 modificados** en `cfg-iter06..HEAD`; *pairwise* verificado ficha a ficha: **715/715 pares** (A 90/90, B 186/186, F 439/439) y **159 filas** de las 37.770 teóricas. Cierre material: wiki **`Iter7-CDU14-listas-espera`** publicada en `master` del repo wiki (**`3dd871d`**) con los 4 PNG de `docs/modelo/iter07`, la fila nueva en `Home.md` y las fichas Javadoc enlazadas (D32: 404 hasta el merge); **comentario con el DoD en la #47**; **PR borrador #48** → `develop` con `Ref: #47` y **sin `Closes`**, **CI `construir` en verde** (ejecución 44335613731); **D37 revalidado** en `TASADEFECTOS.md` con **DEF-16** (F4: el 415 tragado por el consejo), **DEF-17** (F4: **falta de control optimista `@Version`** en `ListaEspera`, hallado por TC14-E10 → 409 `CONFLICTO_ENTRADA_NO_ACTIVA` + columna `version` en `V1.6.0` dual, mismo error que en Iter5) y **DEF-18** (F3: **familia** de expectativas de spec mal fijadas): fila Iter7 **33 commits · 0 F1 · 0 F2 · 1 F3 · 2 F4 · 3 totales · 9,1/100** y total histórico **162 · 18 · 13 fugados · 11,1/100**, con §2-§6 rehechos con datos medidos (CI 87 ejecuciones, matrices D33 ya en **666 filas** = 115+172+126+253). **Deliberadamente no hecho:** fusionar el PR, cerrar #47, el tag `cfg-iter07` y los **TC14-01…09** (D28/D29) son de Ismael; y la **tarjeta Kanban de la Iter7** queda pendiente porque al token le falta el alcance `project` (`gh auth refresh -h github.com -s project` falló con *context deadline exceeded*). |
+
+| 27 | 22/11/2026 | **Cierre de Iter7/CFG-07 asumido por el agente por orden de Ismael y arranque de la Iter8 (Prompt 26):** sesión de relevo. Sincronización del disco con GitHub (`git pull --ff-only`: `815d5d5` → `8fb4ee1`, 9 commits del turno del otro equipo, todo alcanzable desde la rama). **PR #48 pasado a *ready* y fusionado a `develop` con `--merge` (merge `af8fde6`, `construir` en verde).** Cierre documental en `docs/iter07-cierre` → `develop` (este commit): `TASADEFECTOS.md` **D37 revalidado con el conte final** (tramo `cfg-iter06..cfg-iter07` = **39 commits** medidos, no los ~36 estimados el 18/11: tasa **9,1 → 7,7/100**, total **162 → 168**, **11,1 → 10,7**, F4 sobre 168 = **3,0/100**) y `STATUS.md`/`PROMPTS.md` actualizados. Sobre la **fusión de este PR** se pone el tag anotado **`cfg-iter07`** (receta de `docs/mapa-configuraciones.md`, patrón `cfg-iter06`/PR #46, no sobre el merge de código), con las cifras medidas del cierre: **matriz 253/253**, reactor **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo **86,7 % líneas / 76,8 % ramas**, `iso2-citas` **93,5 % / 89,5 %**, wiki **`Iter7-CDU14-listas-espera`** (`3dd871d`), CI **92 ejecuciones** (88 verdes, 3 rojas históricas). **Issue #47 cerrada con el comentario de DoD detrás** (D29) y **ramas `feature/iter07-cdu14-listas-espera` y `docs/iter07-cierre` borradas** en remoto y local. **No hecho a propósito:** los **TC humanos TC14-01…09 siguen pendientes de Ismael** (D28; TC14-08 cubre la puerta RBAC sin test automatizado), y la **tarjeta Kanban de la Iter7** queda sin mover porque al token le falta el alcance `project` (`gh auth refresh -s project` vuelve a fallar con *context deadline exceeded*). **Arranca la Iter8 · CDU11 administrativo de pacientes (CFG-08)** (fila 8 del plan, 23–27/11, 22 h): issue nueva, rama `feature/iter08-cdu11-pacientes` desde el tip de `develop`, ciclo diseño-primero (D31) con `docs/modelo/iter08/` y spec TDOP después; se arrastran las deudas D-01…D-10 (D-08: `iso2-common` sin puerta), la propuesta de puerta ArchUnit para `@Version` y los TC humanos atrasados de Iter2-5/7. |
 
 ## Deuda / pendientes inmediatos
 
@@ -478,7 +496,7 @@ técnicas, la D33 y sus TC humanos.
     en CI en vez de salir en un TC de concurrencia. No se ha escrito todavía y **no se numera como deuda hasta que
     Ismael la acepte**; si se acepta, entra como una fila más de D37 en la iteración siguiente.
 
-## Punto exacto de continuación para la próxima sesión *(escrito el 15/11; **superado** por «Punto de continuación — 18/11/2026», al final del fichero — se deja como histórico)*
+## Punto exacto de continuación para la próxima sesión *(escrito el 15/11; **superado** por «Punto de continuación — 22/11/2026», al final del fichero — se deja como histórico)*
 
 **La Iter5 / CFG-05 está CERRADA del lado del repo** (15/11, sesiones 21-22): los 12 commits de código entraron
 con el **PR #42** (merge `08a7ed8`, 14/11 22:25) y la **matriz D33 de 172 casos** con el **PR #43** (merge
@@ -988,7 +1006,37 @@ del punto de vista del usuario sigue siendo de Ismael, y el hito `v0.2.0-alpha` 
 
 ---
 
-## Punto de continuación — 18/11/2026 (sesión 26): CFG-07 terminada y en el PR #48, a falta de los gestos de Ismael
+## Punto de continuación — 22/11/2026 (sesión 27): CFG-07 CERRADA (merge `af8fde6` + tag `cfg-iter07`); toca la Iter8 y los TC14 de Ismael
+
+* **Dónde está el repo:** `develop` con la **Iter7 ya fusionada** (merge del PR #48 = **`af8fde6`**) y encima el
+  **cierre documental de esta sesión**; el tag anotado **`cfg-iter07`** queda puesto **sobre la fusión de este PR
+  de docs** (patrón `cfg-iter06` = `207a506`, fusión del PR #46, no sobre el merge de código). `main` = `d12388b`,
+  intocada (D30). **Cero issues y cero PRs abiertos** tras cerrar la #47; ramas `feature/iter07-*` y
+  `docs/iter07-cierre` borradas. Conteo oficial de `TASADEFECTOS.md` §3: **`cfg-iter06..cfg-iter07` = 39 commits,
+  3 defectos, 0 fugados, 7,7/100**; total **168 · 18 · 13 fugados · 10,7/100**.
+* **Lo único que queda de la Iter7 es de Ismael (D28):** ejecutar los **TC humanos TC14-01…09** de
+  `docs/tc/cdu14-tc-humanos.md` contra el servidor real. **TC14-08 es el que cubre la puerta RBAC**: no hay test
+  automatizado 401/403 sobre `/api/listas-espera`, así que ese TC no es opcional. Recordar que el tag puede
+  moverse si de esos TC sale un defecto, como se hizo con `cfg-iter01`.
+* **Qué toca ahora — Iter8 · CDU11 administrativo de pacientes (CFG-08)**, fila 8 del plan (22 h, 23–27/11, ya
+  empezada el 22/11): módulos **`iso2-pacientes` + `iso2-integracion` a 1.2.0-SNAPSHOT**, calidad
+  **Adec. Funcional (corrección/completitud) · Fiabilidad (tolerancia) · Seguridad (responsabilidad)**,
+  puertas **«unicidad verificada»** y **«reconciliación con adaptador probada»**, TC sugeridos: duplicado por
+  NIF/id HIS, admisión caída → alta local `pendiente_sincronizar`, baja lógica con confirmación. Slot Flyway
+  libre: **V1.7.0** (h2 y mysql, D34). Ciclo normal: issue con alcance → rama `feature/iter08-cdu11-pacientes` →
+  **modelo D31 en `docs/modelo/iter08/`** → spec TDOP en `docs/test/iter08/` con `tools/pairwise.py` → ejecución
+  rojo→verde → wiki al cerrar. El ejecutor de matriz debe nacer de la spec JSON, nunca a mano.
+* **Deudas vivas que puede tocar la Iter8:** **D-08** (`iso2-common` 0 % de cobertura, sin puerta), D-01…D-10 de
+  `docs/deuda-tecnica.md`; la **propuesta de puerta ArchUnit para `@Version`** (hallazgo TC14-E10/DEF-17, espera
+  aceptación de Ismael); los **TC humanos atrasados** de Iter2/CDU17, Iter3/CDU13, Iter4/CDU06 e Iter5/CDU12; y
+  el informe de diseño de conjuntos de prueba **ya escrito** en `docs/informes/diseno-conjuntos-de-prueba.md`
+  (llegó con el PR #48).
+* **Entorno (equipo nuevo):** el relevo del 17/11 y el del 22/11 se verificaron **anexando la rama**, no
+  reescribiendo; antes de tocar nada, `git fetch` + comprobar que `HEAD` es ancestro del trabajo de la otra
+  máquina. El token **no tiene alcance `project`**: el tablero Kanban no se puede mover desde CLI
+  (`gh auth refresh -s project` da *context deadline exceeded*); es el único gesto del cierre que no pudo hacerse.
+
+## Punto de continuación — 18/11/2026 (sesión 26; **superado por el bloque anterior, se deja como histórico**): CFG-07 terminada y en el PR #48, a falta de los gestos de Ismael
 
 * **Dónde está el repo**: rama `feature/iter07-cdu14-listas-espera` estrella **`21d9a3c`**, **volcada en `origin` y
   con el árbol limpio**. `develop` = **`207a506`** (tip del cierre de Iter6, tag `cfg-iter06`), `main` = `d12388b`.

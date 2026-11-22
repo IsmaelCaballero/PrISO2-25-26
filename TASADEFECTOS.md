@@ -108,8 +108,8 @@ aplicacion de D33 a Iter1, los TC humanos y la D34; se agrupa como tramo inter-i
 | Tramo D33-Iter1 + TC + D34 | `cfg-iter04..6feabdf` | 21 | 1 | 1 | 0 | 0 | 2 | 2 | 9,5 |
 | Iter5 · CDU12 citas | rama `6feabdf..b912554` | 13 | 0 | 1 | 0 | 0 | 1 | 1 | 7,7 |
 | Iter6 · CDU19 integracion | `cfg-iter05..cfg-iter06` | 22 | 0 | 1 | 0 | 1 | 2 | 1 | 9,1 |
-| Iter7 · CDU14 listas de espera | rama `cfg-iter06..21d9a3c` | 33 | 0 | 0 | 1 | 2 | 3 | 0 | 9,1 |
-| **Total** | | **162** | **6** | **4** | **3** | **5** | **18** | **13** | **11,1** |
+| Iter7 · CDU14 listas de espera | `cfg-iter06..cfg-iter07` | 39 | 0 | 0 | 1 | 2 | 3 | 0 | 7,7 |
+| **Total** | | **168** | **6** | **4** | **3** | **5** | **18** | **13** | **10,7** |
 
 Nota: DEF-03/04/05 son codigo de Iter1 (tramo 10 commits) aunque se descubrieron al aplicar D33 en el tramo
 inter-iteraciones; se imputan al tramo de origen porque es el codigo que los contiene. La fila de Iter5 cuenta
@@ -126,13 +126,14 @@ como en los tramos anteriores. El unico F4 es DEF-14 y el unico F2 es DEF-15. Ni
 regido por D29/D30/D34/D36 sin desviaciones de protocolo (rama de una sola CDU, PR a `develop`, CI verde antes
 de fusionar, issue cerrada con artefacto detras).
 
-Nota de Iter7: los 33 commits del tramo son `git rev-list --count cfg-iter06..21d9a3c`, medido el 18/11 con la
-rama `feature/iter07-cdu14-listas-espera` ya pusheada y el arbol limpio, usando el **mismo metodo** que en
-Iter6 (`git rev-list --count cfg-iter05..207a506` = 22, contando los merges). Faltan por sumarse el merge del
-PR #48, el commit de docs de cierre y su fusion, asi que al poner el tag `cfg-iter07` la cuenta subira a ~36
-y **se revalida aqui**, como se hizo en Iter5 e Iter6; la tasa de la fila (9,1/100) esta calculada sobre 33 y
-bajaria a ~8,3 con 36. Los 3 defectos imputados a Iter7 (DEF-16, DEF-17, DEF-18) nacen todos en la propia rama
-y ninguno llega a `develop`.
+Nota de Iter7 (**revalidada el 22/11/2026 al poner el tag**): el 18/11 la fila apuntaba a la rama
+(`cfg-iter06..21d9a3c` = 33 commits) porque faltaban el merge del PR #48 y el cierre documental. Con la
+**fusion del PR #48 (merge `af8fde6`)** y el **cierre documental de la sesion 27**, el tramo final es
+`git rev-list --count cfg-iter06..cfg-iter07` = **39 commits** (los 33 de la rama + el merge `af8fde6` + el
+commit de docs + su fusion, donde va el tag, **mismo metodo que en Iter6**), y la tasa de la fila baja de
+9,1 a **7,7 por 100**; el total sube de 162 a **168** y baja de 11,1 a **10,7**. Los 3 defectos imputados a
+Iter7 (DEF-16, DEF-17, DEF-18) nacen todos en la propia rama y ninguno llega a `develop`: **Iter7 cierra con
+0 fugados**, como Iter6.
 
 ## 4. Metricas de apoyo (para el denominador)
 
@@ -323,7 +324,8 @@ cierre de Iter7 el 18/11/2026)
    rama de una sola CDU, PR a `develop`, CI verde antes de fusionar, issue con artefacto detras y tag sobre
    la fusion de cierre.
 2. **F4 (codigo): 1 en Iter1, 1 en Iter3, 0 en Iter2/Iter4/D34/Iter5, 1 en Iter6 y 2 en Iter7.** 5 defectos
-   de codigo en 162 commits (**3,1/100**, antes 2,3/100). **Iter7 es el tramo con mas F4 de todo el
+   de codigo en 168 commits con el tag `cfg-iter07` puesto el 22/11 (**3,0/100**, antes 3,1/100 sobre los 162
+   del conte del 18/11). **Iter7 es el tramo con mas F4 de todo el
    proyecto**, y con uno de los dos casos (DEF-16) viviendo commiteado casi dos dias: nace en `2c7ea4e`
    (16/11) y se arregla el 18/11 en `b38c149`/`21d9a3c`.
 3. **El riesgo real del cuantizado no es el numero de F4 sino el falso verde, y DEF-14 lo roza.** Con

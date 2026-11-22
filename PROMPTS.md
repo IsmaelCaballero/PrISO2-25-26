@@ -1036,3 +1036,39 @@ respóndeme antes de nada al de los dos agentes en paralelo, uno por iteración,
   **Y sin hacer por bloqueo real**: la **tarjeta de la Iter7 en el GitHub Project** — el token de `gh` no tiene el
   alcance `project` y `gh auth refresh -h github.com -s project` dio *context deadline exceeded* (el código de
   dispositivo `FD99-0D44` no llegó a autorizarse). Queda anotado en la Deuda nº 27-h para reintentarlo.
+
+### Prompt 26 - Cerrar CFG-07 por orden de Ismael (merge, tag, issue, ramas) y arrancar la Iter8 · CDU11 [✅ ejecutado]
+
+> Lanzado por Ismael el 22/11/2026 en el equipo nuevo. *(No se conserva el texto literal: la pregunta era
+> «¿cómo continuamos el proyecto?» y la respuesta, elegida de un abanico de opciones, fue que **el agente cierre
+> CFG-07** —fusionar el #48, taguear, cerrar la #47 y borrar ramas, como con la Iter6 en la sesión 24— **y
+> arranque la Iter8**. Los **TC humanos TC14-01…09 se quedan con Ismael** (D28): esa opción no se marcó.)*
+
+- **Sincronización antes de nada**: el disco del equipo nuevo venía detrás; `git pull --ff-only` en
+  `feature/iter07-cdu14-listas-espera` trajo 9 commits (`815d5d5` → `8fb4ee1`, el turno del otro equipo) y se
+  verificó que todo seguía siendo alcanzable. Lección de relevo repetida: **anexar, no reescribir**.
+- **Cierre de CFG-07 ejecutado por el agente** (orden expresa, mismo esquema de la sesión 24): **#48 pasado a
+  *ready* y fusionado a `develop` con `--merge` (merge `af8fde6`)**, **cierre documental** en
+  `docs/iter07-cierre` → `develop`, **tag anotado `cfg-iter07` sobre la fusión del PR de cierre** (no sobre el
+  merge de código: el patrón es `cfg-iter06` = `207a506`, fusión del PR #46), **#47 cerrada con su comentario de
+  DoD detrás** (D29) y **ramas borradas** en remoto y local. `main` sin tocar (D30).
+- **Reconteo D37 con el tag puesto**: la fila Iter7 del 18/11 decía 33 commits (`cfg-iter06..21d9a3c`) porque
+  faltaba el tramo de cierre; medido `git rev-list --count cfg-iter06..cfg-iter07` = **39 commits** (los 33 de la
+  rama + el merge `af8fde6` + el commit de docs + su fusión), así que la fila pasa a **39 · 7,7/100** (antes 9,1)
+  y el total a **168 · 18 defectos · 13 fugados · 10,7/100**; la F4 sobre 168 queda en **3,0/100**. Iter7 cierra
+  con **0 fugados**, como Iter6.
+- **Datos del mensaje del tag, todos medidos** (nada heredado de Iter6): matriz **253/253**, reactor
+  **1092 pruebas / 0 fallos / 0 saltadas**, JaCoCo **86,7 % líneas / 76,8 % ramas**, `iso2-citas` **93,5 % /
+  89,5 %**, wiki `Iter7-CDU14-listas-espera` (`3dd871d`), Flyway **V1.6.0 dual** como último slot y **V1.7.0**
+  libre para la Iter8, y CI **92 ejecuciones** (88 verdes, 3 rojas históricas, 1 en curso) contadas con
+  `gh run list --limit 100 --json conclusion`.
+- **Tablero Kanban, segunda vez bloqueado**: la tarjeta de la Iter7 sigue sin poder moverse; el token no tiene
+  alcance `project` y `gh auth refresh -s project` volvió a dar *context deadline exceeded*. Anotado en la deuda;
+  no bloquea nada.
+- **Arranque de la Iter8 · CDU11 administrativo de pacientes (CFG-08)**: fila 8 del plan (22 h, 23–27/11),
+  `iso2-pacientes` + `iso2-integracion` a **1.2.0-SNAPSHOT**, puertas *«unicidad verificada»* y
+  *«reconciliación con adaptador probada»*, TC sugeridos: duplicado por NIF/id HIS, admisión caída → alta local
+  `pendiente_sincronizar`, baja lógica con confirmación. Issue nueva con alcance y DoD, rama
+  `feature/iter08-cdu11-pacientes` desde el tip de `develop` y ciclo **diseño-primero** (D31):
+  `docs/modelo/iter08/` primero, spec TDOP en `docs/test/iter08/` después, y el ejecutor de matriz generado de la
+  spec JSON, nunca a mano.
