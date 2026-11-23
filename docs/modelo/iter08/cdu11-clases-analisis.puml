@@ -1,0 +1,94 @@
+@startuml cdu11-clases-analisis
+' CDU11 (Iter8) - Clases de analisis: conceptos y reglas del dominio "pacientes"
+' Autor: agente (diseno previo al codigo, issue #50) - fuentes PlantUML (D31)
+title CDU11 - Clases de analisis: paciente, baja logica y conciliacion con el HCE externo
+
+skinparam classAttributeIconSize 0
+
+class Paciente <<concepto>> {
+  identificador de paciente (pacienteId)
+  NIF
+  historia clinica (HCE)
+  nombre completo / fecha de nacimiento / centro de origen
+  estado: ACTIVO o BAJA_LOGICA (+ fecha y motivo de la baja)
+  conciliacion: SINCRONIZADO o PENDIENTE_SINCRONIZAR
+  --
+  {static} nuevo(nif, nombre, nacimiento, centro, HCE)
+  modificar(nombre, nacimiento, centro, nif?)
+  darDeBaja(motivo)
+  conciliar()
+  estaActivo()
+  esperaConciliacion()
+}
+
+class RegistroAuditoria <<concepto>> {
+  accion: ALTA / MODIFICACION / BAJA / RECONCILIACION
+  sobre que paciente (pacienteId)
+  estado antes -> estado despues
+  autor (usuario) y motivo
+  instante
+  eslabon hashAnterior + hash propio (cadena verificable)
+}
+
+class ConciliacionHCE <<concepto>> {
+  historia clinica a conciliar con el sistema externo
+  resultado: SINCRONIZADO / PENDIENTE / NO_ENCONTRADA
+  --
+  {static} intentar(HCE) : intenta el canje con el HCE externo
+}
+note right of ConciliacionHCE
+  El HCE externo NO es un objeto del dominio
+  ISO2: es un sistema de otro subdominio
+  (iso2-integracion) al que se llega por el
+  contrato InteropFacade.sincronizarHistoriaClinica.
+  CDU11 solo guarda el RESULTADO de la conciliacion.
+end note
+
+Paciente "1" -- "0..*" RegistroAuditoria : deja rastro\ncada accion
+Paciente "1" -- "0..1" ConciliacionHCE : resuelve su\nconciliacion
+
+package "Reglas del dominio (invariantes)" #FFFFE6 {
+  class R1 <<regla>> {
+    {static} TRES UNICIDADES: pacienteId, nif e historia
+    clinica no se repiten JAMAS. Dos hilos que pasan a la
+    vez la comprobacion "soft" chocan contra el UNIQUE de
+    la base de datos: el perdedor recibe conflicto, nunca
+    dos filas.
+  }
+  class R2 <<regla>> {
+    {static} LA BAJA ES LOGICA Y TERMINAL: despues de la
+    baja el paciente sigue existiendo (se puede consultar
+    con estado BAJA_LOGICA) pero no se puede modificar,
+    ni volver a dar de baja, ni reconciliar.
+  }
+  class R3 <<regla>> {
+    {static} CONFIRMACION EXPRESA: la baja exige motivo Y
+    confirmacion=true; sin confirmacion la peticion se
+    rechaza sin tocar nada.
+  }
+  class R4 <<regla>> {
+    {static} EL ALTA NUNCA DEPENDE DEL HCE: si el sistema
+    externo esta caido, el alta se completa igual (201) y
+    el paciente queda PENDIENTE_SINCRONIZAR. El 5xx solo
+    puede aparecer en la reconciliacion explicita.
+  }
+  class R5 <<regla>> {
+    {static} CONCILIACION IDEMPOTENTE: reconciliar un
+    paciente ya SINCRONIZADO no escribe eslabon nuevo;
+    reconciliar dos veces seguidas deja la misma cadena.
+  }
+  class R6 <<regla>> {
+    {static} EDAD COMPARTIDA: dos ediciones concurrentes
+    de la misma ficha se detectan (version de control
+    optimista); la segunda recibe conflicto, no gana
+    sobre la primera.
+  }
+}
+note bottom of R1
+  R1 es la regla que da titulo a la iteracion
+  ("unicidad por tres vias"): la garantia REAL es
+  la base de datos; la comprobacion del servicio es
+  solo para dar un error bonito.
+end note
+
+@enduml

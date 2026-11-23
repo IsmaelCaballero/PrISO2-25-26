@@ -1,0 +1,75 @@
+@startuml cdu11-casos-uso
+' CDU11 (Iter8) - Casos de uso de "Dar de alta, modificar y dar de baja pacientes"
+' Autor: agente (diseno previo al codigo, issue #50) - fuentes PlantUML (D31)
+title CDU11 - Gestion de pacientes (unicidad por tres vias, baja logica y reconciliacion HCE)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Recepcionista\n(ROL: RECEPCIONISTA)" as RECEP
+actor "Administrador\n(ROL: ADMINISTRADOR)" as ADMIN
+actor "Medico\n(ROL: MEDICO, solo lectura de fichas)" as MEDICO
+actor "Sistema\n(filtro JWT + reglas de dominio)" as SYS #D9D9D9
+actor "HCE externo\n(via InteropFacade,\nimpl de iso2-integracion)" as HCE #D9D9D9
+
+rectangle "ISO2 Radiodiagnostico - CDU11" {
+  usecase "UC11.1\nDar de alta un\npaciente (nif + HCE)" as UC1
+  usecase "UC11.2\nBuscar pacientes\n(filtros + pagination)" as UC2
+  usecase "UC11.3\nVer la ficha\nde un paciente" as UC3
+  usecase "UC11.4\nModificar datos\ndemograficos" as UC4
+  usecase "UC11.5\nDar de baja un\npaciente (motivo +\nconfirmacion)" as UC5
+  usecase "UC11.6\nReconciliar la historia\nclinica con el HCE" as UC6
+  usecase "UC11.7\nVerificar la auditoria\nde pacientes" as UC7
+  usecase "UC02.1\nAutenticarse\n(JWT)" as UCLOGIN
+}
+
+RECEP --> UC1
+RECEP --> UC2
+RECEP --> UC3
+RECEP --> UC4
+RECEP --> UC5
+RECEP --> UC6
+ADMIN --> UC1
+ADMIN --> UC5
+ADMIN --> UC7
+MEDICO --> UC2
+MEDICO --> UC3
+SYS --> UCLOGIN
+
+UC1 ..> UCLOGIN : <<include>>
+UC2 ..> UCLOGIN : <<include>>
+UC4 ..> UCLOGIN : <<include>>
+UC5 ..> UCLOGIN : <<include>>
+UC6 ..> UCLOGIN : <<include>>
+
+UC1 ..> UC6 : <<extend>>\nHCE caido al alta:\nqueda PENDIENTE_SINCRONIZAR
+UC4 ..> UC5 : <<extend>>\ndado de baja: NO se modifica
+UC6 ..> UC5 : <<extend>>\ndado de baja: NO se reconcilia
+
+UC1 -[#red]-> HCE : sincronizarHistoriaClinica\n(puede fallar: el alta NO falla)
+UC6 -[#red]-> HCE : sincronizarHistoriaClinica\n(reintentos explicitos del usuario)
+
+note right of UC1
+  **Unicidad por tres vias (el corazon del CDU11):**
+  pacienteId, nif e historiaClinica son UNIQUE.
+  El alta repetida (doble clic) choca contra la base
+  de datos SIEMPRE, aunque dos hilos pasen antes
+  la comprobacion "soft" del servicio.
+end note
+
+note bottom of UC5
+  **La baja es LOGICA:** la fila sigue en la base
+  con estado BAJA_LOGICA, fecha y motivo. Un dado
+  de baja no se borra, no se modifica y no se
+  reconcilia; consultarlo si responde (200 con
+  estado BAJA_LOGICA).
+end note
+
+note left of UC6
+  **Reconciliacion idempotente:** si el HCE sigue
+  caido, 503; si ya esta sincronizado, 200 sin
+  escribir eslabon nuevo. El alta NUNCA devuelve
+  5xx por tener el HCE caido (leccion DEF-05).
+end note
+
+@enduml

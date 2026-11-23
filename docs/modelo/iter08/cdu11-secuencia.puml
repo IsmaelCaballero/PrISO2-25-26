@@ -1,0 +1,90 @@
+@startuml cdu11-secuencia
+' CDU11 (Iter8) - Secuencia: los tres momentos que pueden fallar y como fallan bien
+' Autor: agente (diseno previo al codigo, issue #50) - fuentes PlantUML (D31)
+title CDU11 - Secuencia: alta con HCE caido, carrera de unicidad y baja logica terminal
+
+autonumber "<b>00."
+skinparam sequenceMessageAlign center
+
+actor "Recepcionista\n(HTTP)" as CLI
+boundary "PacienteControlador" as CTRL
+control "PacienteServicio" as SVC
+database "PacienteRepositorio\n(tabla paciente,\n3 UNIQUE)" as REPO
+entity "AuditoriaPaciente\n(cadena)" as AUD
+participant "InteropFacade\n(HCE externo)" as HCE #D9D9D9
+
+== Escena 1: alta con el HCE caido (R4: el alta NUNCA es 5xx) ==
+CLI -> CTRL : POST /api/pacientes\n{AltaPacienteDTO(nif, HCE, ...)}
+CTRL -> SVC : darAlta(dto)
+SVC -> REPO : existsByNif / existsByHistoriaClinica
+REPO --> SVC : false / false (comprobacion "soft")
+SVC -> HCE : sincronizarHistoriaClinica(HCE)
+HCE --> SVC : SistemaExternoException (caido)
+note right of SVC #FFE6E6
+  La excepcion externa NO aborta el alta:
+  se traga aqui y se convierte en estado.
+end note
+SVC -> REPO : save(Paciente nif, nuevo(...), PENDIENTE_SINCRONIZAR)
+REPO --> SVC : fila creada (pacienteId)
+SVC -> AUD : crear(ALTA, pacienteId, null->ACTIVO)
+SVC --> CTRL : FichaPacienteDTO(sincronizacion=PENDIENTE_SINCRONIZAR)
+CTRL --> CLI : **201** + Location (+ eslabon ALTA)
+... dias despues, el HCE reviviado ...
+CLI -> CTRL : POST /api/pacientes/{id}/reconciliar
+CTRL -> SVC : reconciliarHistoria(pacienteId)
+SVC -> HCE : sincronizarHistoriaClinica(HCE)
+HCE --> SVC : HistoriaSincronizadaDTO(reutilizado=false)
+SVC -> REPO : save(marcarSincronizado())
+SVC -> AUD : crear(RECONCILIACION, PENDIENTE->SINCRONIZADO)
+CTRL --> CLI : **200** ficha con SINCRONIZADO
+
+== Escena 2: carrera de alta con el mismo nif (doble clic, dos hilos) ==
+CLI -> CTRL : POST /api/pacientes (hilo A)
+CLI -> CTRL : POST /api/pacientes (hilo B, mismo nif)
+CTRL -> SVC : darAlta(dto) [A]
+CTRL -> SVC : darAlta(dto) [B]
+SVC -> REPO : existsByNif [A] y existsByNif [B]
+REPO --> SVC : false y false (los dos pasan la soft check)
+SVC -> REPO : save [A]
+SVC -> REPO : save [B]
+REPO --> SVC : **DataIntegrityViolationException** (uk_paciente_nif)
+note right of REPO #FFE6E6
+  La garantia REAL es el UNIQUE de la base de
+  datos: la soft check del servicio solo da
+  error bonito cuando NO hay carrera.
+end note
+SVC --> CTRL : PacienteConflictoException / DataIntegrityViolation
+CTRL --> CLI : **409** CONFLICTO_NIF_DUPLICADO (o generico\ncuando la soft check no lo pillo)
+
+== Escena 3: doble clic de baja + terminalidad + edicion concurrente (R2/R3/R6) ==
+CLI -> CTRL : POST /api/pacientes/{id}/baja {motivo:"", confirmacion:false}
+CTRL --> CLI : **400** CONFIRMACION_REQUERIDA (no se toco nada)
+CLI -> CTRL : POST /api/pacientes/{id}/baja {motivo:"fin de transferencia", confirmacion:true}
+CTRL -> SVC : darBaja(pacienteId, dto)
+SVC -> REPO : findByIdentificador
+REPO --> SVC : paciente ACTIVO, version=3
+SVC -> AUD : crear(BAJA, ACTIVO->BAJA_LOGICA, motivo)
+SVC -> REPO : save(estado=BAJA_LOGICA, fechaBaja, motivoBaja) version 3->4
+CTRL --> CLI : **200** ficha BAJA_LOGICA (la fila SIGUE)
+CLI -> CTRL : POST /api/pacientes/{id}/baja (repeticion del boton)
+CTRL -> SVC : darBaja(...)
+SVC --> CTRL : PacienteConflictoException(PACIENTE_YA_BAJADO)
+CTRL --> CLI : **409** CONFLICTO_PACIENTE_YA_BAJADO
+CLI -> CTRL : POST /api/pacientes/{id}/datos (modificar un dado de baja)
+CTRL -> SVC : modificarDatos(...)
+SVC --> CTRL : PacienteConflictoException(PACIENTE_YA_BAJADO)
+CTRL --> CLI : **409** CONFLICTO_PACIENTE_YA_BAJADO (no hay UPDATE)
+CLI -> CTRL : POST /api/pacientes/{id}/reconciliar (un dado de baja no se reconcilia)
+CTRL -> SVC : reconciliarHistoria(...)
+SVC --> CTRL : PacienteConflictoException(PACIENTE_YA_BAJADO)
+CTRL --> CLI : **409** CONFLICTO_PACIENTE_YA_BAJADO
+== Escena 4: dos ediciones concurrentes de la misma ficha (R6) ==
+CLI -> CTRL : POST /{id}/datos (hilo A: lee version 4)
+CLI -> CTRL : POST /{id}/datos (hilo B: lee version 4)
+SVC -> REPO : save [A] con version 4
+REPO --> SVC : ok, version 5
+SVC -> REPO : save [B] con version 4
+REPO --> SVC : **ObjectOptimisticLockingFailureException**
+CTRL --> CLI : **409** CONFLICTO_MODIFICACION_CONCURRENT\n(la segunda edicion no pisa a la primera)
+
+@enduml

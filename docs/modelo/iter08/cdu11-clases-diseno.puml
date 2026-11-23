@@ -1,0 +1,161 @@
+@startuml cdu11-clases-diseno
+' CDU11 (Iter8) - Clases de diseno: paquetes, firmas y cableado
+' Autor: agente (diseno previo al codigo, issue #50) - fuentes PlantUML (D31)
+title CDU11 - Clases de diseno: iso2-pacientes consume InteropFacade sin tocar iso2-integracion
+
+!pragma layout smetana
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype polyline
+skinparam nodesep 30
+skinparam ranksep 40
+
+package "iso2-common (contratos, 1.2.0)" {
+  interface PacienteFacade <<baseline 1.0.0 INTACTO>> {
+    buscarPorHistoriaClinica(String) -> Optional<PacienteDTO>
+    upsert(PacienteDTO) -> PacienteDTO
+    record PacienteDTO(historiaClinica, nombreCompleto, fechaNacimiento, centroOrigen)
+  }
+  interface GestionPacienteFacade <<nuevo 1.2.0>> {
+    darAlta(AltaPacienteDTO) -> FichaPacienteDTO
+    buscar(nombre, nif, estado, sincronizacion) -> List<FichaPacienteDTO>
+    ficha(String pacienteId) -> FichaPacienteDTO
+    modificarDatos(String pacienteId, ModificacionPacienteDTO) -> FichaPacienteDTO
+    darBaja(String pacienteId, BajaPacienteDTO) -> FichaPacienteDTO
+    reconciliarHistoria(String pacienteId) -> FichaPacienteDTO
+  }
+  class AltaPacienteDTO <<record>> {
+    nif / nombreCompleto / fechaNacimiento
+    centroOrigen / historiaClinica
+  }
+  class ModificacionPacienteDTO <<record>> {
+    nif? / nombreCompleto? / fechaNacimiento? / centroOrigen?
+    (null = no tocar ese campo)
+  }
+  class BajaPacienteDTO <<record>> {
+    motivo / confirmacion:Boolean
+  }
+  class FichaPacienteDTO <<record>> {
+    pacienteId / nif / nombreCompleto / fechaNacimiento
+    centroOrigen / historiaClinica / estado / sincronizacion
+    fechaBaja / motivoBaja / version
+  }
+  class PacienteNoEncontradoException <<nuevo>>
+  class PacienteConflictoException <<nuevo>> {
+    enum Conflicto: NIF_DUPLICADO, HISTORIA_CLINICA_DUPLICADA, PACIENTE_YA_BAJADO
+  }
+  class ConfirmacionBajaRequeridaException <<nuevo>>
+  interface InteropFacade <<1.1.0 ya existe>> {
+    sincronizarHistoriaClinica(String pacienteExternoId) -> HistoriaSincronizadaDTO
+    lanza HistoriaNoEncontradaException / SistemaExternoException
+  }
+}
+
+package "iso2-pacientes (nuevo, 1.2.0-SNAPSHOT)" {
+  class PacienteControlador <<@RestController>> {
+    POST   /api/pacientes                      -> alta (201 + Location)
+    GET    /api/pacientes                      -> busqueda (filtros + PaginacionDTO)
+    GET    /api/pacientes/{id}                 -> ficha
+    POST   /api/pacientes/{id}/datos           -> modificacion (POST, no PUT: semantica de accion)
+    POST   /api/pacientes/{id}/baja            -> baja logica
+    POST   /api/pacientes/{id}/reconciliar     -> reintentar conciliacion
+    GET    /api/pacientes/auditoria-verificable-> cadena integridad + total
+    GET    /api/pacientes/{id}/auditoria       -> eslabones del paciente
+  }
+  class PacienteManejadorErrores <<@RestControllerAdvice>> {
+    404 PACIENTE_NO_ENCONTRADO
+    409 CONFLICTO_NIF_DUPLICADO / CONFLICTO_HISTORIA_CLINICA_DUPLICADA / CONFLICTO_PACIENTE_YA_BAJADO
+    409 CONFLICTO_PACIENTE_DUPLICADO (UNIQUE en carrera, ultima capa)
+    409 CONFLICTO_MODIFICACION_CONCURRENT (ObjectOptimisticLockingFailureException)
+    400 CONFIRMACION_REQUERIDA / 503 SERVICIO_EXTERNO_NO_DISPONIBLE
+  }
+  class PacienteServicio <<@Service tx>> {
+    implements GestionPacienteFacade, PacienteFacade
+    alta: existeNif? existeHCE? -> soft checks; INSERT cierra la carrera
+    alta: sincronizar con HCE; caido NO aborta el alta (R4)
+    baja: confirmacion + estado + auditoria
+    reconciliar: idempotente; caido -> SistemaExternoException
+    usuario(): SecurityContextHolder con fallback "sistema"
+  }
+  class Paciente <<@Entity, tabla paciente>> {
+    - id:Long  <<@Id IDENTITY>>
+    - pacienteId:String  <<columna paciente_id VARCHAR(36) UNIQUE>>
+    - nif:String  <<VARCHAR(15) UNIQUE>>
+    - historiaClinica:String  <<VARCHAR(30) UNIQUE>>
+    - nombreCompleto / fechaNacimiento / centroOrigen
+    - estado:Estado (ACTIVO | BAJA_LOGICA)
+    - sincronizacion:Sincronizacion (SINCRONIZADO | PENDIENTE_SINCRONIZAR)
+    - fechaBaja:Instant  / motivoBaja:String
+    - version:int  <<@Version DESDE EL PRIMER COMMIT (DEF-17)>>
+    --
+    {static} nuevo(AltaPacienteDTO) / modificar() / darBaja(motivo) / marcarSincronizado()
+  }
+  class AuditoriaPaciente <<@Entity, tabla paciente_auditoria>> {
+    - accion:Accion (ALTA | MODIFICACION | BAJA | RECONCILIACION)
+    - pacienteId / antes / despues / usuario / motivo
+    - instante:Instant / hashAnterior / hash
+    --
+    {static} Genesis -> AuditoriaPaciente  (GENESIS propio)
+    {static} canonicos(List) -> String   canon: accion|pacienteId|antes->despues|usuario|motivo|instante|hashAnterior
+    calcularHash(...) -> String  (SHA-256 hex)
+  }
+  interface PacienteRepositorio <<JpaRepository>> {
+    existsByNif(String) / existsByHistoriaClinica(String)
+    findByHistoriaClinica(String) -> Optional<Paciente>
+    findByIdentificador(String) -> Optional<Paciente>
+    buscar(filtros...) -> List<Paciente>
+  }
+  interface AuditoriaPacienteRepositorio <<JpaRepository>> {
+    findTopByOrderByIdDesc() -> Optional<AuditoriaPaciente>
+  }
+}
+
+package "iso2-seguridad (1.2.0)" {
+    enum Permiso <<+2 valores>> {
+      PACIENTE_LEER("paciente:leer")
+      PACIENTE_ESCRIBIR("paciente:escribir")
+    }
+  class MatrizPermisos {
+    leer: ADMIN + MEDICO + RECEPCIONISTA
+    escribir: ADMIN + RECEPCIONISTA
+  }
+}
+
+package "iso2-server-app (1.2.0)" {
+  class ConfigSeguridad {
+    GET /api/pacientes/** -> paciente:leer
+    POST /api/pacientes/** -> paciente:escribir
+  }
+  class Flyway_V1_7_0 <<h2 + mysql iguales en version>> {
+    table paciente (3 UNIQUE) + table paciente_auditoria (cadena)
+    semillas con hash precalculado (tools/cdu11_seed_hashes.py)
+  }
+}
+
+PacienteControlador --> PacienteServicio
+PacienteControlador ..> PacienteManejadorErrores : lanza -> traduce
+PacienteServicio ..|> GestionPacienteFacade
+PacienteServicio ..|> PacienteFacade : implementa la baseline\nsin tocarla (D22)
+PacienteServicio --> PacienteRepositorio
+PacienteServicio --> AuditoriaPacienteRepositorio
+PacienteServicio --> InteropFacade : SOLO el contrato (D23);\nla impl real la pone iso2-integracion\nen server-app; en el TDOP del modulo,\nfalso con tokens SEM-HCE-*
+PacienteRepositorio --> Paciente
+AuditoriaPacienteRepositorio --> AuditoriaPaciente
+PacienteServicio ..> AltaPacienteDTO
+PacienteServicio ..> FichaPacienteDTO
+PacienteServicio ..> PacienteConflictoException
+PacienteManejadorErrores ..> ConfirmacionBajaRequeridaException
+ConfigSeguridad ..> Permiso
+MatrizPermisos ..> Permiso
+Flyway_V1_7_0 ..> Paciente : crea tabla
+Flyway_V1_7_0 ..> AuditoriaPaciente : crea tabla
+
+note bottom of PacienteServicio
+  Las tres capas anti-duplicado (la que da title a la iteracion):
+  (1) soft check en el servicio (error bonito),
+  (2) UNIQUE de nif/historia_clinica/paciente_id en la BD (cierra la carrera, 409 CONFLICTO_PACIENTE_DUPLICADO),
+  (3) @Version en Paciente (ediciones concurrentes -> 409).
+  El TDOP (tablas A-G) ataca las tres desde HTTP con dos hilos.
+end note
+
+@enduml
