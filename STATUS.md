@@ -1006,7 +1006,43 @@ del punto de vista del usuario sigue siendo de Ismael, y el hito `v0.2.0-alpha` 
 
 ---
 
-## Punto de continuación — 22/11/2026 (sesión 27): CFG-07 CERRADA (merge `af8fde6` + tag `cfg-iter07`); toca la Iter8 y los TC14 de Ismael
+## Punto de continuación — 23/11/2026 (sesión 28): Iter8 abierta (#50) y **modelo D31 commiteado**; lo siguiente es la spec TDOP
+
+* **Dónde está el repo:** rama **`feature/iter08-cdu11-pacientes`** (nacida de `develop` = `4fd778a`) en **`29f05a4`**,
+  **pusheada y con el árbol limpio**. `main` = `d12388b`, intocada (D30). Issue **#50** abierta con su alcance y DoD.
+  Cero PRs abiertos (la rama aún no tiene PR: la borrador llega al final, `Ref: #50` sin `Closes`).
+* **Lo que trae esta sesión (sesión 28):** issue #50 creada; rama abierta; **DoD parcial "modelo antes del código" (D31)
+  cumplido** en `docs/modelo/iter08/`: `base-hecha-cdu11.txt` (inventario: `iso2-pacientes` baseline 1.0.0 vacío,
+  `PacienteFacade` sin implementar, `InteropFacade.sincronizarHistoriaClinica` disponible, slot Flyway V1.7.0 libre)
+  + `cdu11-casos-uso/clases-analisis/clases-diseno/secuencia.puml` con sus 4 PNG. El de clases **necesita
+  `!pragma layout smetana`** (no hay Graphviz en el equipo; sin él sale un plano ilegible). El README del modelo fija
+  las decisiones: fachada nueva **`GestionPacienteFacade`** en common (baseline intacta, D22, y `PacienteServicio` la
+  implementa), entidad **`Paciente` con `@Version` desde el primer commit** (DEF-17), tres capas anti-duplicado
+  (soft check → UNIQUE → `@Version`), alta con HCE caido = **201 + PENDIENTE_SINCRONIZAR** (nunca 5xx), baja lógica
+  terminal con confirmación, reconciliación idempotente, auditoría `paciente_auditoria` con genesis propio, permisos
+  **`paciente:leer`/`paciente:escribir`** y **test RBAC automatizado en server-app** (leción TC14-08).
+* **Siguientes pasos, en este orden (D33: spec → CSV generados → ejecutor; nunca al revés):**
+  1. Spec `docs/test/iter08/tdop-cdu11-espec.json` con tablas A (alta/unicidad + HCE), B (búsqueda/filtros),
+     C (modificación), D (baja/confirmación), E (reconciliación), F (secuencias/conjeturas a dos hilos) y
+     G (auditoría + tamper), con la semilla propia documentada (`SEM-HCE-NORMAL`/`SEM-HCE-CAIDO`…).
+  2. `python tools/pairwise.py docs/test/iter08/tdop-cdu11-espec.json --resources iso2-pacientes/src/test/resources/tdop`
+     y plantilla `docs/tc/cdu11-tc-humanos.md` (TC15-…) con `python tools/tc_plantillas.py … --tc …`.
+  3. Implementación rojo→verde: tren **1.2.0-SNAPSHOT** en pom raíz + `iso2-pacientes` + `iso2-server-app`
+     (ojo: declara `iso2-pacientes` con versión literal `1.0.0` en las líneas 84-88); `jacoco.line.min=0,70`;
+     contratos nuevos en `iso2-common` + excepciones; entidad + repositorios; Flyway **V1.7.0 dual h2+mysql** con
+     semillas de auditoría de hash precalculado (crear `tools/cdu11_seed_hashes.py`, espejo de `cdu14_seed_hashes.py`);
+     servicio/controlador/advice (códigos: `CONFLICTO_NIF_DUPLICADO`, `CONFLICTO_HISTORIA_CLINICA_DUPLICADA`,
+     `CONFLICTO_PACIENTE_YA_BAJADO`, `CONFLICTO_PACIENTE_DUPLICADO`, `CONFLICTO_MODIFICACION_CONCURRENT`,
+     `CONFIRMACION_REQUERIDA`, `PACIENTE_NO_ENCONTRADO`, `SERVICIO_EXTERNO_NO_DISPONIBLE`); `Permiso`+`MatrizPermisos`
+     +`MatrizPermisosTest`+`ConfigSeguridad`; **`PacientesApiTest`** en server-app (patrón `CitasApiTest`).
+  4. Ejecutor `Cdu11MatrizTdopTest` (esqueleto `@SpringBootTest` + `ConfigTdopWeb` interna + MockMvc + **`InteropFacade`
+     falsa** con tokens SEM-HCE-*; CSV del classpath `tdop/`), imitando a `Cdu14MatrizTdopTest`.
+  5. Cierre: página wiki Iter8, recuento D37 en `TASADEFECTOS.md`, `PROMPTS.md`, PR borrador; **tag `cfg-iter08` y
+     cierre del issue siguen siendo de Ismael salvo orden expresa** (DoD 6). TC15 humanos, de Ismael (D28).
+* **Deuda Kanban (27-h) sigue viva:** el token de `gh` no tiene alcance `project` (tarjeta Iter7 sin mover, Iter8 sin
+  crear); `gh auth refresh -s project` da *context deadline exceeded*.
+
+## Punto de continuación — 22/11/2026 (sesión 27; **superado por el bloque anterior, se deja como histórico**): CFG-07 CERRADA (merge `af8fde6` + tag `cfg-iter07`); toca la Iter8 y los TC14 de Ismael
 
 * **Dónde está el repo:** `develop` con la **Iter7 ya fusionada** (merge del PR #48 = **`af8fde6`**) y encima el
   **cierre documental de esta sesión**; el tag anotado **`cfg-iter07`** queda puesto **sobre la fusión de este PR
